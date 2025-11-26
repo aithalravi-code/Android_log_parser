@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let cpuLoadStats, temperatureStats;
     let cpuLoadPlotContainer;
     let appVersionsTable;
+    let batteryStats, batteryPlotContainer;
     let accountsList, deviceEventsTable, walletEventsTable;
     let nfcFilterButtons, bleFilterButtons, dckFilterButtons;
     let bleLogContainer, bleLogSizer, bleLogViewport;
@@ -75,6 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let dckLogContainer, dckLogSizer, dckLogViewport;
     let btsnoopLogContainer, btsnoopLogViewport;
     let kernelLogContainer, kernelLogSizer, kernelLogViewport;
+    let btsnoopLogSizer;
+    let btsnoopLogTableBody; // For efficient btsnoop rendering
 
     // Virtual scroll elements
     const logContainer = document.getElementById('logContainer');
@@ -107,6 +110,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let filteredDckLogLines = []; // The currently filtered set of DCK lines
     let btsnoopPackets = []; // Holds parsed btsnoop packets
     let kernelLogLines = []; // Holds all Kernel-related log lines
+    let filteredBtsnoopPackets = []; // Holds the filtered set of btsnoop packets
+    let btsnoopConnectionEvents = []; // Holds LE Connection Complete events
     let btsnoopConnectionMap = new Map(); // Maps connection handle to BT address
     let allAppVersions = []; // Holds all found app versions
     let filteredKernelLogLines = []; // The currently filtered set of Kernel lines
@@ -124,17 +129,22 @@ document.addEventListener('DOMContentLoaded', () => {
     let btsnoopColumnFilterDebounceTimer = null;
     let userAnchorLine = null; // The log line object the user has clicked to anchor
     let bleScrollListenerAttached = false;
+    let collapsedFileHeaders = new Set(); // For collapsible file logs
     let nfcScrollListenerAttached = false;
     let dckScrollListenerAttached = false;
     let kernelScrollListenerAttached = false;
+    let btsnoopScrollListenerAttached = false;
+    let btsnoopScrollThrottleTimer = null; // For throttling btsnoop scroll events
+    let btsnoopRowPool = []; // For recycling DOM elements in btsnoop virtual scroll
 
     // --- Virtual Scroll State ---
     const LINE_HEIGHT = 20; // Estimated height of a single log line in pixels
-    const BUFFER_LINES = 20; // Number of lines to render above/below the viewport
+    const BUFFER_LINES = 50; // Number of lines to render above/below the viewport
 
     // --- Time Filter State ---
     let minLogDate = null;
     let maxLogDate = null;
+    let isTimeFilterActive = false;
     let debounceTimer = null;
 
     // --- Performance Debugging ---
@@ -142,13 +152,11 @@ document.addEventListener('DOMContentLoaded', () => {
         tasks: {},
         start(name) {
             this.tasks[name] = { start: performance.now(), duration: 0, running: true };
-            console.log(`[TimeTracker] Starting: ${name}`);
         },
         stop(name) {
             if (this.tasks[name] && this.tasks[name].running) {
                 this.tasks[name].duration = performance.now() - this.tasks[name].start;
                 this.tasks[name].running = false;
-                console.log(`[TimeTracker] Stopped: ${name} (${this.tasks[name].duration.toFixed(2)} ms)`);
             }
         },
         getResults() {
@@ -171,45 +179,13 @@ document.addEventListener('DOMContentLoaded', () => {
             tab.classList.add('active');
             const tabId = tab.dataset.tab;
             document.getElementById(tabId + 'Tab').classList.add('active');
-
-            // If switching to a specialized log tab, process/filter the logs for it.
-            if (tabId === 'ble' && originalLogLines.length > 0) {
-                console.log(`[DEBUG] Tab switch to BLE. Filtering logs.`);
-                processForBle();
-            } else if (tabId === 'nfc' && originalLogLines.length > 0) {
-                console.log(`[DEBUG] Tab switch to NFC. Filtering logs.`);
-                processForNfc();
-            } else if (tabId === 'dck' && originalLogLines.length > 0) {
-                console.log(`[DEBUG] Tab switch to DCK. Filtering logs.`);
-                processForDck();
-            } else if (tabId === 'btsnoop' && originalLogLines.length > 0 && btsnoopPackets.length === 0) {
-                // BTSnoop parsing is expensive, so only do it once.
-                console.log(`[DEBUG] Tab switch to BTSnoop. Starting processing.`);
-                await processForBtsnoop(); // Await the async parsing
-            } else if (tabId === 'btsnoop' && btsnoopPackets.length > 0) {
-                // If packets are already parsed, just re-render them.
-                renderBtsnoopPackets(btsnoopConnectionMap, activeBtsnoopFilters);
-            } else if (tabId === 'kernel' && originalLogLines.length > 0) {
-                console.log(`[DEBUG] Tab switch to Kernel. Filtering logs.`);
-                processForKernel();
-            } else {
-                console.log(`[DEBUG] Tab switch to ${tabId}. No processing needed or already processed.`);
-            }
-
-            // Force a re-render of the virtual scroller when switching back to a tab
-            if (tabId === 'logs') {
-                renderVirtualLogs(logContainer, logSizer, logViewport, filteredLogLines);
-            } else if (tabId === 'ble') {
-                renderBleVirtualLogs();
-            } else if (tabId === 'nfc') {
-                renderNfcVirtualLogs();
-            } else if (tabId === 'dck') {
-                renderDckVirtualLogs();
-            } else if (tabId === 'btsnoop') {
-                renderBtsnoopPackets(btsnoopConnectionMap, activeBtsnoopFilters);
-            } else if (tabId === 'kernel') {
-                renderKernelVirtualLogs();
-            }
+            
+            // FIX: Use requestAnimationFrame to ensure the tab is visible before rendering.
+            // This is the definitive fix for the "47 lines" bug.
+            requestAnimationFrame(() => {
+                // When switching tabs, always refresh the view with the correct filters.
+                refreshActiveTab();
+            });
         });
     });
 
@@ -241,6 +217,63 @@ document.addEventListener('DOMContentLoaded', () => {
             .log-line-W { color: #FBC02D; } /* Yellow */
             .log-line-I { color: #388E3C; } /* Green */
             .log-line-D { color: #1976D2; } /* Blue */
+
+            /* --- Fix for BTSnoop Header Alignment --- */
+            .btsnoop-column-filters {
+                display: flex; /* Treat the header row as a flex container */
+                width: 100%; /* Ensure it spans the full width */
+                padding-right: 17px; /* Account for scrollbar width to prevent layout shift */
+                box-sizing: border-box;
+            }
+            .btsnoop-column-filters th {
+                padding: 2px 5px; /* Match cell padding */
+            }
+            /* FIX: Apply the same fixed-width flex rules to header cells as data cells */
+            .btsnoop-column-filters th:nth-child(1) { flex: 0 0 60px; }
+            .btsnoop-column-filters th:nth-child(2) { flex: 0 0 100px; }
+            .btsnoop-column-filters th:nth-child(3), .btsnoop-column-filters th:nth-child(4) { flex: 0 0 180px; }
+            .btsnoop-column-filters th:nth-child(5) { flex: 0 0 120px; }
+
+            /* Apply the same flex rules to header cells as data cells */
+            .btsnoop-column-filters th:nth-child(6), .btsnoop-column-filters th:nth-child(7) { flex: 1 1 0; min-width: 0; }
+
+            /* --- FINAL REDESIGN for BTSnoop View --- */
+            /* This container holds the header and the log container */
+            #btsnoopContentView {
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+            }
+            /* The new header is a div, not a table */
+            #btsnoopHeader {
+                display: flex;
+                border-bottom: 2px solid #ccc;
+                padding-bottom: 5px;
+                margin-bottom: 5px;
+            }
+            .btsnoop-row {
+                display: flex;
+                position: absolute;
+                width: 100%;
+                height: ${LINE_HEIGHT}px;
+                border-bottom: 1px solid #e0e0e0;
+            }
+            /* Shared column widths for header AND data cells */
+            .btsnoop-header-cell, .btsnoop-cell {
+                padding: 2px 5px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                box-sizing: border-box;
+            }
+            .btsnoop-header-cell:nth-child(1), .btsnoop-cell:nth-child(1) { flex: 0 0 60px; }
+            .btsnoop-header-cell:nth-child(2), .btsnoop-cell:nth-child(2) { flex: 0 0 100px; }
+            .btsnoop-header-cell:nth-child(3), .btsnoop-cell:nth-child(3) { flex: 0 0 180px; }
+            .btsnoop-header-cell:nth-child(4), .btsnoop-cell:nth-child(4) { flex: 0 0 180px; }
+            .btsnoop-header-cell:nth-child(5), .btsnoop-cell:nth-child(5) { flex: 0 0 120px; }
+            .btsnoop-header-cell:nth-child(6), .btsnoop-cell:nth-child(6) { flex: 1 1 50%; min-width: 0; } /* Summary */
+            .btsnoop-header-cell:nth-child(7), .btsnoop-cell:nth-child(7) { flex: 1 1 50%; min-width: 0; } /* Data */
+            }
         `;
         document.head.appendChild(style);
     }
@@ -301,14 +334,12 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const persistedData = await loadData('logData');
             if (persistedData && persistedData.value) {
-                console.log('Found persisted logs. Restoring session...');
                 originalLogLines = persistedData.value;
                 const persistedFileName = await loadData('fileName');
                 currentZipFileName = persistedFileName?.value || '';
                 currentFileDisplay.textContent = `Restored: ${currentZipFileName || 'log files'}`;
 
                 // --- Re-process restored data to rebuild the UI state ---
-                console.log('Re-processing restored data for UI...');
                 const finalStats = { total: 0, E: 0, W: 0, I: 0, D: 0, V: 0 };
                 const finalHighlights = { accounts: new Set(), deviceEvents: [], walletEvents: [] };
                 const accountRegex = /Account {name=([^,]+), type=[^}]+}/g;
@@ -334,7 +365,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 initializeTimeFilterFromLines();
                 await renderUI(true); // Use fast initial render and wait for it to complete
-                console.log('Session restored.');
                 return true; // Explicitly return true on success
             }
         } catch (error) {
@@ -360,6 +390,8 @@ document.addEventListener('DOMContentLoaded', () => {
         appSearchInput = document.getElementById('appSearchInput');
             temperatureStats = document.getElementById('temperatureStats');
             bleLogContainer = document.getElementById('bleLogContainer');        bleLogSizer = document.getElementById('bleLogSizer');
+        batteryStats = document.getElementById('batteryStats');
+        batteryPlotContainer = document.getElementById('batteryPlotContainer');
         bleLogViewport = document.getElementById('bleLogViewport');
         nfcLogContainer = document.getElementById('nfcLogContainer');
         nfcLogSizer = document.getElementById('nfcLogSizer');
@@ -368,7 +400,10 @@ document.addEventListener('DOMContentLoaded', () => {
         dckLogSizer = document.getElementById('dckLogSizer');
         dckLogViewport = document.getElementById('dckLogViewport');
         btsnoopLogContainer = document.getElementById('btsnoopLogContainer');
+        btsnoopLogSizer = document.getElementById('btsnoopLogSizer');
+        btsnoopConnectionEventsTable = document.getElementById('btsnoopConnectionEventsTable')?.getElementsByTagName('tbody')[0];
         btsnoopLogViewport = document.getElementById('btsnoopLogViewport');
+        btsnoopLogTableBody = document.getElementById('btsnoopLogTableBody');
         kernelLogContainer = document.getElementById('kernelLogContainer');
         kernelLogSizer = document.getElementById('kernelLogSizer');
         kernelLogViewport = document.getElementById('kernelLogViewport');
@@ -385,10 +420,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // They will be attached dynamically when the tab is first accessed.
         if (keywordChipsContainer) keywordChipsContainer.addEventListener('mousedown', handleChipClick);
 
-        if (logViewport) logViewport.addEventListener('mousedown', handleViewportInteraction);
+        [logViewport, bleLogViewport, nfcLogViewport, dckLogViewport, kernelLogViewport].forEach(vp => {
+            if (vp) vp.addEventListener('mousedown', handleViewportInteraction);
+        });
         if (bleLogViewport) bleLogViewport.addEventListener('mousedown', handleViewportInteraction);
         if (nfcLogViewport) nfcLogViewport.addEventListener('mousedown', handleViewportInteraction);
-        if (btsnoopLogViewport) btsnoopLogViewport.addEventListener('mousedown', handleViewportInteraction);
         if (dckLogViewport) dckLogViewport.addEventListener('mousedown', handleViewportInteraction);
         if (kernelLogViewport) kernelLogViewport.addEventListener('mousedown', handleViewportInteraction);
         if (appSearchInput) appSearchInput.addEventListener('input', () => renderAppVersions(allAppVersions));
@@ -409,7 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 isAndLogic = false;
                 logicOrBtn.classList.add('active');
                 logicAndBtn.classList.remove('active');
-                applyFilters();
+                refreshActiveTab();
             });
         }
 
@@ -418,7 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 isAndLogic = true;
                 logicAndBtn.classList.add('active');
                 logicOrBtn.classList.remove('active');
-                applyFilters();
+                refreshActiveTab();
             });
         }
 
@@ -476,6 +512,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const exportBtsnoopBtn = document.getElementById('exportBtsnoopBtn');
         if (exportBtsnoopBtn) exportBtsnoopBtn.addEventListener('click', () => handleExport(btsnoopPackets.map(p => `${p.timestamp} ${p.direction} ${p.type} ${p.summary}`), 'btsnoop_packets.txt'));
+
+        const analyzeDckBtn = document.getElementById('analyzeDckBtn');
+        if (analyzeDckBtn) {
+            analyzeDckBtn.addEventListener('click', async () => {
+                if (filteredDckLogLines.length === 0) {
+                    alert("No filtered DCK logs to analyze. Please load logs and ensure they are visible in the DCK tab.");
+                    return;
+                }
+
+                const analysisContainer = document.getElementById('dckGeminiAnalysisContainer');
+                const resultDiv = document.getElementById('dckGeminiResult');
+
+                analysisContainer.style.display = 'block';
+                resultDiv.textContent = 'Analyzing with Gemini...';
+
+                try {
+                    // IMPORTANT: Replace with your actual backend server URL
+                    const response = await fetch('http://localhost:3000/analyze-dck', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        // Send the raw text of the filtered logs
+                        body: JSON.stringify({ logs: filteredDckLogLines.map(line => line.originalText).join('\n') }),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Server error: ${response.statusText}`);
+                    }
+
+                    const analysis = await response.json();
+                    resultDiv.innerHTML = analysis.text; // Using innerHTML to render potential Markdown from the backend
+                } catch (error) {
+                    resultDiv.textContent = `Error getting analysis: ${error.message}. Make sure your backend server is running.`;
+                    console.error('Gemini analysis failed:', error);
+                }
+            });
+        }
     }
 
     async function clearPreviousState(clearStorage = false) {
@@ -490,6 +564,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear time filters
         startTimeInput.value = '';
         endTimeInput.value = '';
+        isTimeFilterActive = false;
         if (timeRangeSlider && timeRangeSlider.noUiSlider) {
             timeRangeSlider.noUiSlider.destroy();
             document.getElementById('timeRangeSliderContainer').style.display = 'none';
@@ -502,6 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Reset specialized log data
         logTags = [];
         bleLogLines = [];
+        collapsedFileHeaders.clear();
         filteredBleLogLines = [];
         nfcLogLines = [];
         filteredNfcLogLines = [];
@@ -509,6 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
         filteredDckLogLines = [];
         btsnoopConnectionMap.clear();
         btsnoopPackets = [];
+        btsnoopConnectionEvents = [];
         kernelLogLines = [];
         allAppVersions = [];
         activeBtsnoopFilters = new Set(['cmd', 'evt', 'acl', 'l2cap', 'smp', 'att']);
@@ -536,6 +613,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Set the processing flag to prevent concurrent filtering operations
         isProcessing = true;
 
+        // FIX: Initialize all dynamic DOM element references at the start of processing.
+        // This ensures that all containers are found before any rendering is attempted.
+        initializeDynamicElements();
+
         TimeTracker.reset();
         TimeTracker.start('Total Processing Time');
 
@@ -561,9 +642,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- Unified Processing Logic ---
         const processFileEntry = async (file) => {
-            // DEBUG: Log the object being processed to identify the source of TypeErrors.
-            console.log('[DEBUG] processFileEntry received:', file);
-
             const path = file.webkitRelativePath || file.name;
             if (file.name.endsWith('.zip')) {
                 // Use the Blob URL workaround to create the zip worker, avoiding CORS issues.
@@ -638,7 +716,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Filter out binary btsnoop logs from the text-parsing pipeline.
         // They will be handled separately by the BTSnoop tab's logic.
-        const tasksToParse = fileTasks.filter(task => !task.path.includes('btsnoop_hci.log') || task.path.endsWith('hci.log'));
+        const tasksToParse = fileTasks.filter(task => !task.path.includes('btsnoop_hci.log'));
         // --- Simplified Worker Pool Logic ---
         // To bypass 'file://' CORS restrictions, the worker's code is embedded
         // directly as a string. A Blob is created from this string, and a URL
@@ -667,8 +745,8 @@ document.addEventListener('DOMContentLoaded', () => {
             '    const logcatRegex = new RegExp(\n' +
             '        \'^\\\\s*(?:\' + // Allow optional leading whitespace\n' +
             '            \'(?<logcatDate>\\\\d{2}-\\\\d{2})\\\\s(?<logcatTime>\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{3,})\' + // MM-DD HH:mm:ss.SSS\n' +
-            '            \'\\\\s+\' + \n' +
-        '            \'(?:(?:\\\\s*\\\\d+\\\\s+\\\\d+\\\\s+(?:\\\\d+\\\\s+)?)?(?<level>[A-Z])\\\\s+(?<tag>[^\\\\s:]+?)(?::\\\\s|\\\\s+)|(?<level2>[A-Z])\\\\/(?<tag2>[^(\\\\s]+)(?:\\\\(\\\\s*\\\\d+\\\\))?:\\\\s)\' + \n' +
+            '            \'\\\\s+\' + // Separator\n' +
+            '            \'(?:(?:\\\\s*\\\\d+\\\\s+\\\\d+\\\\s+(?:\\\\d+\\\\s+)?)?(?<level>[A-Z])\\\\s+(?<tag>[^\\\\s:]+?)(?::\\\\s|\\\\s+)|(?<level2>[A-Z])\\\\/(?<tag2>[^\\\\(\\\\s]+)(?:\\\\(\\\\s*\\\\d+\\\\))?:\\\\s)\' + // Two formats for level/tag\n' +
             '            \'(?<message>(?!.*Date: \\\\d{4}).*)\' + // Standard logcat message, negative lookahead to prevent matching custom format\n' +
             '        \'|\' +\n' +
             '            \'Date:\\\\s(?<customFullDate>\\\\d{4}-\\\\d{2}-\\\\d{2})\\\\s(?<customTime>\\\\d{2}:\\\\d{2}:\\\\d{2})\' + // Date: YYYY-MM-DD HH:mm:ss\n' +
@@ -677,10 +755,9 @@ document.addEventListener('DOMContentLoaded', () => {
             '        \'m\' // Use \'m\' (multiline) for ^, but NOT \'g\' (global) with exec() in a loop\n' +
             '    );\n' +
             '\n' +
-            '    const parsedLines = [];\n' +
+'    let parsedLines = [];\n' +
             '    const tagSet = new Set();\n' +
             '    let minTimestamp, maxTimestamp;\n' +
-            '    const headerText = \'--- Log from \' + path + \' ---\';\n' +
             '    const workerDebugLogs = [];\n' +
             '\n' +
             '    const stats = { total: 0, E: 0, W: 0, I: 0, D: 0, V: 0 };\n' +
@@ -694,9 +771,26 @@ document.addEventListener('DOMContentLoaded', () => {
             '    const accountRegex = new RegExp(\'(?:account:)?Account {name=([^,]+), type=[^}]+}\', \'g\');\n' +
             '    const lockRegex = /KeyguardUpdateMonitor.*Device.*policy:\\\\s*1/;\n' +
             '    const unlockRegex = /KeyguardUpdateMonitor.*Device.*policy:\\\\s*2/;\n' +
+            '    // Regex for BT connection events\n' +
+            '    const btConnectRegex = /(?:onConnectionStateChange|CONNECT|connectionStateChange).*status=0.*?newState=(?:2|CONNECTED)/i;\n' +
+            '    const btDisconnectRegex = /(?:onConnectionStateChange|DISCONNECT|connectionStateChange).*?newState=(?:0|DISCONNECTED)/i;\n' +
+            '    const btAddressRegex = /([0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2})/i;\n' +
             '    \n' +
+            '    const batteryRegex = /level: (\\\\d+).*scale: (\\\\d+)/;\n' +
+            '    const batteryDataPoints = [];\n' +
             '    const versionRegex = new RegExp(\'Package\\\\s+\\\\[([^\\]]+)\\\\].*?versionName=([^\\\\s\\\\n,]+)\');\n' +
             '    const appVersions = new Map();\n' +
+            '    // Regex for multi-line dumpsys package format\n' +
+            '    const dumpsysPackageRegex = /Package\\s+\\[([^\\]]+)\\][^:]*:[\\s\\S]*?^\\s+versionName=([^\\s\\n]+)/gm;\n' +
+            '    let dumpsysMatch;\n' +
+            '    while ((dumpsysMatch = dumpsysPackageRegex.exec(fileContent)) !== null) {\n' +
+            '        if (dumpsysMatch[1] && dumpsysMatch[2]) {\n' +
+            '            appVersions.set(dumpsysMatch[1], dumpsysMatch[2]);\n' +
+            '        }\n' +
+            '    }\n' +
+            '    // Regex for the custom format: { component_name=... version=... label=... }\n' +
+            '    const customVersionRegex = /component_name=([\\w.\\/]+).*?version=([\\d]+).*?label=([\\w]+)/;\n' +
+
             '\n' +
             '    const bleTagKeywords = [\'BluetoothManager\', \'BluetoothAdapter\', \'BtGatt\', \'GattService\', \'HciHal\', \'bt_hci\', \'bt_snoop\'];\n' +
             '    const bleTagRegex = new RegExp(`^(${bleTagKeywords.join(\'|\')})$`, \'i\');\n' +
@@ -709,27 +803,29 @@ document.addEventListener('DOMContentLoaded', () => {
             '    const nfcMessageRegex = new RegExp(`\\\\b(${nfcMessageKeywords.join(\'|\')})\\\\b`, \'i\');\n' +
             '\n' +
             '    const dckKeywords = [\'DigitalCarKey\', \'CarKey\', \'UwbTransport\', \'Dck\'];\n' +
-            '    const dckRegex = new RegExp(`\\\\b(${dckKeywords.join(\'|\')})\\\\b`, \'i\');\n' +
-            '    const kernelRegex = /^\\\\[\\\\s*\\\\d+\\\\.\\\\d+\\\\]/;\n' +
+'    const CHUNK_SIZE = 10000; // Number of lines to send back at a time\n' +
+'    const dckRegex = new RegExp(`\\\\b(${dckKeywords.join(\'|\')})\\\\b`, \'i\');\n' +
+'    const kernelRegex = /^\\s*\\[\\s*\\d+\\.\\d+\\]/;\n' +
             '\n' +
             '    const yearMatch = path.match(/(\\d{4})-\\d{2}-\\d{2}/);\n' +
             '    const fileYear = yearMatch ? parseInt(yearMatch[1], 10) : new Date().getFullYear();\n' +
             '\n' +
-            '    parsedLines.push({ isMeta: true, text: headerText, originalText: headerText, level: \'M\' });\n' +
+            '    parsedLines.push({ isMeta: true, text: \'--- Log from \' + path + \' ---\', originalText: \'--- Log from \' + path + \' ---\', level: \'M\' });\n' +
             '\n' +
             '    const lines = fileContent.split(\'\\n\');\n' +
-            '    for (const lineText of lines) {\n' +
+            '    for (let i = 0; i < lines.length; i++) {\n' +
+            '        const lineText = lines[i];\n' +
             '        if (!lineText.trim()) continue;\n' +
             '        stats.total++;\n' +
             '\n' +
-            '        const match = logcatRegex.exec(lineText);\n' +
-            '        let parsedLine;\n' +
+            '        let match = logcatRegex.exec(lineText);\n' +
+            '        let parsedLine = { lineNumber: i + 1 }; // Add line number\n' +
             '        let lineDateObj = null;\n' +
             '\n' +
             '        if (match) {\n' +
             '            if (match.groups.logcatDate) { // Standard logcat format\n' +
             '                const { logcatDate, logcatTime, level, tag, level2, tag2, message } = match.groups;\n' +
-            '                const [month, day] = logcatDate.split(\'-\').map(Number);\n' +
+            '                const [month, day] = logcatDate.split(\'-\').map(Number);\n' + // This was line 209
             '                const [hours, minutes, seconds, milliseconds] = logcatTime.split(/[:.]/).map(Number);\n' +
             '                lineDateObj = new Date(fileYear, month - 1, day, hours, minutes, seconds, milliseconds || 0);\n' +
             '\n' +
@@ -737,9 +833,9 @@ document.addEventListener('DOMContentLoaded', () => {
             '                if (!minTimestamp || fullTimestamp < minTimestamp) minTimestamp = fullTimestamp;\n' +
             '                if (!maxTimestamp || fullTimestamp > maxTimestamp) maxTimestamp = fullTimestamp;\n' +
             '\n' +
-            '                const finalTag = (tag || tag2).trim();\n' +
+            '                const finalTag = (tag || tag2 || \'\').trim();\n' +
             '                tagSet.add(finalTag);\n' +
-            '                const finalLevel = (level || level2).trim();\n' +
+            '                const finalLevel = (level || level2).trim();\n' + // This was line 217
             '                parsedLine = { isMeta: false, dateObj: lineDateObj, date: logcatDate, time: logcatTime, timestamp: fullTimestamp, level: finalLevel, tag: finalTag, message: message.trim(), originalText: lineText };\n' +
             '                if (stats[finalLevel] !== undefined) stats[finalLevel]++;\n' +
             '            } else if (match.groups.customFullDate) { // Custom YYYY-MM-DD format\n' +
@@ -758,10 +854,11 @@ document.addEventListener('DOMContentLoaded', () => {
             '                stats.I++;\n' +
             '            }\n' +
             '        } else { // Unmatched line\n' +
-            '            parsedLine = { isMeta: false, dateObj: null, date: \'N/A\', time: \'N/A\', originalText: lineText, level: \'V\' };\n' +
+            '            parsedLine = { isMeta: false, dateObj: null, date: \'N/A\', time: \'N/A\', originalText: lineText, level: \'V\', lineNumber: i + 1 };\n' +
             '            stats.V++;\n' +
             '        }\n' +
             '\n' +
+            '        if (parsedLine) parsedLine.lineNumber = i + 1;\n' +
             '        const textToSearchForHighlights = parsedLine.message || lineText;\n' +
             '        let accountMatch;\n' +
             '        while ((accountMatch = accountRegex.exec(textToSearchForHighlights)) !== null) {\n' +
@@ -777,12 +874,41 @@ document.addEventListener('DOMContentLoaded', () => {
             '            if (service.off.test(lineText)) highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: serviceName + \' Status\', detail: \'Off\', originalText: lineText });\n' +
             '        }\n' +
             '        \n' +
+            '        if (btConnectRegex.test(textToSearchForHighlights)) {\n' +
+            '            const addressMatch = textToSearchForHighlights.match(btAddressRegex);\n' +
+            '            highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: \'Bluetooth Connected\', detail: addressMatch ? addressMatch[1] : \'N/A\', originalText: lineText });\n' +
+            '        }\n' +
+            '        if (btDisconnectRegex.test(textToSearchForHighlights)) {\n' +
+            '            const addressMatch = textToSearchForHighlights.match(btAddressRegex);\n' +
+            '            highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: \'Bluetooth Disconnected\', detail: addressMatch ? addressMatch[1] : \'N/A\', originalText: lineText });\n' +
+            '        }\n' +
+            '\n' +
+            '        for (const serviceName in services) {\n' +
+            '            const service = services[serviceName];\n' +
+            '            if (service.on.test(lineText)) highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: serviceName + \' Status\', detail: \'On\', originalText: lineText });\n' +
+            '            if (service.off.test(lineText)) highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: serviceName + \' Status\', detail: \'Off\', originalText: lineText });\n' +
+            '        }\n' +
+            '        \n' +
             '        const versionMatch = lineText.match(versionRegex);\n' +
             '        if (versionMatch) {\n' +
             '            const packageName = versionMatch[1];\n' +
             '            const versionName = versionMatch[2];\n' +
             '            if (packageName && versionName) appVersions.set(packageName, versionName);\n' +
             '        }\n' +
+            '        const customVersionMatch = lineText.match(customVersionRegex);\n' +
+            '        if (customVersionMatch) {\n' +
+            '            const componentName = customVersionMatch[1];\n' +
+            '            const packageName = componentName.split(\'/\')[0]; // Extract package name from component\n' +
+            '            const versionCode = customVersionMatch[2];\n' +
+            '            if (packageName && versionCode) appVersions.set(packageName, versionCode);\n' +
+            '        }\n' +
+            '        \n' +
+            '        const batteryMatch = lineText.match(batteryRegex);\n' +
+            '        if (batteryMatch && lineDateObj) {\n' +
+            '            const level = parseInt(batteryMatch[1]);\n' +
+            '            batteryDataPoints.push({ ts: lineDateObj, level: level });\n' +
+            '        }\n' +
+            '\n' +
             '\n' +
 '        if (parsedLine) { // Ensure parsedLine is not null\n' +
             '        if ((parsedLine.tag && bleTagRegex.test(parsedLine.tag)) || (parsedLine.message && bleMessageRegex.test(parsedLine.message))) {\n' +
@@ -799,16 +925,27 @@ document.addEventListener('DOMContentLoaded', () => {
 '        // FIX: The kernel check must be independent of the logcat match and the if(parsedLine) block.\n' +
 '        if (parsedLine && kernelRegex.test(lineText)) {\n' +
 '            parsedLine.isKernel = true;\n' +
-'            workerDebugLogs.push(`[WORKER] Kernel line found: ${lineText.substring(0, 100)}`);\n' +
 '        }\n' +
             '\n' +
 '        if(parsedLine) parsedLines.push(parsedLine);\n' +
+            '\n' +
+            '        // If the chunk is full, send it back to the main thread\n' +
+            '        if (parsedLines.length >= CHUNK_SIZE) {\n' +
+            '            self.postMessage({ status: \'chunk\', parsedLines: parsedLines, filePath: path });\n' +
+            '            parsedLines = []; // Reset for the next chunk\n' +
+            '        }\n' +
+            '    }\n' +
+            '\n' +
+            '    // Send any remaining lines in the last chunk\n' +
+            '    if (parsedLines.length > 0) {\n' +
+            '        self.postMessage({ status: \'chunk\', parsedLines: parsedLines, filePath: path });\n' +
             '    }\n' +
             '\n' +
             '    if (workerDebugLogs.length > 0) {\n' +
             '        self.postMessage({ status: \'debug\', logs: workerDebugLogs, filePath: path });\n' +
             '    }\n' +
-            '    self.postMessage({ status: \'success\', parsedLines, tags: Array.from(tagSet), minTimestamp, maxTimestamp, filePath: path, stats, highlights: { ...highlights, accounts: Array.from(highlights.accounts) }, appVersions: Array.from(appVersions) });\n' +
+            '    // Send a final success message with summary data, but without the huge parsedLines array\n' +
+            '    self.postMessage({ status: \'success\', tags: Array.from(tagSet), minTimestamp, maxTimestamp, filePath: path, stats, highlights: { ...highlights, accounts: Array.from(highlights.accounts) }, appVersions: Array.from(appVersions), batteryDataPoints });\n' +
             '};';
         const blob = new Blob([workerScriptText], { type: 'application/javascript' });
         const workerScriptURL = URL.createObjectURL(blob);
@@ -826,26 +963,35 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const onWorkerMessage = (event) => {
-                if (event.data.status === 'debug') {
-                    console.log(`[WORKER DEBUG from ${event.data.filePath}]`, event.data.logs);
-                    return; // Don't treat debug messages as a completed task
-                }
-                results.push(event.data); // This is a 'success' message
-                tasksCompleted++;
-
-                const progress = (tasksCompleted / totalTasks) * 100;
-                progressBar.style.width = `${progress}%`;
-                progressText.textContent = `Parsing ${tasksCompleted} of ${totalTasks}...`;
-
-                if (tasksToParse.length > 0) {
-                    const task = tasksToParse.shift();
-                    event.target.postMessage(task);
+                const data = event.data;
+                // Find or create the result object for this file path
+                let resultForFile = results.find(r => r.filePath === data.filePath);
+                if (!resultForFile) {
+                    resultForFile = { filePath: data.filePath, parsedLines: [], status: 'pending' };
+                    results.push(resultForFile);
                 }
 
-                if (tasksCompleted === totalTasks) {
-                    resolve(results);
-                    workers.forEach(w => w.terminate()); // Terminate all workers
-                    URL.revokeObjectURL(workerScriptURL);
+                if (data.status === 'chunk') {
+                    // Append the chunk of lines
+                    resultForFile.parsedLines.push(...data.parsedLines);
+                } else if (data.status === 'success') {
+                    // This is the final message for this file. Merge summary data.
+                    Object.assign(resultForFile, data);
+                    resultForFile.status = 'success'; // Mark as complete
+                    tasksCompleted++;
+
+                    const progress = (tasksCompleted / totalTasks) * 100;
+                    progressBar.style.width = `${progress}%`;
+                    progressText.textContent = `Parsing ${tasksCompleted} of ${totalTasks}...`;
+
+                    if (tasksToParse.length > 0) {
+                        const task = tasksToParse.shift();
+                        event.target.postMessage(task);
+                    } else if (tasksCompleted === totalTasks) {
+                        resolve(results);
+                        workers.forEach(w => w.terminate());
+                        URL.revokeObjectURL(workerScriptURL);
+                    }
                 }
             };
 
@@ -875,7 +1021,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Wait for all parsing workers to finish
         progressText.textContent = 'Finalizing...';
 
-        console.log("[MAIN] All worker promises resolved. Consolidating results.");
         // --- Consolidate Results ---
         // Reset global state before consolidating new results
         TimeTracker.start('Result Consolidation');
@@ -888,6 +1033,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const finalStats = { total: 0, E: 0, W: 0, I: 0, D: 0, V: 0 };
         const finalBleKeys = new Map();
         const consolidatedAppVersions = new Map();
+        let consolidatedBatteryDataPoints = [];
 
         // --- Consolidate Results ---
         for (const result of allResults) {
@@ -932,6 +1078,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         finalBleKeys.set(addr, keyInfo);
                     });
                 }
+                // Consolidate battery data from worker
+                if (result.batteryDataPoints) {
+                    consolidatedBatteryDataPoints = consolidatedBatteryDataPoints.concat(result.batteryDataPoints);
+                }
             }
         }
         allAppVersions = Array.from(consolidatedAppVersions).sort((a, b) => a[0].localeCompare(b[0]));
@@ -943,7 +1093,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Persist data asynchronously, don't wait for it.
         saveData('logData', originalLogLines);
         saveData('fileName', currentZipFileName);
-        console.log(`[MAIN] Total originalLogLines after consolidation: ${originalLogLines.length}`);
 
         // --- Finalize UI ---
         minLogDate = consolidatedMinTimestamp ? logcatToDate(consolidatedMinTimestamp) : null;
@@ -961,27 +1110,106 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAppVersions(allAppVersions);
         renderTemperaturePlot(dashboardStats.temperatureDataPoints);
         renderCpuPlot(dashboardStats.cpuDataPoints);
+        renderBatteryPlot(consolidatedBatteryDataPoints);
 
-        console.log("[MAIN] Triggering final renderUI.");
         // The initial render is now handled by a direct call to applyFilters,
         // which is the correct way to populate the log view for the first time.
         applyFilters(true);
-
-        TimeTracker.stop('Total Processing Time');
-        TimeTracker.stop('Persisting & UI Render');
-        updateCollapsedMargin();
-        leftPanel.classList.add('collapsed');
-        panelToggleBtn.innerHTML = '&raquo;';
-
+        
         // Reset the processing flag now that everything is complete
         progressText.textContent = 'Complete!';
         isProcessing = false;
+
     }
 
+    /**
+     * NEW: Master refresh function. Detects the active tab and calls its
+     * specific filtering and rendering function. This is now the central
+     * point for all UI updates triggered by filter changes.
+     */
+    async function refreshActiveTab() {
+        const activeTabId = document.querySelector('.tab-btn.active')?.dataset.tab;
+
+        switch (activeTabId) {
+            case 'logs':
+                applyFilters();
+                break;
+            case 'ble':
+                if (!bleScrollListenerAttached) setupBleTab(); else renderBleVirtualLogs();
+                break;
+            case 'nfc':
+                if (!nfcScrollListenerAttached) setupNfcTab(); else renderNfcVirtualLogs();
+                break;
+            case 'dck':
+                if (!dckScrollListenerAttached) setupDckTab(); else renderDckVirtualLogs();
+                break;
+            case 'kernel':
+                processForKernel(); // This function already includes filtering
+                break;
+            case 'btsnoop':
+                // OPTIMIZATION: Parse btsnoop logs just-in-time on the first visit to the tab.
+                // On subsequent visits, the data is already in memory and renders instantly.
+                if (btsnoopPackets.length === 0 && fileTasks.length > 0) {
+                    await processForBtsnoop(); // This happens only once.
+                }
+                // Now that data is guaranteed to be parsed, set up and render.
+                setupBtsnoopTab(); 
+                break;
+            // 'stats' tab has its own update mechanisms and doesn't need a call here.
+        }
+    }
+
+    /**
+     * A generic filtering function that applies the main filters (keyword, level, time)
+     * to a given set of log lines. This is the new core of the filtering system.
+     * @param {Array} linesToFilter The array of log line objects to filter.
+     * @returns {Array} A new array containing only the lines that pass the filters.
+     */
+    function applyMainFilters(linesToFilter) {
+        const activeKeywords = filterKeywords.filter(kw => kw.active).map(kw => kw.text);
+        const keywordRegexes = activeKeywords.length > 0 ? activeKeywords.map(wildcardToRegex) : null;
+        const liveSearchRegex = liveSearchQuery ? wildcardToRegex(liveSearchQuery) : null;
+        const startTime = startTimeInput.value ? new Date(startTimeInput.value) : null;
+        const endTime = endTimeInput.value ? new Date(endTimeInput.value) : null;
+
+        let isInsideCollapsedSection = false;
+        const results = [];
+
+        for (const line of linesToFilter) {
+            // Always include file headers in the results, and update the collapsed state.
+            if (line.isMeta) {
+                isInsideCollapsedSection = collapsedFileHeaders.has(line.originalText);
+                results.push(line); // Always include headers
+                continue;
+            }
+
+            // If we are inside a collapsed section, skip this log line.
+            if (isInsideCollapsedSection) continue;
+
+            // Now, apply all other filters to the visible lines.
+            if (keywordRegexes) {
+                const matches = isAndLogic
+                    ? keywordRegexes.every(regex => regex.test(line.originalText))
+                    : keywordRegexes.some(regex => regex.test(line.originalText));
+                if (!matches) continue;
+            }
+            if (liveSearchRegex && !liveSearchRegex.test(line.originalText)) continue;
+
+            if (isTimeFilterActive && (startTime || endTime)) {
+                if (line.dateObj) {
+                    if ((startTime && line.dateObj < startTime) || (endTime && line.dateObj > endTime)) continue;
+                }
+            }
+
+            if (line.level && !activeLogLevels.has(line.level)) continue;
+
+            results.push(line); // Line passes all filters
+        }
+        return results;
+    }
     // --- Clear & Reset Logic ---
     clearStateBtn.addEventListener('click', async () => {
         if (confirm('Are you sure you want to clear all loaded logs and reset the application? This cannot be undone.')) {
-            console.log('Clearing all data and resetting UI...');
             await clearPreviousState(true); // true to clear persisted data in IndexedDB
             await applyFilters(); // Re-render the empty state
         }
@@ -991,10 +1219,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Filtering and Rendering ---
     // =================================================================================
     
-    // Slower, async filter function that yields to the UI. Used for interactive filtering.
+    // Slower, async filter function that yields to the UI. Used for interactive filtering for the MAIN LOGS TAB.
     async function applyFilters(force = false) {
-        console.log('[DEBUG] applyFilters activeLogLevels:', Array.from(activeLogLevels));
-        // Increment the version to invalidate any previous, slower filter calls
+        // Increment the version to invalidate any previous, slower filter calls.
         const currentVersion = ++filterVersion;
 
         // If we are in the middle of processing new files, abort the filter operation.
@@ -1010,7 +1237,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         // --- End Scroll Restoration ---
 
-        console.log(`[DEBUG] applyFilters started. originalLogLines: ${originalLogLines.length}`);
         TimeTracker.start('Async Filtering');
 
         if (originalLogLines.length === 0) {
@@ -1019,70 +1245,16 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         };
 
-        // --- Build filter conditions first ---
-        const activeKeywords = filterKeywords.filter(kw => kw.active).map(kw => kw.text);
-        const keywordRegexes = activeKeywords.length > 0 ? activeKeywords.map(wildcardToRegex) : null;
-        const liveSearchRegex = liveSearchQuery ? wildcardToRegex(liveSearchQuery) : null;
-        const startTime = startTimeInput.value ? new Date(startTimeInput.value) : null;
-        const endTime = endTimeInput.value ? new Date(endTimeInput.value) : null;
-
-        const newFilteredLines = [];
-        const BATCH_SIZE = 50000;
-
-        for (let i = 0; i < originalLogLines.length; i += BATCH_SIZE) {
-            // If the version has changed, it means a new filter has been triggered. Abort this old one.
-            if (currentVersion !== filterVersion) return;
-
-            const batch = originalLogLines.slice(i, i + BATCH_SIZE);
-
-            for (const line of batch) {
-                if (line.isMeta) {
-                    newFilteredLines.push(line);
-                    continue;
-                }
-
-                // Apply all filters. If a line fails any filter, skip it.
-                if (keywordRegexes) {
-                    const matches = isAndLogic
-                        ? keywordRegexes.every(regex => regex.test(line.originalText)) // AND logic
-                        : keywordRegexes.some(regex => regex.test(line.originalText));  // OR logic
-                    if (!matches) {
-                        continue;
-                    }
-                }
-                if (liveSearchRegex && !liveSearchRegex.test(line.originalText)) {
-                    continue;
-                }
-                if (startTime || endTime) {
-                    // Only apply time filter to lines that have a timestamp.
-                    // Other lines (like kernel logs) should pass this filter.
-                    // OPTIMIZATION: Use the pre-parsed `dateObj` instead of re-parsing the timestamp string.
-                    if (line.dateObj) {
-                        if ((startTime && line.dateObj < startTime) || (endTime && line.dateObj > endTime)) continue;
-                    }
-                }
-                // Corrected log level filtering:
-                // If a line has a level, it must be in the active set to be shown.
-                if (line.level && !activeLogLevels.has(line.level)) continue;
-                // If we get here, the line passed all filters
-                newFilteredLines.push(line);
-            }
-
-            // Yield to the main thread to keep the UI responsive
-            await new Promise(resolve => setTimeout(resolve, 0));
-        }
-
-        // Final check: If the version changed during the last batch, don't render the stale results.
-        if (currentVersion !== filterVersion) return;
-
-        console.log(`[DEBUG] applyFilters finished. newFilteredLines count: ${newFilteredLines.length}`);
-        filteredLogLines = newFilteredLines;
+        // Apply main filters to the lines that are not hidden by collapsed sections.
+        // This is the correct, unified approach.
+        // The main "Logs" tab filters from ALL original lines.
+        filteredLogLines = applyMainFilters(originalLogLines);
 
         // --- Scroll Restoration Logic ---
         // 2. Find the anchor in the new list and scroll to it.
         let newScrollTop = 0;
         // If the user's chosen anchor was filtered out, clear it.
-        if (userAnchorLine && !newFilteredLines.includes(userAnchorLine)) {
+        if (userAnchorLine && !filteredLogLines.includes(userAnchorLine)) {
             userAnchorLine = null;
         }
 
@@ -1213,13 +1385,15 @@ function wildcardToRegex(pattern) {
         });
 
         timeRangeSlider.noUiSlider.on('end', () => {
-            applyFilters(); // Apply filters only when the user finishes sliding
+            isTimeFilterActive = true;
+            refreshActiveTab(); // Apply filters only when the user finishes sliding
         });
 
         // When input fields are changed, update the slider
         [startTimeInput, endTimeInput].forEach(input => {
             input.addEventListener('change', () => {
                 isUpdatingFromInput = true;
+                isTimeFilterActive = true;
                 const startVal = startTimeInput.value ? new Date(startTimeInput.value).getTime() : minTime;
                 const endVal = endTimeInput.value ? new Date(endTimeInput.value).getTime() : maxTime;
                 timeRangeSlider.noUiSlider.set([startVal, endVal]);
@@ -1268,7 +1442,6 @@ function wildcardToRegex(pattern) {
              .replace(/'/g, "&#039;");
     }
     function renderVirtualLogs(container, sizer, viewport, lines) {
-        console.log(`[DEBUG] renderVirtualLogs called. Lines: ${lines?.length ?? 'undefined'}. Container:`, container?.id);
         if (!container || !sizer || !viewport || !lines) return;
 
         const scrollTop = container.scrollTop;
@@ -1314,7 +1487,20 @@ function wildcardToRegex(pattern) {
             if (userAnchorLine === line) {
                 lineClass += ' selected-anchor';
             }
-            visibleHtml += `<div class="${lineClass}" data-line-index="${i}">${lineText}${copyButtonHtml}</div>`;
+
+            // Add collapse/expand indicator for meta lines
+            if (line.isMeta) {
+                const indicator = collapsedFileHeaders.has(line.originalText) ? '[+] ' : '[-] ';
+                lineText = indicator + lineText;
+            }
+            let lineNumberHtml = '';
+            // Only show line numbers for non-meta lines that have a number
+            if (!line.isMeta && line.lineNumber) {
+                lineNumberHtml = `<span class="line-number">${line.lineNumber}</span>`;
+            } else if (!line.isMeta) {
+                lineNumberHtml = `<span class="line-number"></span>`; // Keep alignment
+            }
+            visibleHtml += `<div class="${lineClass}" data-line-index="${i}">${lineNumberHtml}${lineText}${copyButtonHtml}</div>`;
         }
 
         viewport.innerHTML = visibleHtml;
@@ -1360,12 +1546,11 @@ function wildcardToRegex(pattern) {
     }
 
     function renderUI(isInitialLoad = false) {
-        console.log(`[DEBUG] renderUI called. isInitialLoad: ${isInitialLoad}`);
         renderFilterChips();
         // This function's primary role is to re-apply filters when a UI control
         // (like a keyword chip) changes the filter state. The initial render is
         // handled at the end of processFiles.
-        applyFilters();
+        refreshActiveTab();
     }
 
     function handleExport(logLines, filename) {
@@ -1416,7 +1601,6 @@ function wildcardToRegex(pattern) {
                 const wasActive = activeSet.has(layer);
                 const newActiveState = !wasActive;
                 button.classList.toggle('active', newActiveState);
-                console.log(`[DEBUG] Filter button for "${layer}" clicked. New visual state: ${newActiveState}`);
 
                 // 2. Update the data model
                 if (wasActive) {
@@ -1424,12 +1608,10 @@ function wildcardToRegex(pattern) {
                 } else {
                     activeSet.add(layer);
                 }
-                console.log(`[DEBUG] State AFTER click: activeSet is now:`, Array.from(activeSet));
                 
                 // 3. Schedule the heavy processing (filtering & rendering) for the next event loop cycle.
                 // This allows the browser to repaint the button color change immediately.
                 setTimeout(() => {
-                    console.log('[DEBUG] Refreshing view with new filters...');
                     applyFn();
                 }, 0);
             });
@@ -1463,7 +1645,7 @@ function wildcardToRegex(pattern) {
                 });
                 logLevelToggleBtn.textContent = 'None';
             }
-            applyFilters();
+            refreshActiveTab();
         });
     } else {
         console.warn('HTML element with ID "logLevelToggleBtn" not found.');
@@ -1479,7 +1661,7 @@ function wildcardToRegex(pattern) {
             } else {
                 activeLogLevels.add(level);
             }
-            applyFilters(); // Re-apply all filters
+            refreshActiveTab(); // Re-apply all filters
         });
     });
 
@@ -1492,7 +1674,7 @@ function wildcardToRegex(pattern) {
 
         searchInput.addEventListener('input', () => {
             liveSearchQuery = searchInput.value;
-            applyFilters(); // Re-filter on every keystroke
+            refreshActiveTab(); // Re-filter on every keystroke
 
             const query = searchInput.value.toLowerCase();
             if (!query || !autocompleteSuggestions) {
@@ -1582,8 +1764,6 @@ function wildcardToRegex(pattern) {
         if (!highlights || !accountsList || !deviceEventsTable) return;
     
         // Render BLE Keys
-    //    console.log(`[DEBUG] Rendering highlights. Found ${(highlights.accounts && highlights.accounts.size) || 0} accounts and ${(highlights.deviceEvents && highlights.deviceEvents.length) || 0} device events.`, highlights.accounts);
-    
         // Clear previous results
         accountsList.innerHTML = '';
         deviceEventsTable.innerHTML = '';
@@ -1638,7 +1818,7 @@ function wildcardToRegex(pattern) {
         const cpuDataPoints = [];
         const allCpuLoads = [];
         const temperatureDataPoints = [];
-
+        const batteryDataPoints = []; // This will now be empty, as it's processed by workers.
         // This loop is necessary to calculate CPU and Temperature, which are not done by the workers.
         for (const line of originalLogLines) {
             if (line.isMeta) continue;
@@ -1679,7 +1859,15 @@ function wildcardToRegex(pattern) {
         const maxTemp = tempsOnly.length > 0 ? Math.max(...tempsOnly).toFixed(1) : 'N/A';
         const minTemp = tempsOnly.length > 0 ? Math.min(...tempsOnly).toFixed(1) : 'N/A';
 
-        return { avgCpu, maxCpu, minCpu, avgTemp, maxTemp, minTemp, cpuDataPoints, temperatureDataPoints };
+        // This part of the logic is no longer needed here, as the data comes from workers.
+        // It's kept for the return object structure but will be populated by worker results.
+        const batteryLevels = batteryDataPoints.map(d => d.level);
+        const avgBattery = batteryLevels.length > 0 ? (batteryLevels.reduce((a, b) => a + b, 0) / batteryLevels.length).toFixed(1) : 'N/A';
+        const maxBattery = batteryLevels.length > 0 ? Math.max(...batteryLevels) : 'N/A';
+        const minBattery = batteryLevels.length > 0 ? Math.min(...batteryLevels) : 'N/A';
+
+
+        return { avgCpu, maxCpu, minCpu, avgTemp, maxTemp, minTemp, avgBattery, maxBattery, minBattery, cpuDataPoints, temperatureDataPoints };
     }
 
     function renderDashboardStats(stats) {
@@ -1688,6 +1876,9 @@ function wildcardToRegex(pattern) {
         }
         if (temperatureStats) {
             temperatureStats.innerHTML = `<p>Avg: <span class="stat-value">${stats.avgTemp}°C</span></p><p>Min: <span class="stat-value">${stats.minTemp}°C</span></p><p>Max: <span class="stat-value">${stats.maxTemp}°C</span></p>`;
+        }
+        if (batteryStats) {
+            batteryStats.innerHTML = `<p>Avg: <span class="stat-value">${stats.avgBattery}%</span></p><p>Min: <span class="stat-value">${stats.minBattery}%</span></p><p>Max: <span class="stat-value">${stats.maxBattery}%</span></p>`;
         }
     }
 
@@ -1787,22 +1978,56 @@ function wildcardToRegex(pattern) {
         container.innerHTML = svg;
     }
 
+    function renderBatteryPlot(dataPoints) {
+        if (!batteryPlotContainer) return;
+        if (!dataPoints || dataPoints.length < 2) {
+            batteryPlotContainer.innerHTML = '<p style="text-align: center; color: #5f6368;">Not enough data to plot battery level.</p>';
+            return;
+        }
+
+        const width = batteryPlotContainer.clientWidth;
+        const height = 100;
+        const padding = 5;
+
+        const minTs = dataPoints[0].ts.getTime();
+        const maxTs = dataPoints[dataPoints.length - 1].ts.getTime();
+        const timeRange = maxTs - minTs;
+
+        // Y-axis is from 0 to 100%
+        const minLevel = 0;
+        const maxLevel = 100;
+        const levelRange = maxLevel - minLevel;
+
+        const points = dataPoints.map(d => {
+            const x = timeRange > 0 ? ((d.ts.getTime() - minTs) / timeRange) * (width - padding * 2) + padding : width / 2;
+            const y = height - (((d.level - minLevel) / levelRange) * (height - padding * 2) + padding);
+            return `${x},${y}`;
+        }).join(' ');
+
+        const svg = `
+            <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+                <polyline
+                    class="sparkline"
+                    points="${points}"
+                    style="stroke: #34a853;"
+                />
+            </svg>
+        `;
+        batteryPlotContainer.innerHTML = svg;
+    }
+
+
+
     // --- BLE Log Processing ---
-    async function processForBle() {
-        // OPTIMIZATION: This function is now much simpler. It just applies filters
-        // to the pre-populated bleLogLines array.
-        console.log('[DEBUG] Processing for BLE tab. Logs already filtered.');
-        // Attach scroll listener once
+
+    async function setupBleTab() {
         if (!bleScrollListenerAttached && bleLogContainer instanceof HTMLElement) {
-            bleLogContainer.addEventListener('scroll', () => renderBleVirtualLogs());
+            bleLogContainer.addEventListener('scroll', renderBleVirtualLogs);
             bleScrollListenerAttached = true;
         }
         applyBleFilters();
     }
-
     function applyBleFilters() {
-        console.log(`[DEBUG] Applying BLE filters. Total BLE logs found: ${bleLogLines.length}. Active layers:`, Array.from(activeBleLayers));
-
         const layerKeywords = {
             manager: /BluetoothManager|BluetoothAdapter/i,
             gatt: /GATT|BtGatt/i,
@@ -1810,21 +2035,22 @@ function wildcardToRegex(pattern) {
             hci: /HCI/i
         };
 
+        let filteredLines = bleLogLines; // Start with all BLE lines
+
+        // 1. Apply specialized layer filters
         if (activeBleLayers.size === 0) {
-            filteredBleLogLines = [];
+            filteredLines = [];
         } else {
-            // If all filters are active, show all logs. Otherwise, filter.
-            if (activeBleLayers.size === bleFilterButtons.length) {
-                filteredBleLogLines = bleLogLines;
-            } else {
-                filteredBleLogLines = bleLogLines.filter(line => {
+            // Only apply layer filters if NOT all layers are selected.
+            if (activeBleLayers.size < bleFilterButtons.length) {
+                filteredLines = filteredLines.filter(line => {
                     if (line.isMeta) return true; // Always include file headers
                     return Array.from(activeBleLayers).some(layer => layerKeywords[layer]?.test(line.originalText));
                 });
             }
         }
-
-        console.log(`[DEBUG] BLE logs after filtering: ${filteredBleLogLines.length} lines.`);
+        // 2. Apply main filters (keyword, level, time) to the result of the layer filters
+        filteredBleLogLines = applyMainFilters(filteredLines);
 
         if (bleLogContainer) bleLogContainer.scrollTop = 0;
         if (bleLogSizer) {
@@ -1837,14 +2063,9 @@ function wildcardToRegex(pattern) {
         renderVirtualLogs(bleLogContainer, bleLogSizer, bleLogViewport, filteredBleLogLines);
     }
 
-    // --- DCK Log Processing ---
-    async function processForDck() {
-        // OPTIMIZATION: This function is now much simpler. It just applies filters
-        // to the pre-populated dckLogLines array.
-        console.log('[DEBUG] Processing for DCK tab. Logs already filtered.');
-        // Attach scroll listener once
+    async function setupDckTab() {
         if (!dckScrollListenerAttached && dckLogContainer instanceof HTMLElement) {
-            dckLogContainer.addEventListener('scroll', () => renderDckVirtualLogs());
+            dckLogContainer.addEventListener('scroll', renderDckVirtualLogs);
             dckScrollListenerAttached = true;
         }
         applyDckFilters();
@@ -1858,14 +2079,22 @@ function wildcardToRegex(pattern) {
             oem: /oem-dck|vendor.google.automotive.dck/i // OEM-specific logs
         };
 
+        let filteredLines = dckLogLines;
+
+        // 1. Apply specialized layer filters
         if (activeDckLayers.size === 0) {
-            filteredDckLogLines = [];
+            filteredLines = [];
         } else {
-            filteredDckLogLines = dckLogLines.filter(line => {
-                if (line.isMeta) return true; // Always include file headers
-                return Array.from(activeDckLayers).some(layer => layerKeywords[layer]?.test(line.originalText));
-            });
+            // Only apply layer filters if NOT all layers are selected.
+            if (activeDckLayers.size < dckFilterButtons.length) {
+                filteredLines = filteredLines.filter(line => {
+                    if (line.isMeta) return true; // Always include file headers
+                    return Array.from(activeDckLayers).some(layer => layerKeywords[layer]?.test(line.originalText));
+                });
+            }
         }
+        // 2. Apply main filters to the result
+        filteredDckLogLines = applyMainFilters(filteredLines);
 
         if (dckLogContainer) dckLogContainer.scrollTop = 0;
         if (dckLogSizer) {
@@ -1878,22 +2107,15 @@ function wildcardToRegex(pattern) {
         renderVirtualLogs(dckLogContainer, dckLogSizer, dckLogViewport, filteredDckLogLines);
     }
 
-    // --- NFC Log Processing ---
-    async function processForNfc() {
-        // OPTIMIZATION: This function is now much simpler. It just applies filters
-        // to the pre-populated nfcLogLines array.
-        console.log('[DEBUG] Processing for NFC tab. Logs already filtered.');
-        // Attach scroll listener once
+    async function setupNfcTab() {
         if (!nfcScrollListenerAttached && nfcLogContainer instanceof HTMLElement) {
-            nfcLogContainer.addEventListener('scroll', () => renderNfcVirtualLogs());
+            nfcLogContainer.addEventListener('scroll', renderNfcVirtualLogs);
             nfcScrollListenerAttached = true;
         }
         applyNfcFilters();
     }
 
     function applyNfcFilters() {
-        console.log(`[DEBUG] Applying NFC filters. Total NFC logs found: ${nfcLogLines.length}. Active layers:`, Array.from(activeNfcLayers));
-
         const layerKeywords = {
             framework: /NfcManager|NfcService|TagDispatcher|NfcTag/i,
             hce: /HostEmulationManager|ApduServiceInfo/i,
@@ -1901,22 +2123,23 @@ function wildcardToRegex(pattern) {
             hal: /NxpNci|NxpExtns|libnfc|libnfc-nci/i
         };
 
+        let filteredLines = nfcLogLines;
+
+        // 1. Apply specialized layer filters
         // If no layers are active, show nothing.
         if (activeNfcLayers.size === 0) {
-            filteredNfcLogLines = [];
+            filteredLines = [];
         } else {
-            // If all filters are active, show all logs. Otherwise, filter.
-            if (activeNfcLayers.size === nfcFilterButtons.length) {
-                filteredNfcLogLines = nfcLogLines;
-            } else {
-                filteredNfcLogLines = nfcLogLines.filter(line => {
+            // Only apply layer filters if NOT all layers are selected.
+            if (activeNfcLayers.size < nfcFilterButtons.length) { 
+                filteredLines = filteredLines.filter(line => {
                     if (line.isMeta) return true; // Always include file headers
                     return Array.from(activeNfcLayers).some(layer => layerKeywords[layer]?.test(line.originalText));
                 });
             }
         }
-
-        console.log(`[DEBUG] NFC logs after filtering: ${filteredNfcLogLines.length} lines.`);
+        // 2. Apply main filters to the result
+        filteredNfcLogLines = applyMainFilters(filteredLines);
 
         if (nfcLogContainer) nfcLogContainer.scrollTop = 0;
         if (nfcLogSizer) {
@@ -1933,17 +2156,14 @@ function wildcardToRegex(pattern) {
     async function processForKernel() {
         // OPTIMIZATION: This function is now much simpler. It just applies filters
         // to the pre-populated kernelLogLines array.
-        console.log(`[DEBUG] Processing for Kernel tab. Found ${kernelLogLines.length} total kernel lines.`);
-        // Attach scroll listener once
         if (!kernelScrollListenerAttached && kernelLogContainer instanceof HTMLElement) {
-            kernelLogContainer.addEventListener('scroll', () => renderKernelVirtualLogs());
+            kernelLogContainer.addEventListener('scroll', renderKernelVirtualLogs);
             kernelScrollListenerAttached = true;
         }
         
         // FIX: For kernel logs, we show everything found without sub-filters for now.
-        // The filtered list needs to be explicitly assigned from the main kernel log list.
-        filteredKernelLogLines = [...kernelLogLines];
-        console.log(`[DEBUG] Assigned ${filteredKernelLogLines.length} lines to be rendered in Kernel tab.`);
+        // It should still respect the main filters.
+        filteredKernelLogLines = applyMainFilters(kernelLogLines);
 
         if (kernelLogSizer) {
             kernelLogSizer.style.height = `${filteredKernelLogLines.length * LINE_HEIGHT}px`;
@@ -1953,8 +2173,24 @@ function wildcardToRegex(pattern) {
     }
 
     function renderKernelVirtualLogs() {
-        console.log(`[DEBUG] Rendering kernel virtual logs with ${filteredKernelLogLines.length} lines.`);
         renderVirtualLogs(kernelLogContainer, kernelLogSizer, kernelLogViewport, filteredKernelLogLines);
+    }
+    // --- BTSnoop Tab Setup ---
+    async function setupBtsnoopTab() {
+        if (!btsnoopScrollListenerAttached && btsnoopLogContainer instanceof HTMLElement) {
+            // Use the generic render function, throttled for performance.
+            btsnoopLogContainer.addEventListener('scroll', () => {
+                if (!btsnoopScrollThrottleTimer) {
+                    btsnoopScrollThrottleTimer = setTimeout(() => {
+                        renderBtsnoopVirtualLogs();
+                        btsnoopScrollThrottleTimer = null;
+                    }, 50); // Throttle to 50ms
+                }
+            });
+            btsnoopScrollListenerAttached = true;
+        }
+        // Initial render when tab is first set up
+        renderBtsnoopPackets(btsnoopConnectionMap, activeBtsnoopFilters);
     }
     // --- BTSnoop Log Processing ---
     async function processForBtsnoop() {
@@ -1964,28 +2200,63 @@ function wildcardToRegex(pattern) {
         const filterContainer = document.getElementById('btsnoopFilterContainer');
         const exportBtn = document.getElementById('exportBtsnoopXlsxBtn');
 
-        initialView.innerHTML = `<p>Searching for btsnoop_hci.log...</p>`;
+        // If the view elements don't exist, we can't proceed with UI updates.
+        if (!initialView || !contentView || !filterContainer || !exportBtn) {
+            TimeTracker.stop('BTSnoop Processing');
+            return; // Exit if the tab hasn't been rendered in the DOM yet.
+        }
 
-        // Make the search more flexible: find either 'btsnoop_hci.log' or 'hci.log'
-        const btsnoopTask = fileTasks.find(task => 
-            task.path.includes('btsnoop_hci.log') || task.path.endsWith('hci.log')
+        // Find ALL btsnoop files to concatenate them.
+        const btsnoopTasks = fileTasks.filter(task =>
+            /btsnoop_hci\.log.*/.test(task.path)
         );
 
-        if (!btsnoopTask) {
-            initialView.innerHTML = `<p>No btsnoop_hci.log file found in the selection.</p>`;
+        if (btsnoopTasks.length === 0) {
+            // Don't log processing time if there's nothing to do.
+            TimeTracker.stop('BTSnoop Processing');
+            return;
+        }
+
+        // If parsing has already happened, don't do it again.
+        if (btsnoopPackets.length > 0) {
             TimeTracker.stop('BTSnoop Processing');
             return;
         }
 
         btsnoopConnectionMap.clear(); // Clear previous connection data
-        initialView.innerHTML = `<p>Found. Parsing packets...</p>`;
-        initialView.style.display = 'none';
-        contentView.style.display = 'block';
-        filterContainer.style.display = 'block';
-        exportBtn.style.display = 'block';
+        btsnoopConnectionEvents = []; // Clear previous connection events
+        initialView.innerHTML = `<p>Found ${btsnoopTasks.length} btsnoop file(s). Parsing packets...</p>`;
 
         try {
-            const buffer = await (btsnoopTask.file || btsnoopTask.blob).arrayBuffer();
+            // Read all found btsnoop files into buffers.
+            const bufferPromises = btsnoopTasks.map(task => (task.file || task.blob).arrayBuffer());
+            const buffers = await Promise.all(bufferPromises);
+
+            let finalBuffer;
+            if (buffers.length === 1) {
+                finalBuffer = buffers[0];
+            } else {
+                // Concatenate buffers, keeping the header of the first file only.
+                let totalSize = buffers[0].byteLength;
+                for (let i = 1; i < buffers.length; i++) {
+                    totalSize += (buffers[i].byteLength - 16); // Subtract 16 bytes for the header
+                }
+
+                const finalArray = new Uint8Array(totalSize);
+                let offset = 0;
+
+                finalArray.set(new Uint8Array(buffers[0]), offset);
+                offset += buffers[0].byteLength;
+
+                for (let i = 1; i < buffers.length; i++) {
+                    const dataPart = new Uint8Array(buffers[i], 16); // Get data after the header
+                    finalArray.set(dataPart, offset);
+                    offset += dataPart.byteLength;
+                }
+                finalBuffer = finalArray.buffer;
+            }
+
+            const buffer = finalBuffer;
             const dataView = new DataView(buffer);
 
             // Check file header
@@ -2017,6 +2288,15 @@ function wildcardToRegex(pattern) {
 
                 const interpretation = interpretHciPacket(packetData, btsnoopConnectionMap, btsnoopPackets.length + 1, direction);
 
+                // If this was an LE Connection Complete event, add it to our special list for the stats page
+                if (interpretation.isConnectionComplete) {
+                    btsnoopConnectionEvents.push({
+                        ...interpretation.connectionInfo,
+                        timestamp: timestampStr,
+                        rawData: interpretation.data
+                    });
+                }
+
                 btsnoopPackets.push({
                     ...interpretation, // Spread the interpretation results
                     number: packetNumber++,
@@ -2031,11 +2311,7 @@ function wildcardToRegex(pattern) {
                 offset += includedLength;
             }
 
-            // --- Log the connection map for debugging ---
-            console.log('[DEBUG] Final btsnoopConnectionMap:', btsnoopConnectionMap);
-
             // --- Post-processing pass to resolve forward-referenced handles ---
-            console.log('[DEBUG] Starting post-processing pass to resolve handles.');
             for (const packet of btsnoopPackets) {
                 // Check if the source or destination is an unresolved handle
                 const sourceIsHandle = packet.source && packet.source.startsWith('Handle:');
@@ -2055,18 +2331,43 @@ function wildcardToRegex(pattern) {
                 }
             }
 
-            console.log(`[DEBUG] BTSnoop parsing complete. Found ${btsnoopPackets.length} packets.`);
-            renderBtsnoopPackets(btsnoopConnectionMap, activeBtsnoopFilters);
+            // Now that data is parsed, update the UI to show the content view.
+            initialView.style.display = 'none';
+            contentView.style.display = 'block';
+            filterContainer.style.display = 'block';
+            exportBtn.style.display = 'block';
+
+            // Render the packets and the connection events table on the Stats page.
+            renderBtsnoopPackets(btsnoopConnectionMap, activeBtsnoopFilters); // Initial render
+            renderBtsnoopConnectionEvents(); // Render the new table on the Stats page
         } catch (error) {
             console.error('Error processing btsnoop log:', error);
             initialView.style.display = 'block';
-            contentView.style.display = 'none';
-            filterContainer.style.display = 'none';
-            exportBtn.style.display = 'none';
             initialView.innerHTML = `<p>Error: ${error.message}</p>`;
         }
 
         TimeTracker.stop('BTSnoop Processing');
+    }
+
+    function renderBtsnoopConnectionEvents() {
+        if (!btsnoopConnectionEventsTable) return;
+
+        if (btsnoopConnectionEvents.length === 0) {
+            btsnoopConnectionEventsTable.innerHTML = '<tr><td colspan="5">No LE Connection Complete events found.</td></tr>';
+            return;
+        }
+
+        let tableHtml = '';
+        for (const event of btsnoopConnectionEvents) {
+            tableHtml += `<tr>
+                <td>${event.packetNum}</td>
+                <td>${event.timestamp}</td>
+                <td>${event.handle}</td>
+                <td>${event.address}</td>
+                <td class="log-line-cell">${escapeHtml(event.rawData)}</td>
+            </tr>`;
+        }
+        btsnoopConnectionEventsTable.innerHTML = tableHtml;
     }
 
     function interpretHciPacket(data, connectionMap, packetNum, direction) {
@@ -2118,13 +2419,16 @@ function wildcardToRegex(pattern) {
                         const smpCode = data[9];
                         const smpData = data.slice(10);
                         aclSummary += ` > SMP: ${SMP_CODES[smpCode] || 'Code ' + smpCode.toString(16)}`;
-                        // Key Extraction Logic
-                        if (smpCode === 0x06 && smpData.length >= 16) { // Encryption Information -> LTK
+                        // Restore Key Extraction Logic
+                        if (smpCode === 0x06 /* Encryption Information */ && smpData.length >= 16) {
                             const ltk = Array.from(smpData.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join('');
-                            return { type: 'ACL Data', summary: aclSummary, tags, source, destination, data: hexData, bleKeys: { type: 'LTK', value: ltk }, number: packetNum };
-                        } else if (smpCode === 0x08 && smpData.length >= 16) { // Identity Information -> IRK
+                            aclSummary += ` (LTK: ${ltk.substring(0, 8)}...)`;
+                            // FIX: Return the packet with the extracted LTK.
+                            return { type: 'ACL Data', summary: aclSummary, tags, source, destination, data: hexData, bleKeys: { type: 'LTK', value: ltk }, number: packetNum, handle: handle };
+                        } else if (smpCode === 0x08 /* Identity Information */ && smpData.length >= 16) {
                             const irk = Array.from(smpData.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join('');
-                            return { type: 'ACL Data', summary: aclSummary, tags, source, destination, data: hexData, bleKeys: { type: 'IRK', value: irk }, number: packetNum };
+                            // FIX: Include the handle in the return object for consistency.
+                            return { type: 'ACL Data', summary: aclSummary, tags, source, destination, data: hexData, bleKeys: { type: 'IRK', value: irk }, number: packetNum, handle: handle };
                         }
                     }
                 }
@@ -2145,13 +2449,25 @@ function wildcardToRegex(pattern) {
                 } else if (eventCode === 0x3E && data.length >= 4) { // LE Meta Event
                     const subEventCode = data[3];
                     summary += ` > ${LE_META_EVENTS[subEventCode] || 'Unknown Sub-event'}`;
-                    if (subEventCode === 0x01 && data.length >= 15) { // LE Connection Complete event needs at least 15 bytes
+                    // FIX: Handle both legacy (0x01) and enhanced (0x0A) connection complete events.
+                    if ((subEventCode === 0x01 || subEventCode === 0x0A) && data.length >= 15) {
                         const connectionHandle = (data[6] << 8) | data[5];
                         const peerAddress = Array.from(data.slice(9, 15)).reverse().map(b => b.toString(16).padStart(2, '0')).join(':').toUpperCase();
                         if (connectionHandle) {
                             connectionMap.set(connectionHandle, { address: peerAddress, packetNum: packetNum });
                         }
                         destination = peerAddress;
+                        // This is the event we want to capture for the stats page.
+                        // Return extra info so the caller can store it.
+                        return {
+                            type: 'HCI Event', summary, tags, source, destination, data: hexData, bleKeys: null, number: packetNum, handle: null,
+                            isConnectionComplete: true,
+                            connectionInfo: {
+                                packetNum: packetNum,
+                                handle: `0x${connectionHandle.toString(16).padStart(4, '0')}`,
+                                address: peerAddress
+                            }
+                        };
                     }
                 }
                 return { type: 'HCI Event', summary, tags, source, destination, data: hexData, bleKeys: null, number: packetNum, handle: null };
@@ -2161,70 +2477,93 @@ function wildcardToRegex(pattern) {
     }
 
     function renderBtsnoopPackets(connMap, currentActiveFilters) {
-        console.log(`[DEBUG] renderBtsnoopPackets START. Active filters:`, Array.from(currentActiveFilters || []));
-        let html = '';
-        
-        // 1. Filter by top-level type buttons (HCI Cmd, Evt, etc.)
-        // This logic is now hierarchical and correct.
-        let filteredPackets = btsnoopPackets.filter(p => {
-            const primaryTag = p.tags[0]; // e.g., 'cmd', 'evt', 'acl'
+        // Get all active column filters first
+        const columnFilters = Array.from(btsnoopColumnFilters)
+            .map(input => ({
+                index: parseInt(input.dataset.column, 10),
+                value: input.value.toLowerCase()
+            }))
+            .filter(f => f.value);
 
-            // Master switch: If the primary type's filter is off in the CURRENT activeFilters, hide the packet.
+        // Combine button and text filters in a single pass for correct AND logic
+        filteredBtsnoopPackets = btsnoopPackets.filter(p => {
+            // 1. Check button filters first
+            const primaryTag = p.tags[0];
             if (!currentActiveFilters.has(primaryTag)) {
                 return false;
             }
-
-            // For ACL packets, apply sub-filters (L2CAP, SMP, ATT)
             if (primaryTag === 'acl') {
-                // Show if it has no sub-tags, or if any of its sub-tags match an active filter.
-                const subTags = p.tags.slice(1); // Get L2CAP, SMP, ATT
-                return subTags.length === 0 || subTags.some(t => currentActiveFilters.has(t));
+                const subTags = p.tags.slice(1);
+                if (subTags.length > 0 && !subTags.some(t => currentActiveFilters.has(t))) {
+                    return false;
+                }
             }
 
-            // If it's not an ACL packet, and its primary filter is on, show it.
+            // 2. If it passes button filters, check column text filters
+            if (columnFilters.length > 0) {
+                const passesAllColumnFilters = columnFilters.every(filter => {
+                    const cellValue = [p.number, p.timestamp, p.source || '', p.destination || '', p.type, p.summary, p.data][filter.index];
+                    return cellValue.toString().toLowerCase().includes(filter.value);
+                });
+                if (!passesAllColumnFilters) return false;
+            }
+
+            // If we get here, the packet passes all active filters
             return true;
         });
 
-        // 2. Filter by column text inputs
-        btsnoopColumnFilters.forEach(input => {
-            const columnIndex = parseInt(input.dataset.column, 10);
-            const filterValue = input.value.toLowerCase();
-            if (filterValue) {
-                filteredPackets = filteredPackets.filter(p => {
-                    const cellValue = [p.number, p.timestamp, p.source || '', p.destination || '', p.type, p.summary, p.data][columnIndex];
-                    return cellValue.toString().toLowerCase().includes(filterValue);
-                });
-            }
-        });
-
-        if (filteredPackets.length === 0 && btsnoopPackets.length > 0) {
-            html = `<tr><td colspan="7">No packets found or all packets are filtered out. Check filters.</td></tr>`;
-        } else if (filteredPackets.length > 0) {
-            for (const packet of filteredPackets) {
-                // Determine source and destination based on direction
-                let source = 'Host';
-                let destination = 'Controller';
-                if (packet.direction === 'Controller -> Host') {
-                    source = 'Controller';
-                    destination = 'Host';
-                }
-                // If we have a peer address, use it
-                if (connMap && packet.handle !== null && connMap.has(packet.handle)) {
-                    const peerAddress = connMap.get(packet.handle).address;
-                    if (packet.direction === 'Host -> Controller') {
-                        destination = peerAddress; // Outgoing packet to a known peer
-                    } else {
-                        source = peerAddress; // Incoming packet from a known peer
-                    }
-                }
-
-                html += `<tr><td>${packet.number}</td><td>${packet.timestamp}</td><td>${escapeHtml(source)}</td><td>${escapeHtml(destination)}</td><td>${packet.type}</td><td>${escapeHtml(packet.summary)}</td><td class="log-line-cell">${escapeHtml(packet.data)}</td></tr>`;
-            }
+        // Reset scroll and update sizer height
+        if (btsnoopLogContainer) btsnoopLogContainer.scrollTop = 0;
+        if (btsnoopLogSizer) {
+            btsnoopLogSizer.style.height = `${filteredBtsnoopPackets.length * LINE_HEIGHT}px`;
         }
-        console.log(`[DEBUG] renderBtsnoopPackets END. Generated ${filteredPackets.length} rows of HTML.`);
-        // FIX: The viewport is the tbody. We need to set its innerHTML, not the container's.
-        if (btsnoopLogViewport) {
-            btsnoopLogViewport.innerHTML = html;
+        renderBtsnoopVirtualLogs();
+    }
+
+    function renderBtsnoopVirtualLogs() {
+        if (!btsnoopLogContainer || !btsnoopLogSizer || !btsnoopLogViewport) return;
+
+        const scrollTop = btsnoopLogContainer.scrollTop;
+        const containerHeight = btsnoopLogContainer.clientHeight;
+
+        let startIndex = Math.floor(scrollTop / LINE_HEIGHT) - BUFFER_LINES;
+        startIndex = Math.max(0, startIndex);
+        let endIndex = Math.ceil((scrollTop + containerHeight) / LINE_HEIGHT) + BUFFER_LINES;
+        endIndex = Math.min(filteredBtsnoopPackets.length, endIndex);
+
+        const numVisibleRows = endIndex - startIndex;
+
+        // --- Smart DOM Element Recycling ---
+        while (btsnoopRowPool.length < numVisibleRows) {
+            const row = document.createElement('div');
+            row.className = 'btsnoop-row';
+            for (let j = 0; j < 7; j++) {
+                row.appendChild(document.createElement('div'));
+            }
+            btsnoopRowPool.push(row);
+            btsnoopLogViewport.appendChild(row);
+        }
+
+        for (let i = 0; i < btsnoopRowPool.length; i++) {
+            const row = btsnoopRowPool[i];
+            if (i < numVisibleRows) {
+                const packetIndex = startIndex + i;
+                const packet = filteredBtsnoopPackets[packetIndex];
+                const cells = row.children;
+
+                cells[0].className = 'btsnoop-cell'; cells[0].textContent = packet.number;
+                cells[1].className = 'btsnoop-cell'; cells[1].textContent = packet.timestamp;
+                cells[2].className = 'btsnoop-cell'; cells[2].textContent = escapeHtml(packet.source || (packet.direction === 'Controller -> Host' ? 'Controller' : 'Host'));
+                cells[3].className = 'btsnoop-cell'; cells[3].textContent = escapeHtml(packet.destination || (packet.direction === 'Host -> Controller' ? 'Controller' : 'Host'));
+                cells[4].className = 'btsnoop-cell'; cells[4].textContent = packet.type;
+                cells[5].className = 'btsnoop-cell'; cells[5].textContent = escapeHtml(packet.summary);
+                cells[6].className = 'btsnoop-cell log-line-cell'; cells[6].textContent = escapeHtml(packet.data);
+
+                row.style.transform = `translateY(${packetIndex * LINE_HEIGHT}px)`;
+                row.style.display = 'flex';
+            } else {
+                row.style.display = 'none';
+            }
         }
     }
 
@@ -2268,6 +2607,33 @@ function wildcardToRegex(pattern) {
                     console.error('Failed to copy log line:', err);
                 });
             }
+        } else if (target.closest('.log-line-meta')) {
+            // Handle collapsing/expanding file logs in ANY viewport
+            const lineDiv = target.closest('.log-line-meta');
+            const lineIndex = parseInt(lineDiv.dataset.lineIndex, 10);
+            const activeViewport = target.closest('.log-viewport');
+            let sourceArray = filteredLogLines; // Default to main logs
+
+            if (activeViewport === bleLogViewport) sourceArray = filteredBleLogLines;
+            else if (activeViewport === nfcLogViewport) sourceArray = filteredNfcLogLines;
+            else if (activeViewport === dckLogViewport) sourceArray = filteredDckLogLines;
+            else if (activeViewport === kernelLogViewport) sourceArray = filteredKernelLogLines;
+
+            if (!isNaN(lineIndex) && sourceArray[lineIndex]) {
+                const clickedLine = sourceArray[lineIndex];
+                if (collapsedFileHeaders.has(clickedLine.originalText)) {
+                    collapsedFileHeaders.delete(clickedLine.originalText);
+                } else {
+                    collapsedFileHeaders.add(clickedLine.originalText);
+                }
+                // Re-apply the correct filter function for the active tab
+                if (activeViewport === bleLogViewport) applyBleFilters();
+                else if (activeViewport === nfcLogViewport) applyNfcFilters();
+                else if (activeViewport === dckLogViewport) applyDckFilters();
+                else if (activeViewport === kernelLogViewport) processForKernel(); // Kernel has no sub-filters
+                else applyFilters(true); // Main log view
+
+            }
         } else if (target.closest('.log-line')) {
             // Prevent text selection from being cleared by the highlight re-render
             // if the user is dragging to select.
@@ -2279,7 +2645,7 @@ function wildcardToRegex(pattern) {
             const lineDiv = target.closest('.log-line');
             const lineIndex = parseInt(lineDiv.dataset.lineIndex, 10);
 
-            if (!isNaN(lineIndex) && lineIndex < filteredLogLines.length) {
+            if (!isNaN(lineIndex) && filteredLogLines[lineIndex]) {
                 const clickedLine = filteredLogLines[lineIndex];
 
                 // Toggle anchor: if clicking the same line, deselect it. Otherwise, select the new one.
@@ -2295,6 +2661,12 @@ function wildcardToRegex(pattern) {
             }
         }
     }
+
+    // --- Memory Cleanup on Exit ---
+    // Ensure all data, including persisted data in IndexedDB, is cleared when the user leaves.
+    window.addEventListener('beforeunload', async (event) => {
+        await clearPreviousState(true); // true to clear persisted data
+    });
 
     // --- Application Initialization ---
     async function initializeApp() {
