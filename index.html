@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,50 +8,69 @@
     <link rel="stylesheet" href="styles.css">
     <style>
         /* Log level color coding */
-        .log-line.log-line-meta { color: #FF9800; font-style: italic; } /* Orange for file headers */
+        .log-line.log-line-meta {
+            color: #FF9800;
+            font-style: italic;
+        }
+
+        /* Orange for file headers */
 
         .reset-section {
             margin-top: 15px;
             padding: 5px;
         }
+
         /* Style for the user-selected anchor line */
         .log-line.selected-anchor {
-            background-color: #2c3e50; /* A dark slate blue for contrast */
-            border-left: 3px solid #3498db; /* A bright blue left border */
+            background-color: #2c3e50;
+            /* A dark slate blue for contrast */
+            border-left: 3px solid #3498db;
+            /* A bright blue left border */
         }
+
         /* Style for collapsible file headers */
         .log-line.log-line-meta {
             cursor: pointer;
-            user-select: none; /* Prevents text selection on click */
+            user-select: none;
+            /* Prevents text selection on click */
         }
+
         .log-line.log-line-meta:hover {
             background-color: #2a2a2a;
         }
+
         /* Style for line numbers */
         .line-number {
             display: inline-block;
-            width: 50px; /* Adjust width as needed */
+            width: 50px;
+            /* Adjust width as needed */
             text-align: right;
             margin-right: 10px;
-            color: #777; /* Dim color for the line number */
+            color: #777;
+            /* Dim color for the line number */
         }
+
         #clearStateBtn {
             width: 100%;
             padding: 8px;
-            background-color: #c62828; /* A reddish color to indicate a destructive action */
+            background-color: #c62828;
+            /* A reddish color to indicate a destructive action */
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
         }
+
         /* Indicator for available special logs like BTSnoop */
         .tab-btn .indicator {
-            color: #34a853; /* Google Green */
+            color: #34a853;
+            /* Google Green */
             font-size: 1.2em;
             line-height: 1;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -79,7 +99,8 @@
                         </div>
                     </div>
                     <div class="reset-section">
-                        <button id="clearStateBtn" title="Clear all loaded data and reset filters">Clear & Reset</button>
+                        <button id="clearStateBtn" title="Clear all loaded data and reset filters">Clear &
+                            Reset</button>
                     </div>
                 </details>
                 <div class="filter-column">
@@ -97,10 +118,13 @@
                     <section class="search-section">
                         <label for="searchInput">Keyword Search:</label>
                         <div class="logic-toggle">
-                            <button id="logicOrBtn" class="logic-btn active" title="Show lines that match ANY active keyword">OR</button>
-                            <button id="logicAndBtn" class="logic-btn" title="Show lines that match ALL active keywords">AND</button>
+                            <button id="logicOrBtn" class="logic-btn active"
+                                title="Show lines that match ANY active keyword">OR</button>
+                            <button id="logicAndBtn" class="logic-btn"
+                                title="Show lines that match ALL active keywords">AND</button>
                         </div>
-                        <input type="text" id="searchInput" class="search-input" placeholder="Live search or type & Enter..." autocomplete="off" />
+                        <input type="text" id="searchInput" class="search-input"
+                            placeholder="Live search or type & Enter..." autocomplete="off" />
                         <div id="keywordChips" class="keyword-chips"></div>
                         <div id="autocompleteSuggestions" class="autocomplete-suggestions"></div>
                     </section>
@@ -111,8 +135,9 @@
                             <input type="datetime-local" id="endTime" />
                         </div>
                         <!-- Slider container, now outside the controls flexbox -->
-                        <div id="timeRangeSliderContainer" style="width: 100%; padding: 20px 5px 10px 5px; box-sizing: border-box; display: none;">
-                           <div id="timeRangeSlider"></div>
+                        <div id="timeRangeSliderContainer"
+                            style="width: 100%; padding: 20px 5px 10px 5px; box-sizing: border-box; display: none;">
+                            <div id="timeRangeSlider"></div>
                         </div>
                     </section>
                 </div>
@@ -124,7 +149,8 @@
                     <button class="tab-btn" data-tab="ble">Bluetooth</button>
                     <button class="tab-btn" data-tab="nfc">NFC</button>
                     <button class="tab-btn" data-tab="dck">DCK</button>
-                    <button class="tab-btn" data-tab="btsnoop">BTSnoop <span id="btsnoopIndicator" class="indicator" style="display: none;">●</span></button>
+                    <button class="tab-btn" data-tab="btsnoop">BTSnoop <span id="btsnoopIndicator" class="indicator"
+                            style="display: none;">●</span></button>
                     <button class="tab-btn" data-tab="kernel">Kernel</button>
                     <button class="tab-btn" data-tab="stats">Stats</button>
                 </nav>
@@ -180,14 +206,29 @@
                             <div class="highlight-section">
                                 <h4>Device & Setting Events</h4>
                                 <table id="deviceEventsTable" class="highlight-table">
-                                    <thead><tr><th>Date</th><th>Timestamp</th><th>Event</th><th>New Value</th><th>Previous Value</th><th>Log Line</th></tr></thead>
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Timestamp</th>
+                                            <th>Event</th>
+                                            <th>New Value</th>
+                                            <th>Previous Value</th>
+                                            <th>Log Line</th>
+                                        </tr>
+                                    </thead>
                                     <tbody></tbody>
                                 </table>
                             </div>
                             <div class="highlight-section">
                                 <h4>BLE Security Keys</h4>
                                 <table id="bleKeysTable" class="highlight-table">
-                                    <thead><tr><th>Peer Address</th><th>Key Type</th><th>Key Value</th></tr></thead>
+                                    <thead>
+                                        <tr>
+                                            <th>Peer Address</th>
+                                            <th>Key Type</th>
+                                            <th>Key Value</th>
+                                        </tr>
+                                    </thead>
                                     <tbody></tbody>
                                 </table>
                             </div>
@@ -195,7 +236,13 @@
                                 <h4>BTSnoop Connection Events</h4>
                                 <table id="btsnoopConnectionEventsTable" class="highlight-table">
                                     <thead>
-                                        <tr><th>Packet No.</th><th>Timestamp</th><th>Connection Handle</th><th>Peer Address</th><th>Raw Packet</th></tr>
+                                        <tr>
+                                            <th>Packet No.</th>
+                                            <th>Timestamp</th>
+                                            <th>Connection Handle</th>
+                                            <th>Peer Address</th>
+                                            <th>Raw Packet</th>
+                                        </tr>
                                     </thead>
                                     <tbody>
                                     </tbody>
@@ -205,7 +252,8 @@
                         <div class="dashboard-card large-card" id="appVersionsCard">
                             <div class="search-section" style="padding: 0 5px 10px 5px;">
                                 <label for="appSearchInput" style="display: none;">Search Apps:</label>
-                                <input type="text" id="appSearchInput" class="search-input" placeholder="Search packages..." autocomplete="off">
+                                <input type="text" id="appSearchInput" class="search-input"
+                                    placeholder="Search packages..." autocomplete="off">
                             </div>
                             <div class="scrollable-table-container">
                                 <table id="appVersionsTable" class="highlight-table">
@@ -262,12 +310,12 @@
                     <button id="exportKernelBtn" class="export-btn">Export Filtered Logs</button>
                 </section>
                 <section id="btsnoopTab" class="tab-content">
-                    <div id="btsnoopFilterContainer" style="display: none;">
-                        <div class="log-level-filters btsnoop-filters">
-                            <span>Filter by Type:</span>
-                            <button class="filter-icon active" data-btsnoop-filter="cmd">HCI Cmd</button>
-                            <button class="filter-icon active" data-btsnoop-filter="evt">HCI Evt</button>
-                            <button class="filter-icon active" data-btsnoop-filter="acl">ACL Data</button>
+                    <div class="log-level-filters btsnoop-filters">
+                        <span>Filter by Type:</span>
+                        <div class="filter-group" id="btsnoopFilterContainer">
+                            <button class="filter-icon active" data-btsnoop-filter="cmd">CMD</button>
+                            <button class="filter-icon active" data-btsnoop-filter="evt">EVT</button>
+                            <button class="filter-icon active" data-btsnoop-filter="acl">ACL</button>
                             <button class="filter-icon active" data-btsnoop-filter="l2cap">L2CAP</button>
                             <button class="filter-icon active" data-btsnoop-filter="smp">SMP</button>
                             <button class="filter-icon active" data-btsnoop-filter="att">ATT</button>
@@ -276,29 +324,14 @@
                     <div id="btsnoopInitialView" style="text-align: center; padding: 4rem 0;">
                         <!-- This content will be managed by JS -->
                     </div>
-                    <div id="btsnoopContentView" style="display: none; height: 100%; display: flex; flex-direction: column;">
-                        <div class="btsnoop-header-table-container">
-                            <table class="highlight-table btsnoop-table">
-                                <thead>
-                                    <tr><th>No.</th><th>Timestamp</th><th>Source</th><th>Destination</th><th>Type</th><th>Summary</th><th>Data</th></tr>
-                                    <tr class="btsnoop-column-filters">
-                                        <th><input type="text" data-column="0" placeholder="Filter No."></th>
-                                        <th><input type="text" data-column="1" placeholder="Filter Time"></th>
-                                        <th><input type="text" data-column="2" placeholder="Filter Source"></th>
-                                        <th><input type="text" data-column="3" placeholder="Filter Dest."></th>
-                                        <th><input type="text" data-column="4" placeholder="Filter Type"></th>
-                                        <th><input type="text" data-column="5" placeholder="Filter Summary"></th>
-                                        <th><input type="text" data-column="6" placeholder="Filter Data"></th>
-                                    </tr>
-                                </thead>
-                            </table>
-                        </div>
-                        <div id="btsnoopLogContainer" class="log-container" style="flex-grow: 1;">
-                            <div id="btsnoopLogSizer" class="log-sizer"></div>
-                            <div id="btsnoopLogViewport" class="log-viewport"></div>
+                    <div id="btsnoopContentView" style="display: none; height: 100%; flex-direction: column;">
+                        <div id="btsnoopHeader"></div>
+                        <div id="btsnoopLogContainer" class="log-container">
+                            <div id="btsnoopLogSizer"></div>
+                            <div id="btsnoopLogViewport"></div>
                         </div>
                     </div>
-                    <button id="exportBtsnoopXlsxBtn" class="export-btn" style="display: none;">Export to Excel</button>
+                    <button id="exportBtsnoopXlsxBtn" class="export-btn">Export to Excel</button>
                 </section>
             </div>
         </main>
@@ -328,11 +361,16 @@
         <span id="progressText" class="progress-text"></span>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="jszip.min.js"></script>
     <!-- noUiSlider for the time range slider -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css" integrity="sha512-qveKnGrvOChbSzAdtSs8p69eoLegyh+1hwOMbmpCViIwj7rn4oJjdmMvWOuyQlTOZgTlZA0N2PXA7iA8/2TUYA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css"
+        integrity="sha512-qveKnGrvOChbSzAdtSs8p69eoLegyh+1hwOMbmpCViIwj7rn4oJjdmMvWOuyQlTOZgTlZA0N2PXA7iA8/2TUYA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js" integrity="sha512-UOJe4paV6hYWBnS0c9GnIRH8PLm2nFK22uhfAvsTIqd3uwnWsVri1OPn5fJYdLtGY3wB11LGHJ4yPU1WFJeBYQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"
+        integrity="sha512-UOJe4paV6hYWBnS0c9GnIRH8PLm2nFK22uhfAvsTIqd3uwnWsVri1OPn5fJYdLtGY3wB11LGHJ4yPU1WFJeBYQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="main.js"></script>
 </body>
+
 </html>

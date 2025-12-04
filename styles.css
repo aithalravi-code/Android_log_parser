@@ -37,8 +37,13 @@ body {
 }
 header {
     text-align: center;
-    padding: 0.75rem 0;
+    padding: 0.4rem 0; /* Reduced from 0.75rem for space optimization */
     border-bottom: 1px solid #dadce0;
+}
+
+header h1 {
+    margin: 0.2rem 0; /* Reduced margin */
+    font-size: 1.3rem; /* Slightly smaller */
 }
 .current-file-display {
     color: #5f6368;
@@ -332,6 +337,11 @@ input[type="file"]:hover {
     border-radius: 5px;
     cursor: pointer;
     font-weight: 500;
+}
+
+.btsnoop-filters {
+    /* Add some space between the main filters and the top of the tab */
+    margin-bottom: 1rem;
 }
 
 /* Unify all filter-related buttons for consistent height and feel */
@@ -652,20 +662,12 @@ input[type="file"]:hover {
     background-color: #f8f9fa;
 }
 
-/* Ensure the log line cell in the stats tables is readable */
-.log-line-cell {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 0.9em;
-    color: #5f6368;
-}
-
 /* Dashboard Grid Styles */
 .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1.5rem;
 }
-
 .dashboard-card {
     background: #fff;
     border: 1px solid #dadce0;
@@ -673,17 +675,14 @@ input[type="file"]:hover {
     padding: 1.5rem;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
-
 .dashboard-card.large-card {
     grid-column: span 2; /* Make this card wider on larger screens */
 }
-
 @media (max-width: 900px) {
     .dashboard-card.large-card {
         grid-column: span 1; /* Stack on smaller screens */
     }
 }
-
 .dashboard-card h3 {
     margin-top: 0;
     border-bottom: 1px solid #e0e0e0;
@@ -695,7 +694,6 @@ input[type="file"]:hover {
     margin: 0.5rem 0;
     font-size: 1rem;
 }
-
 .dashboard-card .stat-value {
     font-weight: 600;
     color: #4285F4; /* Google Blue */
@@ -703,34 +701,6 @@ input[type="file"]:hover {
 }
 
 /* BTSnoop Packet Table Styles */
-.packet-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9rem;
-    color: #e0e0e0;
-}
-
-.packet-table thead {
-    position: sticky;
-    top: 0;
-    background: #3c4043;
-    z-index: 1;
-}
-
-.packet-table th {
-    padding: 0.75rem;
-    text-align: left;
-    font-weight: 600;
-    border-bottom: 2px solid #5f6368;
-}
-
-.packet-table td {
-    padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid #3c4043;
-    white-space: pre-wrap; /* Allow long summaries to wrap */
-    vertical-align: top;
-}
-
 /* Bar Graph Styles for Log Level Distribution */
 .dist-bar-container {
     margin-bottom: 0.5rem;
@@ -738,20 +708,17 @@ input[type="file"]:hover {
     align-items: center;
     gap: 0.75rem;
 }
-
 .dist-label {
     width: 60px; /* Fixed width for labels */
     font-weight: 500;
     text-align: left; /* Ensure all labels are left-aligned */
 }
-
 .dist-bar-wrapper {
     flex-grow: 1;
     background-color: #f1f3f4;
     border-radius: 4px;
     height: 20px;
 }
-
 .dist-bar {
     height: 100%;
     border: 1px solid rgba(0,0,0,0.2); /* Add a subtle border to all bars */
@@ -766,7 +733,6 @@ input[type="file"]:hover {
     font-weight: 600;
     min-width: 22px; /* Ensure even small numbers are visible */
 }
-
 /* Special case for Verbose bar to make text visible */
 .dist-bar.log-line-V {
     color: #202124; /* Dark text for light grey bar */
@@ -784,7 +750,6 @@ input[type="file"]:hover {
 .dist-bar.log-line-E {
     background-color: #F44336;
 }
-
 /* Sparkline Plot Styles */
 .plot-container {
     width: 100%;
@@ -796,12 +761,10 @@ input[type="file"]:hover {
     align-items: center;
     justify-content: center;
 }
-
 .plot-container svg {
     width: 100%;
     height: 100%;
 }
-
 .sparkline {
     fill: none;
     stroke: #4285F4;
@@ -815,28 +778,6 @@ input[type="file"]:hover {
     border-radius: 6px;
 }
 
-/* --- Specific styles for BTSnoop Table for Readability --- */
-.btsnoop-table {
-    color: #e0e0e0; /* Ensure all text is light */
-}
-
-.btsnoop-table th {
-    background-color: #3c4043; /* Dark grey background for header */
-    color: #e0e0e0; /* Light text for header */
-    position: sticky; /* Make header stick during scroll */
-    top: 0;
-    z-index: 2;
-}
-
-.btsnoop-table th, .btsnoop-table td {
-    border-color: #4a4a4a; /* Darker borders that fit the theme */
-}
-
-/* Override the alternating row color for dark theme */
-.btsnoop-table tbody tr:nth-child(odd) {
-    background-color: transparent;
-}
-
 /* Color-code the direction for quick scanning */
 .direction-out {
     color: #81D4FA; /* Light Blue for outgoing packets */
@@ -845,9 +786,53 @@ input[type="file"]:hover {
     color: #A5D6A7; /* Light Green for incoming packets */
 }
 
-/* Styles for the new column filters */
-.btsnoop-column-filters input {
+/* --- Reverted to Table-based Layout for BTSnoop --- */
+.btsnoop-table {
     width: 100%;
+    table-layout: fixed; /* Crucial for performance and alignment */
+    border-collapse: collapse;
+    color: #e0e0e0;
+}
+
+.btsnoop-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background-color: #3c4043;
+}
+
+.btsnoop-table tbody {
+    position: relative; /* Container for positioned rows */
+}
+
+.btsnoop-table th {
+    padding: 8px 5px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid #5f6368;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.btsnoop-table td {
+    padding: 2px 5px;
+    border-bottom: 1px solid #2a2a2a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    height: 20px; /* Match LINE_HEIGHT */
+}
+
+/* Column Widths */
+.btsnoop-table th:nth-child(1), .btsnoop-table td:nth-child(1) { width: 60px; }
+.btsnoop-table th:nth-child(2), .btsnoop-table td:nth-child(2) { width: 100px; }
+.btsnoop-table th:nth-child(3), .btsnoop-table td:nth-child(3) { width: 180px; }
+.btsnoop-table th:nth-child(4), .btsnoop-table td:nth-child(4) { width: 180px; }
+.btsnoop-table th:nth-child(5), .btsnoop-table td:nth-child(5) { width: 120px; }
+
+.btsnoop-column-filters input {
+    width: 95%;
     box-sizing: border-box;
     background-color: #4a4a4a;
     color: #e0e0e0;
@@ -855,7 +840,3 @@ input[type="file"]:hover {
     border-radius: 4px;
     padding: 4px;
 }
-.btsnoop-column-filters th {
-    top: 38px; /* Position below the main header */
-}
-
