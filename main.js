@@ -153,6 +153,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let isBtsnoopProcessed = false; // FIX: New flag to prevent double processing.
     let btsnoopScrollThrottleTimer = null; // For throttling btsnoop scroll events
     let btsnoopRowPool = []; // For recycling DOM elements in btsnoop virtual scroll
+    let selectedBtsnoopPacket = null; // Track the user-selected BTSnoop packet
+    let currentBtsnoopGridTemplate = null; // Store the current grid column layout
 
     // --- Virtual Scroll State ---
     const LINE_HEIGHT = 20; // Estimated height of a single log line in pixels
@@ -309,35 +311,29 @@ document.addEventListener('DOMContentLoaded', () => {
             /* --- Android Studio Style Log Lines --- */
             .log-line-content {
                 display: flex;
-                align-items: center;
-                gap: 8px;
-                padding: 2px 0;
-                min-width: max-content; /* Allow content to extend beyond container */
+                flex-direction: row;
                 white-space: nowrap;
             }
-            .log-timestamp {
-                flex-shrink: 0; /* Don't shrink */
-                width: 140px;
+            .log-meta {
+                flex: 0 0 160px; /* Do not grow, do not shrink, base width 160px */
                 white-space: nowrap;
             }
             .log-pid-tid {
-                flex-shrink: 0; /* Don't shrink */
-                width: 180px; /* Increased to accommodate PID/TID/UID */
+                flex: 0 0 100px; /* Fixed width for PID-TID */
                 white-space: nowrap;
-                text-align: right; /* Right-align to keep log level in same position */
-                padding-right: 8px;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
             .log-tag {
-                flex-shrink: 0; /* Don't shrink */
-                width: 180px; /* Increased for longer tags */
+                flex: 0 0 180px; /* Fixed width for the tag */
                 white-space: nowrap;
-                color: #E0E0E0; /* Standard text color for the tag */
+                overflow: hidden;
+                text-overflow: ellipsis;
+                color: #E0E0E0;
             }
             .log-message {
                 flex-grow: 1; /* Take up remaining space */
-                white-space: nowrap; /* This was correct */
-                overflow: hidden;
-                text-overflow: ellipsis;
+                white-space: nowrap;
             }
             
             /* --- Enable horizontal scrolling for all log containers --- */
@@ -354,15 +350,33 @@ document.addEventListener('DOMContentLoaded', () => {
             .btsnoop-table { /* A single class for both header and body tables */
                 width: 100%;
                 min-width: 1200px; /* Ensure table is wide enough to trigger horizontal scroll */
-                table-layout: fixed; /* This is key for aligning columns */
+                table-layout: auto; /* FIX: Allow table to expand with content, enabling horizontal scroll */
                 border-collapse: collapse;
             }
-            } 
+            
             #btsnoopLogContainer { /* The scrollable body container */
                 flex-grow: 1;
                 overflow-y: auto;
                 overflow-x: auto; /* FIX: Enable horizontal scrolling */
                 position: relative; /* Required for virtual scrolling viewport */
+                width: 100%; /* Ensure container respects parent width */
+            }
+            
+            #btsnoopLogSizer {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                min-width: 1200px; /* Match table min-width for horizontal scroll */
+                pointer-events: none;
+            }
+            
+            #btsnoopLogViewport {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                min-width: 1200px; /* Match table min-width for horizontal scroll */
             }
             
             /* BTSnoop row styling */
@@ -389,7 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 padding: 2px 5px;
                 overflow: hidden;
                 box-sizing: border-box;
-                vertical-align: top; /* Align content to the top of the cell */
+                vertical-align: top;
                 white-space: nowrap; /* Keep content on one line */
                 text-overflow: ellipsis; /* Truncate with ... */
             }
@@ -881,12 +895,15 @@ document.addEventListener('DOMContentLoaded', () => {
             '    const logcatRegex = new RegExp(\n' +
             '        \'^\\\\s*(?:\' + // Allow optional leading whitespace\n' +
             '            \'(?<logcatDate>\\\\d{2}-\\\\d{2})\\\\s(?<logcatTime>\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{3,})\' + // MM-DD HH:mm:ss.SSS\n' +
-            '            \'\\\\s+\' + // PID/TID Separator\n' +
-            '            \'(?:(?:\\\\s*(?<pid>\\\\d+)\\\\s+(?<tid>\\\\d+)\\\\s+)?(?<level>[A-Z])\\\\s+(?<tag>[^\\\\s:]+?)(?::\\\\s|\\\\s+)|(?<level2>[A-Z])\\\\/(?<tag2>[^\\\\(\\\\s]+)(?:\\\\(\\\\s*(?<pid2>\\\\d+)\\\\))?:\\\\s)\' + // Two formats for level/tag with optional PID/TID\n' +
+            '            \'\\\\s+\' + // PID/TID/UID Separator\n' +
+            '            \'(?:(?:\\\\s*(?<pid>[\\\\w-]+)\\\\s+(?<tid>\\\\d+)\\\\s+(?:(?<uid>\\\\d+)\\\\s+)?)(?<level>[A-Z])\\\\s+(?<tag>[^\\\\s:]+?)(?::\\\\s|\\\\s+)|(?<level2>[A-Z])\\\\/(?<tag2>[^\\\\(\\\\s]+)(?:\\\\(\\\\s*(?<pid2>\\\\d+)\\\\))?:\\\\s)\' + // Handle alphanumeric PID (like \'shell\')\n' +
             '            \'(?<message>(?!.*Date: \\\\d{4}).+)\' + // Standard logcat message, negative lookahead to prevent matching custom format, changed .* to .+\n' +
             '        \'|\' +\n' +
             '            \'Date:\\\\s(?<customFullDate>\\\\d{4}-\\\\d{2}-\\\\d{2})\\\\s(?<customTime>\\\\d{2}:\\\\d{2}:\\\\d{2})\' + // Date: YYYY-MM-DD HH:mm:ss\n' +
             '            \'(?<customMessage>\\\\|.*)\' + // The rest of the custom log line, must start with a pipe\n' +
+            '        \'|\' +\n' +
+            '            \'\\\\[(?<weaverDate>\\\\d{2}-\\\\d{2})\\\\s(?<weaverTime>\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d+)\\\\]\' + // Weaver log format [MM-DD HH:mm:ss.SSSSSS]\n' +
+            '            \'\\\\[(?<weaverPid>\\\\d+)\\\\]\\\\[(?<weaverTag>[^\\\\]]+)\\\\]\\\\s*(?<weaverMessage>.*)\' + // Weaver PID, Tag, and Message\n' +
             '        \')\',\n' +
             '        \'m\' // Use \'m\' (multiline) for ^, but NOT \'g\' (global) with exec() in a loop\n' +
             '    );\n' +
@@ -960,7 +977,7 @@ document.addEventListener('DOMContentLoaded', () => {
             '\n' +
             '        if (match) {\n' +
             '            if (match.groups.logcatDate) { // Standard logcat format\n' +
-            '                const { logcatDate, logcatTime, level, tag, level2, tag2, message, tid } = match.groups;\n' +
+            '                const { logcatDate, logcatTime, level, tag, level2, tag2, message, tid, uid } = match.groups;\n' +
             '                const pid = match.groups.pid || match.groups.pid2;\n' +
             '                const [month, day] = logcatDate.split(\'-\').map(Number);\n' + // This was line 209\n' +
             '                const [hours, minutes, seconds, milliseconds] = logcatTime.split(/[:.]/).map(Number);\n' +
@@ -973,7 +990,7 @@ document.addEventListener('DOMContentLoaded', () => {
             '                const finalTag = (tag || tag2 || \'\').trim();\n' +
             '                tagSet.add(finalTag);\n' +
             '                const finalLevel = (level || level2 || \'\').trim();\n' +
-            '                parsedLine = { isMeta: false, dateObj: lineDateObj, date: logcatDate, time: logcatTime, timestamp: fullTimestamp, level: finalLevel, pid: pid, tid: tid, tag: finalTag, message: message.trim(), originalText: lineText };\n' +
+            '                parsedLine = { isMeta: false, dateObj: lineDateObj, date: logcatDate, time: logcatTime, timestamp: fullTimestamp, level: finalLevel, pid: pid, tid: tid, uid: uid, tag: finalTag, message: message.trim(), originalText: lineText };\n' +
             '                if (stats[finalLevel] !== undefined) stats[finalLevel]++;\n' +
             '            } else if (match.groups.customFullDate) { // Custom YYYY-MM-DD format\n' +
             '                const { customFullDate, customTime, customMessage } = match.groups;\n' +
@@ -990,9 +1007,28 @@ document.addEventListener('DOMContentLoaded', () => {
             '                parsedLine = { isMeta: false, dateObj: lineDateObj, date: mmdd, time: timeWithMs, timestamp: fullTimestamp, level: \'I\', tag: \'CustomLog\', message: customMessage.trim(), originalText: lineText };\n' +
             '                stats.I++;\n' +
             '            }\n' +
-            '        } else { // Unmatched line\n' +
-            '            parsedLine = { isMeta: false, dateObj: null, date: \'N/A\', time: \'N/A\', originalText: lineText, level: \'V\', lineNumber: i + 1 };\n' +
-            '            stats.V++;\n' +
+            '            else if (match.groups.weaverDate) { // Weaver log format\n' +
+            '                const { weaverDate, weaverTime, weaverPid, weaverTag, weaverMessage } = match.groups;\n' +
+            '                const [month, day] = weaverDate.split(\'-\').map(Number);\n' +
+            '                const [hours, minutes, seconds, milliseconds] = weaverTime.split(/[.:]/).map(Number);\n' +
+            '                lineDateObj = new Date(fileYear, month - 1, day, hours, minutes, seconds, Math.floor(milliseconds / 1000)); // Convert microseconds to ms\n' +
+            '\n' +
+            '                const fullTimestamp = weaverDate + \' \' + weaverTime.slice(0, 12); // Trim to ms for consistency\n' +
+            '                if (!minTimestamp || fullTimestamp < minTimestamp) minTimestamp = fullTimestamp;\n' +
+            '                if (!maxTimestamp || fullTimestamp > maxTimestamp) maxTimestamp = fullTimestamp;\n' +
+            '\n' +
+            '                parsedLine = { isMeta: false, dateObj: lineDateObj, date: weaverDate, time: weaverTime, timestamp: fullTimestamp, level: \'D\', pid: weaverPid, tag: weaverTag.trim(), message: weaverMessage.trim(), originalText: lineText };\n' +
+            '                stats.D++;\n' +
+            '            }\n' +
+            '        } else { // Unmatched line logic\n' +
+            '            const levelMatch = lineText.match(/\\s([VDIWE])\\s/);\n' +
+            '            const level = levelMatch ? levelMatch[1] : \'V\';\n' +
+            '            parsedLine = { isMeta: false, dateObj: null, date: \'N/A\', time: \'N/A\', originalText: lineText, level: level, lineNumber: i + 1 };\n' +
+            '            if (stats[level] !== undefined) {\n' +
+            '                stats[level]++;\n' +
+            '            } else {\n' +
+            '                stats.V++;\n' +
+            '            }\n' +
             '        }\n' +
             '\n' +
             '        if (parsedLine) parsedLine.lineNumber = i + 1;\n' +
@@ -1246,12 +1282,6 @@ document.addEventListener('DOMContentLoaded', () => {
         TimeTracker.stop('Result Consolidation');
 
         // --- Persist Data ---
-        // FIX: Sort all consolidated log arrays by timestamp to ensure chronological order.
-        const sortByDate = (a, b) => {
-            if (!a.dateObj || !b.dateObj) return 0; // Keep lines without dates in their relative order
-            return a.dateObj - b.dateObj;
-        };
-
         TimeTracker.start('Persisting & UI Render');
         // Persist data asynchronously, don't wait for it.
         saveData('logData', originalLogLines);
@@ -1768,8 +1798,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="log-line-content">
                         <span class="log-meta">${line.timestamp || (line.date + ' ' + line.time)}</span>
                         <span class="log-pid-tid" style="color: ${pidColor};">${line.pid || ''}${line.tid ? '-' + line.tid : ''}</span>
-                        <span class="log-tag" title="${escapeHtml(line.tag || '')}">${tagText}</span>
                         ${levelHtml}
+                        <span class="log-tag" title="${escapeHtml(line.tag || '')}">${tagText}</span>
                         <span class="log-message" title="${escapeHtml(line.message || line.originalText)}">${messageText}</span>
                     </div>
                 `;
@@ -2041,10 +2071,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderHighlights(highlights) {
         if (!highlights || !accountsList || !deviceEventsTable) return;
 
-        // Render BLE Keys
-        // Clear previous results
+        const bleKeysTable = document.getElementById('bleKeysTable');
+        const bleKeysTbody = bleKeysTable ? bleKeysTable.querySelector('tbody') : null;
+
         accountsList.innerHTML = '';
-        deviceEventsTable.innerHTML = '';
 
         // Render Accounts
         if (highlights.accounts && highlights.accounts.size > 0) {
@@ -2057,7 +2087,39 @@ document.addEventListener('DOMContentLoaded', () => {
             accountsList.innerHTML = '<li>No accounts found in logs.</li>';
         }
 
+        // FIX: Correctly render BLE Security Keys (IRK/LTK)
+        if (bleKeysTbody) {
+            bleKeysTbody.innerHTML = ''; // Clear previous content
+            const keyEvents = btsnoopConnectionEvents.filter(e => e.keyType); // Filter for key events
+
+            if (keyEvents.length === 0) {
+                bleKeysTbody.innerHTML = '<tr><td colspan="3">No BLE security keys found.</td></tr>';
+            } else {
+                let keyTableHtml = '';
+                const seenKeys = new Set(); // Deduplicate keys
+
+                for (const event of keyEvents) {
+                    // Deduplication check
+                    if (seenKeys.has(event.keyValue)) continue;
+                    seenKeys.add(event.keyValue);
+
+                    // Resolve peer address from connection map if handle is available
+                    // FIX: Convert handle string (e.g., "0x0003") to a number (3) for map lookup.
+                    const handleNumber = event.handle ? parseInt(event.handle, 16) : -1;
+                    const peerAddress = btsnoopConnectionMap.get(handleNumber)?.address || 'N/A';
+                    // FIX: Close the table row tag '</tr>'
+                    keyTableHtml += `<tr>
+                        <td>${peerAddress}</td>
+                        <td>${event.keyType}</td>
+                        <td><span style="font-family: monospace; font-size: 0.9em;">${event.keyValue}</span></td>
+                    </tr>`;
+                }
+                bleKeysTbody.innerHTML = keyTableHtml;
+            }
+        }
+
         // Render Device Events
+        deviceEventsTable.innerHTML = '';
         if (highlights.deviceEvents && highlights.deviceEvents.length > 0) {
             // Sort events by timestamp to process them in chronological order
             highlights.deviceEvents.sort((a, b) => {
@@ -2414,8 +2476,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearTimeout(btsnoopScrollThrottleTimer);
                 btsnoopScrollThrottleTimer = setTimeout(renderBtsnoopVirtualLogs, 16);
             });
+            // Sync horizontal scroll with header
             btsnoopLogContainer.addEventListener('scroll', () => {
-                // The scroll listener is now only for potential future features, not batch loading.
+                const header = document.getElementById('btsnoopHeader');
+                if (header && header.firstChild) {
+                    header.scrollLeft = btsnoopLogContainer.scrollLeft;
+                }
             });
             btsnoopScrollListenerAttached = true;
         }
@@ -2446,6 +2512,9 @@ document.addEventListener('DOMContentLoaded', () => {
             TimeTracker.stop('BTSnoop Processing');
             return;
         }
+
+        // FIX: Clear previous connection events to prevent duplication
+        btsnoopConnectionEvents = [];
 
         // Clear previous data from IndexedDB
         const transaction = db.transaction([BTSNOOP_STORE_NAME], 'readwrite');
@@ -2598,14 +2667,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                     
                                     // Extract IRK and LTK keys from SMP packets
                                     if (smpCode === 0x06 && data.length >= 26) { // Encryption Info (LTK) - 16 bytes
-                                        const ltk = Array.from(data.slice(10, 26)).map(b => b.toString(16).padStart(2, '0')).join(' ').toUpperCase();
-                                        self.postMessage({ type: 'keyEvent', event: { packetNum, handle, keyType: 'LTK', keyValue: ltk, timestamp: timestampStr } });
-                                        aclSummary += \` [LTK: \${ltk.substring(0, 23)}...]\`;
+                                        const ltk = Array.from(data.slice(10, 26)).reverse().map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+                                        aclSummary += ' [LTK Found]';
+                                        self.postMessage({ type: 'connectionEvent', event: { packetNum, handle, keyType: 'LTK', keyValue: ltk, timestamp: timestampStr } });
                                     }
                                     else if (smpCode === 0x08 && data.length >= 26) { // Identity Info (IRK) - 16 bytes
-                                        const irk = Array.from(data.slice(10, 26)).map(b => b.toString(16).padStart(2, '0')).join(' ').toUpperCase();
-                                        self.postMessage({ type: 'keyEvent', event: { packetNum, handle, keyType: 'IRK', keyValue: irk, timestamp: timestampStr } });
-                                        aclSummary += \` [IRK: \${irk.substring(0, 23)}...]\`;
+                                        const irk = Array.from(data.slice(10, 26)).reverse().map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+                                        self.postMessage({ type: 'connectionEvent', event: { packetNum, handle, keyType: 'IRK', keyValue: irk, timestamp: timestampStr } });
+                                        aclSummary += \` [IRK Found]\`;
                                     }
                                 }
                             }
@@ -2658,9 +2727,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (type === 'connectionEvent') {
                     // The worker sends the complete event object with the correct timestamp. Simply push it.
                     btsnoopConnectionEvents.push(event.data.event);
-                } else if (type === 'keyEvent') {
-                    // Store IRK/LTK key events
-                    btsnoopConnectionEvents.push(event.data.event);
                 } else if (type === 'complete') {
                     btsnoopConnectionMap = new Map(Object.entries(connectionMap));
                     progressDiv.textContent = `Stored ${totalPacketsStored.toLocaleString()} packets. Finalizing...`;
@@ -2680,6 +2746,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     isBtsnoopProcessed = true; // Set the flag to true
                     // FIX: Render the connection events table now that it's populated
+                    // FIX: Re-render the highlights to populate the BLE Keys table now that we have the data.
+                    // This requires rebuilding the highlights object from the consolidated data.
+                    const finalHighlights = { accounts: new Set(Array.from(document.querySelectorAll('#accountsList li')).map(li => li.textContent)), deviceEvents: [], walletEvents: [] };
+                    renderHighlights(finalHighlights);
                     renderBtsnoopConnectionEvents();
                     // The setupBtsnoopTab function will now handle the initial render correctly.
                     setupBtsnoopTab();
@@ -2761,34 +2831,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderBtsnoopConnectionEvents() {
-        const btsnoopConnectionEventsTable = document.getElementById('btsnoopConnectionEventsTable');
-        if (!btsnoopConnectionEventsTable) return;
+        const tbody = document.getElementById('btsnoopConnectionEventsTable')?.querySelector('tbody');
+        if (!tbody) return;
 
-        let tableHtml = '<tr><th>Packet #</th><th>Timestamp</th><th>Event Type</th><th>Handle</th><th>Address/Key</th></tr>';
-        if (btsnoopConnectionEvents.length === 0) {
-            tableHtml += '<tr><td colspan="5">No LE Connection Complete events or Key events found.</td></tr>';
+        // FIX: Filter out key events, as they are now shown in their own table.
+        const connectionEventsOnly = btsnoopConnectionEvents.filter(e => !e.keyType);
+
+        if (connectionEventsOnly.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5">No LE Connection Complete events found.</td></tr>';
         } else {
-            for (const event of btsnoopConnectionEvents) {
-                let eventType, details;
-                if (event.keyType) {
-                    // IRK/LTK key event
-                    eventType = event.keyType;
-                    details = `<span style="font-family: monospace; font-size: 0.9em;">${event.keyValue}</span>`;
-                } else {
-                    // Connection event
-                    eventType = 'Connection';
-                    details = event.address;
-                }
-                tableHtml += `<tr>
+            const tableHtml = connectionEventsOnly.map(event => `
+                <tr>
                     <td>${event.packetNum}</td>
                     <td>${event.timestamp || 'N/A'}</td>
-                    <td>${eventType}</td>
                     <td>${event.handle || 'N/A'}</td>
-                    <td>${details}</td>
-                </tr>`;
-            }
+                    <td>${event.address || 'N/A'}</td>
+                    <td>${escapeHtml(event.rawData)}</td>
+                </tr>`).join('');
+            tbody.innerHTML = tableHtml;
         }
-        btsnoopConnectionEventsTable.innerHTML = tableHtml;
     }
 
     function exportBtsnoopToXlsx() {
@@ -2824,8 +2885,15 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('[BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).');
         TimeTracker.start('BTSnoop Filtering');
 
-        // Don't reset scroll position - let user maintain their position
-        // if (btsnoopLogContainer) btsnoopLogContainer.scrollTop = 0;
+        // --- Scroll Restoration Logic ---
+        // 1. Find the anchor packet. Prioritize the selected packet.
+        let anchorPacket = selectedBtsnoopPacket;
+        // If no selected packet, or it's not in the current view, fall back to the top visible packet.
+        if (!anchorPacket && filteredBtsnoopPackets.length > 0 && btsnoopLogContainer.scrollTop > 0) {
+            const topVisibleIndex = Math.floor(btsnoopLogContainer.scrollTop / LINE_HEIGHT);
+            anchorPacket = filteredBtsnoopPackets[topVisibleIndex];
+        }
+        // --- End Scroll Restoration ---
 
         const columnFilters = Array.from(btsnoopColumnFilters)
             .map(input => ({
@@ -2834,10 +2902,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }))
             .filter(f => f.value);
 
-        // This assumes allBtsnoopPackets is already loaded into memory.
-        // The processForBtsnoop function should handle loading from DB into allBtsnoopPackets.
-        // For now, we'll assume it's populated from the old btsnoopPackets array for compatibility.
-        // A better approach would be to have a single `allBtsnoopPackets` array.
         const allPackets = await new Promise((resolve, reject) => {
             const tx = db.transaction([BTSNOOP_STORE_NAME], 'readonly');
             tx.objectStore(BTSNOOP_STORE_NAME).getAll().onsuccess = e => resolve(e.target.result);
@@ -2854,54 +2918,140 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+        // --- Scroll Restoration Logic ---
+        // 2. Find the new index of the anchor and set the scroll position.
+        let newScrollTop = 0;
+        if (anchorPacket) {
+            const newAnchorIndex = filteredBtsnoopPackets.findIndex(p => p.number === anchorPacket.number);
+            if (newAnchorIndex !== -1) {
+                // FIX: Center the selected packet in the viewport
+                const containerHeight = btsnoopLogContainer.clientHeight;
+                // Scroll to selected packet (approximate position for variable heights)
+                const avgRowHeight = 40; // Estimate: 20px base + some wrapping
+                const centerOffset = Math.floor(containerHeight / 2);
+                newScrollTop = Math.max(0, (newAnchorIndex * avgRowHeight) - centerOffset);
+            } else if (selectedBtsnoopPacket) {
+                // If anchor not found but we have a selected packet, clear selection
+                selectedBtsnoopPacket = null;
+            }
+        }
+        // Store scroll position for later (after render)
+        // --- End Scroll Restoration ---
+
         TimeTracker.stop('BTSnoop Filtering');
         renderBtsnoopVirtualLogs(); // Render the filtered results.
+
+        // Apply scroll AFTER rendering to ensure DOM is ready
+        requestAnimationFrame(() => {
+            console.log('[BTSnoop Scroll] Applying scroll to:', newScrollTop, 'for packet:', selectedBtsnoopPacket?.number);
+            btsnoopLogContainer.scrollTop = newScrollTop;
+            // Force a second render to ensure selection is visible
+            if (selectedBtsnoopPacket) {
+                setTimeout(() => renderBtsnoopVirtualLogs(), 50);
+            }
+        });
     }
 
     function createBtsnoopFilterHeader() {
         const header = document.getElementById('btsnoopHeader');
-        // This function now creates the entire table structure, not just the header.
         if (!header || header.hasChildNodes()) return;
 
-        const headerTable = document.createElement('table');
-        headerTable.className = 'btsnoop-table';
-        const colgroup = document.createElement('colgroup');
-        for (let i = 0; i < 7; i++) colgroup.appendChild(document.createElement('col'));
-        // This colgroup is for the header table
-        headerTable.appendChild(colgroup);
+        // Use a single grid container for both titles and filters to ensure alignment
+        const headerGrid = document.createElement('div');
+        headerGrid.className = 'btsnoop-header-grid';
 
         const columns = ['No.', 'Timestamp', 'Source', 'Destination', 'Type', 'Summary', 'Data'];
-        const titleRow = document.createElement('tr');
-        titleRow.innerHTML = columns.map(text => `<th>${text}</th>`).join('');
 
-        const filterRow = document.createElement('tr');
-        filterRow.className = 'btsnoop-column-filters';
+        // 1. Create Title Cells
         columns.forEach((text, i) => {
-            const th = document.createElement('th');
+            const cell = document.createElement('div');
+            cell.className = 'btsnoop-header-cell';
+            cell.innerHTML = `
+                ${text}
+                <div class="resize-handle-col"></div>
+            `;
+            headerGrid.appendChild(cell);
+        });
+
+        // 2. Create Filter Cells
+        columns.forEach((text, i) => {
+            const cell = document.createElement('div');
+            cell.className = 'btsnoop-filter-cell';
             const input = document.createElement('input');
             input.type = 'text';
             input.dataset.column = i;
-            // FIX: Add unique id and name attributes to satisfy browser best practices.
             input.id = `btsnoop-filter-col-${i}`;
             input.name = `btsnoop-filter-col-${i}`;
             input.placeholder = `Filter ${text}...`;
-            th.appendChild(input);
-            filterRow.appendChild(th);
+            cell.appendChild(input);
+            headerGrid.appendChild(cell);
         });
 
-        const thead = document.createElement('thead');
-        thead.appendChild(titleRow);
-        thead.appendChild(filterRow);
-        headerTable.appendChild(thead);
+        header.appendChild(headerGrid);
 
-        header.appendChild(headerTable);
-
-        btsnoopColumnFilters = document.querySelectorAll('.btsnoop-column-filters input');
+        btsnoopColumnFilters = document.querySelectorAll('.btsnoop-filter-cell input');
         // FIX: Attach all filter listeners here, after the elements have been created.
         btsnoopColumnFilters.forEach(input => {
             input.addEventListener('input', handleBtsnoopFilterInput);
         });
         attachLayerFilterListeners(btsnoopFilterButtons, activeBtsnoopFilters, () => renderBtsnoopPackets());
+
+        // --- Column Resize Logic (Simplified for Grid) ---
+        // Note: Resizing grid columns dynamically requires updating the grid-template-columns style.
+        // For now, we'll rely on the CSS Grid's minmax/fr units, but basic resizing support can be added
+        // by updating the style on the container.
+        let thBeingResized = null;
+        let startX, startWidths;
+
+        headerGrid.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('resize-handle-col')) {
+                thBeingResized = e.target.parentElement; // The .btsnoop-header-cell
+                startX = e.pageX;
+
+                // Get current computed widths of all columns
+                const computedStyle = window.getComputedStyle(headerGrid);
+                const gridTemplateColumns = computedStyle.gridTemplateColumns.split(' ');
+                startWidths = gridTemplateColumns.map(w => parseFloat(w));
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+                e.preventDefault();
+            }
+        });
+
+        function onMouseMove(e) {
+            if (thBeingResized) {
+                const diffX = e.pageX - startX;
+                // Find the index of the column being resized
+                const cells = Array.from(headerGrid.children);
+                const cellIndex = cells.indexOf(thBeingResized);
+                // The index matches the column index directly for the first row
+                if (cellIndex >= 0 && cellIndex < startWidths.length) {
+                    const newWidth = Math.max(50, startWidths[cellIndex] + diffX); // Min 50px
+
+                    // Update the grid-template-columns for BOTH header and body
+                    const newTemplate = startWidths.map((w, i) => i === cellIndex ? `${newWidth}px` : `${w}px`).join(' ');
+
+                    headerGrid.style.gridTemplateColumns = newTemplate;
+                    currentBtsnoopGridTemplate = newTemplate; // Persist for new rows
+
+                    // Update body rows by updating a shared style or iterating (less efficient)
+                    // Better: Update a CSS variable or a specific style rule.
+                    // For simplicity, we'll update the body rows directly if they exist.
+                    const bodyRows = document.querySelectorAll('.btsnoop-row');
+                    bodyRows.forEach(row => row.style.gridTemplateColumns = newTemplate);
+
+                    // Also update the stylesheet rule if possible to persist for new rows
+                    // (Skipped for now, direct style update works for visible rows)
+                }
+            }
+        }
+
+        function onMouseUp() {
+            thBeingResized = null;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        }
     }
 
     function renderBtsnoopVirtualLogs() {
@@ -2916,20 +3066,54 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Calculate cumulative heights for variable-height rows
+        const rowHeights = [];
+        const rowPositions = [];
+        let totalHeight = 0;
+
+        filteredBtsnoopPackets.forEach((packet, idx) => {
+            rowPositions[idx] = totalHeight;
+            // Estimate height: 20px base + extra for wrapped data
+            const dataLength = packet.data?.length || 0;
+            const estimatedLines = Math.max(1, Math.ceil(dataLength / 100)); // ~100 chars per line
+            const height = 20 * estimatedLines;
+            rowHeights[idx] = height;
+            totalHeight += height;
+        });
+
         // Set the total height of the scrollable area
-        sizer.style.height = `${filteredBtsnoopPackets.length * LINE_HEIGHT}px`;
+        sizer.style.height = `${totalHeight}px`;
 
         const scrollTop = container.scrollTop;
         const containerHeight = container.clientHeight;
 
-        // Calculate the range of rows to render
-        let startIndex = Math.floor(scrollTop / LINE_HEIGHT);
-        startIndex = Math.max(0, startIndex - BUFFER_LINES); // Add buffer before
+        // Calculate the range of rows to render based on cumulative positions
+        let startIndex = 0;
+        let endIndex = filteredBtsnoopPackets.length;
 
-        let endIndex = Math.ceil((scrollTop + containerHeight) / LINE_HEIGHT);
-        endIndex = Math.min(filteredBtsnoopPackets.length, endIndex + BUFFER_LINES); // Add buffer after
+        // Find first visible row
+        for (let i = 0; i < rowPositions.length; i++) {
+            if (rowPositions[i] + rowHeights[i] >= scrollTop) {
+                startIndex = Math.max(0, i - BUFFER_LINES);
+                break;
+            }
+        }
 
-        console.log('[BTSnoop Debug] 5. Rendering rows', startIndex, 'to', endIndex, 'of', filteredBtsnoopPackets.length);
+        // Find last visible row
+        const viewportBottom = scrollTop + containerHeight;
+        for (let i = startIndex; i < rowPositions.length; i++) {
+            if (rowPositions[i] > viewportBottom) {
+                endIndex = Math.min(filteredBtsnoopPackets.length, i + BUFFER_LINES);
+                break;
+            }
+        }
+        
+        // Ensure we always render at least some rows
+        if (endIndex <= startIndex) {
+            endIndex = Math.min(filteredBtsnoopPackets.length, startIndex + 50);
+        }
+
+        console.log('[BTSnoop Debug] 5. Rendering rows', startIndex, 'to', endIndex, 'of', filteredBtsnoopPackets.length, 'scrollTop:', scrollTop, 'viewportBottom:', scrollTop + containerHeight);
 
         // Recycle or create DOM elements for the rows
         const visibleRows = [];
@@ -2939,44 +3123,94 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Recycle or create a row element
             let row = btsnoopRowPool.pop();
-            if (!row) {
+            if (!row) { // Create a new row if the pool is empty
                 row = document.createElement('div');
-                row.className = 'log-line btsnoop-row';
-                // Create a table structure that matches the header
-                const table = document.createElement('table');
-                table.className = 'btsnoop-table';
-                const colgroup = document.createElement('colgroup');
-                for (let j = 0; j < 7; j++) colgroup.appendChild(document.createElement('col'));
-                table.appendChild(colgroup);
-                const tbody = document.createElement('tbody');
-                const tr = document.createElement('tr');
+                row.className = 'btsnoop-row'; // Match CSS class
+                // Create cells
                 for (let j = 0; j < 7; j++) {
-                    const td = document.createElement('td');
-                    tr.appendChild(td);
+                    const cell = document.createElement('div');
+                    cell.className = 'btsnoop-cell';
+                    cell.style.color = '#e0e0e0'; // Explicit text color
+                    cell.style.fontFamily = "'JetBrains Mono', 'Consolas', 'Menlo', 'Courier New', monospace";
+                    cell.style.fontSize = '13px';
+                    // Special styling for Data column (last column) - allow wrapping
+                    if (j === 6) {
+                        cell.style.whiteSpace = 'pre-wrap';
+                        cell.style.wordBreak = 'break-all';
+                        cell.style.minHeight = '20px';
+                        cell.style.height = 'auto';
+                    }
+                    row.appendChild(cell);
                 }
-                tbody.appendChild(tr);
-                table.appendChild(tbody);
-                row.appendChild(table);
             }
 
             // Populate the row with data
-            const cells = row.querySelectorAll('td');
-            cells[0].textContent = packet.number;
-            cells[1].textContent = packet.timestamp;
-            cells[2].textContent = packet.source || (packet.direction === 'Controller -> Host' ? 'Controller' : 'Host');
-            cells[3].textContent = packet.destination || (packet.direction === 'Host -> Controller' ? 'Controller' : 'Host');
-            cells[4].textContent = packet.type;
-            cells[5].textContent = packet.summary;
-            cells[5].title = packet.summary; // Full text on hover
-            cells[6].textContent = packet.data;
-            cells[6].title = packet.data; // Full text on hover
+            const cells = row.children; // Get all div cells
+            const cellData = [
+                packet.number, packet.timestamp,
+                packet.source || (packet.direction === 'Controller -> Host' ? 'Controller' : 'Host'),
+                packet.destination || (packet.direction === 'Host -> Controller' ? 'Controller' : 'Host'),
+                packet.type, packet.summary, packet.data
+            ];
 
-            // Position the row correctly in the viewport
+            // Apply selection style
+            if (selectedBtsnoopPacket && selectedBtsnoopPacket.number === packet.number) {
+                row.classList.add('selected');
+            } else {
+                row.classList.remove('selected');
+            }
+            // Apply alternating row background
+            if (packet.number % 2 === 0) {
+                row.classList.add('even-row');
+                row.classList.remove('odd-row');
+            } else {
+                row.classList.add('odd-row');
+                row.classList.remove('even-row');
+            }
+            // Store packet data for click handling
+            row.dataset.packetNumber = packet.number;
+
+            for (let j = 0; j < 7; j++) {
+                // FIX: Ensure data is converted to string and handle undefined/null
+                const dataStr = (cellData[j] !== undefined && cellData[j] !== null) ? String(cellData[j]) : '';
+                cells[j].textContent = dataStr;
+                cells[j].title = dataStr + " (Ctrl+Click to copy)"; // Full text on hover
+                cells[j].dataset.logText = dataStr; // Store raw text for copying
+                cells[j].style.color = '#e0e0e0'; // Ensure visibility
+                cells[j].style.fontFamily = "'JetBrains Mono', 'Consolas', 'Menlo', 'Courier New', monospace";
+                cells[j].style.fontSize = '13px';
+                // Special styling for Data column (last column) - allow wrapping
+                if (j === 6) {
+                    cells[j].style.whiteSpace = 'pre-wrap';
+                    cells[j].style.wordBreak = 'break-all';
+                    cells[j].style.minHeight = '20px';
+                    cells[j].style.height = 'auto';
+                } else {
+                    cells[j].style.whiteSpace = 'nowrap';
+                }
+                // Ensure the class is added (not duplicated if recycling)
+                if (!cells[j].classList.contains('btsnoop-copy-cell')) {
+                    cells[j].classList.add('btsnoop-copy-cell');
+                }
+            }
+
+            // Position the row correctly in the viewport using cumulative position
             row.style.position = 'absolute';
             row.style.top = '0';
             row.style.left = '0';
             row.style.width = '100%';
-            row.style.transform = `translateY(${i * LINE_HEIGHT}px)`;
+            row.style.transform = `translateY(${rowPositions[i]}px)`;
+            row.style.minHeight = '20px';
+            row.style.height = 'auto';
+            row.style.display = 'grid';
+
+            // FIX: Apply the current column widths if they have been resized
+            if (currentBtsnoopGridTemplate) {
+                row.style.gridTemplateColumns = currentBtsnoopGridTemplate;
+            }
+            else {
+                row.style.gridTemplateColumns = '60px 120px 160px 160px 80px minmax(200px, 2fr) minmax(200px, 3fr)';
+            }
             visibleRows.push(row);
         }
 
@@ -3016,7 +3250,56 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.error('Failed to copy log line:', err);
                 });
             }
-        } else if (target.closest('.log-line-meta')) {
+        } else if (target.closest('.btsnoop-copy-cell')) {
+            // Handle clicking on a BTSnoop cell
+            const cell = target.closest('.btsnoop-copy-cell');
+            const row = target.closest('.btsnoop-row');
+
+            console.log('[BTSnoop Click] Cell clicked, row:', row?.dataset.packetNumber, 'ctrl:', event.ctrlKey, 'meta:', event.metaKey);
+
+            // 1. Handle Selection (single click without modifiers)
+            if (row && row.dataset.packetNumber && !event.ctrlKey && !event.metaKey) {
+                const packetNum = parseInt(row.dataset.packetNumber, 10);
+                const packet = filteredBtsnoopPackets.find(p => p.number === packetNum);
+
+                if (packet) {
+                    if (selectedBtsnoopPacket === packet) {
+                        selectedBtsnoopPacket = null; // Deselect
+                        console.log('[BTSnoop] Deselected packet', packetNum);
+                    } else {
+                        selectedBtsnoopPacket = packet; // Select
+                        console.log('[BTSnoop] Selected packet', packetNum);
+                    }
+                    // Fast re-render to show selection state
+                    renderBtsnoopVirtualLogs();
+                }
+            }
+
+            // 2. Handle Copy (Ctrl+Click or Cmd+Click)
+            if ((event.ctrlKey || event.metaKey) && cell) {
+                console.log('[BTSnoop Copy] Attempting to copy:', cell.dataset.logText?.substring(0, 50));
+                const logText = cell.dataset.logText;
+                if (logText) {
+                    navigator.clipboard.writeText(logText).then(() => {
+                        console.log('[BTSnoop Copy] Successfully copied:', logText.length, 'characters');
+                        // Visual feedback
+                        const originalBg = cell.style.backgroundColor;
+                        const originalColor = cell.style.color;
+                        cell.style.backgroundColor = '#34a853';
+                        cell.style.color = '#fff';
+                        setTimeout(() => {
+                            cell.style.backgroundColor = originalBg;
+                            cell.style.color = originalColor;
+                        }, 300);
+                    }).catch(err => {
+                        console.error('[BTSnoop Copy] Failed to copy:', err);
+                    });
+                }
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        }
+        else if (target.closest('.log-line-meta')) {
             // Handle collapsing/expanding file logs in ANY viewport
             const lineDiv = target.closest('.log-line-meta');
             const lineIndex = parseInt(lineDiv.dataset.lineIndex, 10);

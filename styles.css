@@ -8,20 +8,25 @@
     scrollbar-width: thin;
 }
 
-html, body {
+html,
+body {
     height: 100%;
     margin: 0;
     padding: 0;
     font-family: 'Inter', Arial, sans-serif;
-    background: #f1f3f4; /* Google's light grey background */
-    color: #3c4043; /* Google's standard text color */
+    background: #f1f3f4;
+    /* Google's light grey background */
+    color: #3c4043;
+    /* Google's standard text color */
 }
+
 body {
     min-height: 100vh;
     height: 100vh;
     width: 100vw;
     overflow: hidden;
 }
+
 .container {
     position: absolute;
     top: 0;
@@ -35,102 +40,131 @@ body {
     display: flex;
     flex-direction: column;
 }
+
 header {
     text-align: center;
-    padding: 0.4rem 0; /* Reduced from 0.75rem for space optimization */
+    padding: 0.4rem 0;
+    /* Reduced from 0.75rem for space optimization */
     border-bottom: 1px solid #dadce0;
 }
 
 header h1 {
-    margin: 0.2rem 0; /* Reduced margin */
-    font-size: 1.3rem; /* Slightly smaller */
+    margin: 0.2rem 0;
+    /* Reduced margin */
+    font-size: 1.3rem;
+    /* Slightly smaller */
 }
+
 .current-file-display {
     color: #5f6368;
     font-size: 0.9rem;
     margin-top: 0.25rem;
-    min-height: 1.2em; /* Prevent layout shift */
+    min-height: 1.2em;
+    /* Prevent layout shift */
     font-weight: 500;
 }
+
 main {
     flex: 1 1 auto;
     display: flex;
     flex-direction: row;
-    min-height: 0; /* Important for flexbox children with scrolling */
+    min-height: 0;
+    /* Important for flexbox children with scrolling */
     padding: 0 2vw 2vw 2vw;
     box-sizing: border-box;
     gap: 1.5rem;
 }
+
 .left-panel {
     width: 300px;
-    min-width: 300px; /* Prevent it from becoming too small */
-    max-width: 700px; /* Prevent it from becoming too large */
+    min-width: 300px;
+    /* Prevent it from becoming too small */
+    max-width: 700px;
+    /* Prevent it from becoming too large */
     background: #fff;
     border-right: 1px solid #dee2e6;
     padding: 1.5rem;
     position: relative;
     display: flex;
     flex-direction: column;
-    transition: margin-left 0.35s ease-in-out; /* Add transition for animation */
+    transition: margin-left 0.35s ease-in-out;
+    /* Add transition for animation */
 }
+
 .left-panel.collapsed {
     /* When collapsed, move it off-screen to the left */
-    margin-left: -300px; /* Default width, will be adjusted by JS for resized panel */
+    margin-left: -300px;
+    /* Default width, will be adjusted by JS for resized panel */
 }
+
 .main-content {
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
-    min-width: 0; /* Important for flexbox children */
+    min-width: 0;
+    /* Important for flexbox children */
     position: relative;
 }
+
 .panel-toggle-btn {
     position: absolute;
     top: 50%;
-    right: 0; /* Position on the right edge of the panel */
-    transform: translate(50%, -50%); /* Center it on the border */
+    right: 0;
+    /* Position on the right edge of the panel */
+    transform: translate(50%, -50%);
+    /* Center it on the border */
     z-index: 1001;
     background: #4285F4;
     color: white;
     border: 1px solid #1a73e8;
     border-left: none;
     border-radius: 0 8px 8px 0;
-    width: 30px; /* Larger button */
-    height: 70px; /* Larger button */
+    width: 30px;
+    /* Larger button */
+    height: 70px;
+    /* Larger button */
     cursor: pointer;
-    font-size: 1.5rem; /* Larger icon */
+    font-size: 1.5rem;
+    /* Larger icon */
     font-weight: bold;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease-in-out;
 }
+
 .panel-toggle-btn:hover {
     filter: brightness(90%);
 }
+
 .resize-handle {
     position: absolute;
     top: 0;
     right: 0;
-    width: 5px; /* The draggable area */
+    width: 5px;
+    /* The draggable area */
     height: 100%;
     cursor: col-resize;
     z-index: 1000;
 }
+
 details {
     border: 1px solid #dadce0;
     border-radius: 8px;
     padding: 0.5rem 1rem;
     margin-bottom: 1rem;
 }
+
 summary {
     font-weight: 600;
     cursor: pointer;
     padding: 0.5rem 0;
 }
+
 .upload-column {
     padding-top: 1rem;
 }
+
 .upload-choice {
     display: flex;
     gap: 0.5rem;
@@ -139,22 +173,31 @@ summary {
 }
 
 .filter-column {
-    flex: 1 1 auto; /* Allow this column to grow and shrink */
-    min-height: 0; /* Important for scrolling within a flex item */
-    overflow-y: auto; /* Only this part will scroll if needed */
-    margin-right: -1rem; /* Hide scrollbar visually by pushing it out */
-    padding-right: 1rem; /* Add padding back to keep content aligned */
+    flex: 1 1 auto;
+    /* Allow this column to grow and shrink */
+    min-height: 0;
+    /* Important for scrolling within a flex item */
+    overflow-y: auto;
+    /* Only this part will scroll if needed */
+    margin-right: -1rem;
+    /* Hide scrollbar visually by pushing it out */
+    padding-right: 1rem;
+    /* Add padding back to keep content aligned */
 }
+
 .upload-section {
     display: flex;
     flex-direction: column;
     margin-bottom: 1rem;
 }
+
 .upload-label {
     font-weight: 500;
     margin-bottom: 0.5rem;
 }
-input[type="file"], input[type="datetime-local"] {
+
+input[type="file"],
+input[type="datetime-local"] {
     border: 1px solid #dadce0;
     padding: 0.5rem;
     border-radius: 6px;
@@ -162,31 +205,38 @@ input[type="file"], input[type="datetime-local"] {
     font-family: 'Inter', Arial, sans-serif;
     color: #3c4043;
 }
+
 input[type="file"]:hover {
     border-color: #adb5bd;
 }
+
 .time-filter-controls {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
 }
+
 .time-filter-controls input {
     flex: 1 1 auto;
 }
+
 .log-level-filters span,
 .time-range-section label,
 .search-section label {
     display: block;
     width: 100%;
-    font-weight: 600; /* Bolder weight */
+    font-weight: 600;
+    /* Bolder weight */
     margin-bottom: 0.5rem;
 }
+
 .tab-nav {
     display: flex;
     gap: 0.5rem;
     border-bottom: 1px solid #dadce0;
 }
+
 .tab-btn {
     background: transparent;
     border: none;
@@ -199,10 +249,13 @@ input[type="file"]:hover {
     color: #5f6368;
     transition: all 0.2s;
 }
+
 .tab-btn.active {
-    color: #4285F4; /* Google Blue */
+    color: #4285F4;
+    /* Google Blue */
     border-bottom-color: #4285F4;
 }
+
 .tab-content {
     display: none;
     background: #fff;
@@ -211,15 +264,22 @@ input[type="file"]:hover {
     flex: 1 1 auto;
     min-height: 0;
 }
+
 .tab-content.active {
-    display: flex; /* Use flex to make content fill space */
+    display: flex;
+    /* Use flex to make content fill space */
     flex-direction: column;
 }
-.log-container, .ble-output {
+
+.log-container,
+.ble-output {
     position: relative;
-    flex: 1 1 auto; /* Allow log container to grow */
-    overflow: auto; /* Enable both vertical and horizontal scrolling */
-    background: #202124; /* Google's dark surface color */
+    flex: 1 1 auto;
+    /* Allow log container to grow */
+    overflow: auto;
+    /* Enable both vertical and horizontal scrolling */
+    background: #202124;
+    /* Google's dark surface color */
     color: #e0e0e0;
     border-radius: 8px;
     box-sizing: border-box;
@@ -228,22 +288,31 @@ input[type="file"]:hover {
 .log-sizer {
     position: relative;
     width: 100%;
-    height: 0; /* Will be set by JS */
+    height: 0;
+    /* Will be set by JS */
 }
+
 .log-viewport {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     font-size: 0.98rem;
-    user-select: text; /* Allow text selection */
+    user-select: text;
+    /* Allow text selection */
 }
+
 .log-line {
-    height: 20px; /* Match the LINE_HEIGHT in JS */
-    line-height: 20px; /* Vertically center the text */
-    padding: 0 1rem; /* Simulate padding of old pre tag */
-    white-space: pre; /* Prevent wrapping, use pre for horizontal scroll */
-    position: relative; /* Needed for positioning the copy button */
+    height: 20px;
+    /* Match the LINE_HEIGHT in JS */
+    line-height: 20px;
+    /* Vertically center the text */
+    padding: 0 1rem;
+    /* Simulate padding of old pre tag */
+    white-space: pre;
+    /* Prevent wrapping, use pre for horizontal scroll */
+    position: relative;
+    /* Needed for positioning the copy button */
 }
 
 .copy-log-btn {
@@ -257,16 +326,19 @@ input[type="file"]:hover {
     border-radius: 4px;
     padding: 1px 5px;
     cursor: pointer;
-    opacity: 0; /* Hidden by default */
+    opacity: 0;
+    /* Hidden by default */
     visibility: hidden;
     transition: opacity 0.2s, visibility 0.2s;
     font-size: 0.8rem;
 }
 
 .log-line:hover .copy-log-btn {
-    opacity: 1; /* Show on hover */
+    opacity: 1;
+    /* Show on hover */
     visibility: visible;
 }
+
 /* Keyword filter chips */
 .keyword-chips {
     margin-top: 0.5rem;
@@ -275,9 +347,11 @@ input[type="file"]:hover {
     flex-wrap: wrap;
     gap: 0.5rem;
 }
+
 .keyword-chip {
     display: inline-block;
-    background: #e8eaed; /* Inactive color */
+    background: #e8eaed;
+    /* Inactive color */
     color: #3c4043;
     border-radius: 16px;
     padding: 0.3rem 0.5rem 0.3rem 1rem;
@@ -286,10 +360,12 @@ input[type="file"]:hover {
     position: relative;
     transition: all 0.2s;
 }
+
 .keyword-chip.active {
     background: #4285F4;
     color: #fff;
 }
+
 .keyword-chip .remove-chip {
     margin-left: 0.7rem;
     color: #888;
@@ -297,6 +373,7 @@ input[type="file"]:hover {
     cursor: pointer;
     font-size: 1.1em;
 }
+
 .export-btn {
     margin-top: 1rem;
     background: #4285F4;
@@ -308,9 +385,12 @@ input[type="file"]:hover {
     cursor: pointer;
     transition: background 0.2s;
 }
-.export-btn:hover, .modal-btn:hover {
+
+.export-btn:hover,
+.modal-btn:hover {
     filter: brightness(90%);
 }
+
 .filter-icon {
     display: inline-block;
     margin-right: 0.5rem;
@@ -324,11 +404,13 @@ input[type="file"]:hover {
     margin-bottom: 0.5rem;
     transition: all 0.2s;
 }
+
 .filter-icon.active {
     background: #4285F4;
     color: #fff;
     border-color: #4285F4;
 }
+
 .filter-action-btn {
     margin-left: 0.5rem;
     padding: 0.3rem 0.7rem;
@@ -345,8 +427,11 @@ input[type="file"]:hover {
 }
 
 /* Unify all filter-related buttons for consistent height and feel */
-.filter-icon, .logic-btn, .filter-action-btn {
-    height: 32px; /* Set a fixed height */
+.filter-icon,
+.logic-btn,
+.filter-action-btn {
+    height: 32px;
+    /* Set a fixed height */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -358,6 +443,7 @@ input[type="file"]:hover {
     color: #fff;
     border-color: #4285F4;
 }
+
 .filter-action-btn {
     margin-left: 0.5rem;
     padding: 0.3rem 0.7rem;
@@ -367,7 +453,9 @@ input[type="file"]:hover {
     cursor: pointer;
     font-weight: 500;
 }
-.nfc-filters, .ble-filters {
+
+.nfc-filters,
+.ble-filters {
     margin-bottom: 1rem;
 }
 
@@ -379,6 +467,7 @@ input[type="file"]:hover {
     border-radius: 5px;
     cursor: pointer;
 }
+
 .clear-btn:hover {
     background: #e0e0e0;
 }
@@ -389,13 +478,16 @@ input[type="file"]:hover {
     gap: 0.5rem;
     flex-wrap: wrap;
 }
+
 .log-level-filters span {
     font-weight: 500;
 }
+
 /* Search Input */
 .search-section {
     position: relative;
 }
+
 .search-input {
     width: 100%;
     padding: 0.6rem 1rem;
@@ -405,32 +497,39 @@ input[type="file"]:hover {
     margin-top: 0.5rem;
     box-sizing: border-box;
 }
+
 .search-input:focus {
     outline: none;
     border-color: #4285F4;
 }
+
 /* Autocomplete Suggestions */
 .autocomplete-suggestions {
     position: absolute;
     border: 1px solid #e0e0e0;
     border-top: none;
     background-color: #fff;
-    width: calc(100% - 2rem - 2px); /* Match search input width */
+    width: calc(100% - 2rem - 2px);
+    /* Match search input width */
     max-height: 250px;
     overflow-y: auto;
     z-index: 999;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
+
 .suggestion-item {
     padding: 0.6rem 1rem;
     cursor: pointer;
 }
+
 .suggestion-item:hover {
     background-color: #f0f2f5;
 }
+
 .search-header {
     display: flex;
-    gap: 1rem; /* Add space between label and buttons */
+    gap: 1rem;
+    /* Add space between label and buttons */
     align-items: center;
     margin-bottom: 0.5rem;
 }
@@ -439,7 +538,8 @@ input[type="file"]:hover {
     /* Override the generic block style to make it fit in the flex layout */
     display: inline-block;
     width: auto;
-    margin-bottom: 0; /* Remove bottom margin from the label */
+    margin-bottom: 0;
+    /* Remove bottom margin from the label */
 }
 
 .logic-toggle {
@@ -452,8 +552,10 @@ input[type="file"]:hover {
 .logic-btn {
     padding: 0.3rem 0.8rem;
     background: #fff;
-    min-width: 50px; /* Ensure both buttons have the same minimum width */
-    text-align: center; /* Center the text inside the button */
+    min-width: 50px;
+    /* Ensure both buttons have the same minimum width */
+    text-align: center;
+    /* Center the text inside the button */
     border: none;
     cursor: pointer;
     font-size: 0.95rem;
@@ -470,13 +572,18 @@ input[type="file"]:hover {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    width: 200px; /* Smaller width */
-    height: 15px; /* Smaller height */
-    z-index: 1001; /* Ensure it's above everything else */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    width: 200px;
+    /* Smaller width */
+    height: 15px;
+    /* Smaller height */
+    z-index: 1001;
+    /* Ensure it's above everything else */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
+
 .progress-bar-container.fixed-bottom-right .progress-text {
-    font-size: 0.8rem; /* Smaller text */
+    font-size: 0.8rem;
+    /* Smaller text */
     line-height: 15px;
 }
 
@@ -490,6 +597,7 @@ input[type="file"]:hover {
     position: relative;
     overflow: hidden;
 }
+
 .progress-bar {
     height: 100%;
     width: 0%;
@@ -497,6 +605,7 @@ input[type="file"]:hover {
     border-radius: 8px;
     transition: width 0.3s;
 }
+
 .progress-text {
     position: absolute;
     left: 50%;
@@ -506,12 +615,27 @@ input[type="file"]:hover {
     color: #202124;
     line-height: 18px;
 }
+
 /* Service color highlights (example) */
-.service-ble { color: #4fc3f7; }
-.service-auth { color: #81c784; }
-.service-api { color: #ffb74d; }
-.service-ui { color: #ba68c8; }
-.service-other { color: #e57373; }
+.service-ble {
+    color: #4fc3f7;
+}
+
+.service-auth {
+    color: #81c784;
+}
+
+.service-api {
+    color: #ffb74d;
+}
+
+.service-ui {
+    color: #ba68c8;
+}
+
+.service-other {
+    color: #e57373;
+}
 
 /* Modal Styles */
 .modal-overlay {
@@ -533,7 +657,7 @@ input[type="file"]:hover {
     border-radius: 12px;
     width: 90%;
     max-width: 600px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .toggle-all-container {
@@ -583,13 +707,15 @@ input[type="file"]:hover {
 }
 
 .status-card {
-    flex: 1 1 120px; /* Allow cards to grow but have a base size */
-    background: #f8f9fa; /* Slightly different background for inner cards */
+    flex: 1 1 120px;
+    /* Allow cards to grow but have a base size */
+    background: #f8f9fa;
+    /* Slightly different background for inner cards */
     border: 1px solid #e8eaed;
     border-radius: 12px;
     padding: 1.5rem;
     text-align: left;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     transition: box-shadow 0.2s;
 }
 
@@ -605,16 +731,31 @@ input[type="file"]:hover {
     text-transform: uppercase;
 }
 
-.status-on { color: #34a853; } /* Google Green */
-.status-off { color: #ea4335; } /* Google Red */
-.status-unknown { color: #5f6368; } /* Google Grey */
+.status-on {
+    color: #34a853;
+}
+
+/* Google Green */
+.status-off {
+    color: #ea4335;
+}
+
+/* Google Red */
+.status-unknown {
+    color: #5f6368;
+}
+
+/* Google Grey */
 
 .status-note {
     font-size: 0.85rem;
     color: #757575;
     margin: 0.5rem 0 0 0;
 }
-.filter-section, .search-section, .time-range-section {
+
+.filter-section,
+.search-section,
+.time-range-section {
     border: 1px solid #dadce0;
     border-radius: 8px;
     padding: 1rem;
@@ -626,7 +767,8 @@ input[type="file"]:hover {
     display: flex;
     flex-direction: column;
     gap: 2rem;
-    overflow-y: auto; /* Allow highlights to scroll if they overflow */
+    overflow-y: auto;
+    /* Allow highlights to scroll if they overflow */
     padding: 1rem;
 }
 
@@ -647,7 +789,8 @@ input[type="file"]:hover {
     font-size: 0.95rem;
 }
 
-.highlight-table th, .highlight-table td {
+.highlight-table th,
+.highlight-table td {
     border: 1px solid #e0e0e0;
     padding: 0.6rem;
     text-align: left;
@@ -668,21 +811,27 @@ input[type="file"]:hover {
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1.5rem;
 }
+
 .dashboard-card {
     background: #fff;
     border: 1px solid #dadce0;
     border-radius: 12px;
     padding: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
+
 .dashboard-card.large-card {
-    grid-column: span 2; /* Make this card wider on larger screens */
+    grid-column: span 2;
+    /* Make this card wider on larger screens */
 }
+
 @media (max-width: 900px) {
     .dashboard-card.large-card {
-        grid-column: span 1; /* Stack on smaller screens */
+        grid-column: span 1;
+        /* Stack on smaller screens */
     }
 }
+
 .dashboard-card h3 {
     margin-top: 0;
     border-bottom: 1px solid #e0e0e0;
@@ -694,9 +843,11 @@ input[type="file"]:hover {
     margin: 0.5rem 0;
     font-size: 1rem;
 }
+
 .dashboard-card .stat-value {
     font-weight: 600;
-    color: #4285F4; /* Google Blue */
+    color: #4285F4;
+    /* Google Blue */
     margin-left: 0.5rem;
 }
 
@@ -708,20 +859,26 @@ input[type="file"]:hover {
     align-items: center;
     gap: 0.75rem;
 }
+
 .dist-label {
-    width: 60px; /* Fixed width for labels */
+    width: 60px;
+    /* Fixed width for labels */
     font-weight: 500;
-    text-align: left; /* Ensure all labels are left-aligned */
+    text-align: left;
+    /* Ensure all labels are left-aligned */
 }
+
 .dist-bar-wrapper {
     flex-grow: 1;
     background-color: #f1f3f4;
     border-radius: 4px;
     height: 20px;
 }
+
 .dist-bar {
     height: 100%;
-    border: 1px solid rgba(0,0,0,0.2); /* Add a subtle border to all bars */
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    /* Add a subtle border to all bars */
     border-radius: 4px;
     transition: width 0.5s ease-in-out;
     text-align: right;
@@ -731,25 +888,33 @@ input[type="file"]:hover {
     font-size: 0.85rem;
     line-height: 20px;
     font-weight: 600;
-    min-width: 22px; /* Ensure even small numbers are visible */
+    min-width: 22px;
+    /* Ensure even small numbers are visible */
 }
+
 /* Special case for Verbose bar to make text visible */
 .dist-bar.log-line-V {
-    color: #202124; /* Dark text for light grey bar */
+    color: #202124;
+    /* Dark text for light grey bar */
     background-color: #BDBDBD;
 }
+
 .dist-bar.log-line-D {
     background-color: #2196F3;
 }
+
 .dist-bar.log-line-I {
     background-color: #4CAF50;
 }
+
 .dist-bar.log-line-W {
     background-color: #FF9800;
 }
+
 .dist-bar.log-line-E {
     background-color: #F44336;
 }
+
 /* Sparkline Plot Styles */
 .plot-container {
     width: 100%;
@@ -761,10 +926,12 @@ input[type="file"]:hover {
     align-items: center;
     justify-content: center;
 }
+
 .plot-container svg {
     width: 100%;
     height: 100%;
 }
+
 .sparkline {
     fill: none;
     stroke: #4285F4;
@@ -772,7 +939,8 @@ input[type="file"]:hover {
 }
 
 .scrollable-table-container {
-    max-height: 400px; /* Adjust height as needed */
+    max-height: 400px;
+    /* Adjust height as needed */
     overflow-y: auto;
     border: 1px solid #e0e0e0;
     border-radius: 6px;
@@ -780,63 +948,158 @@ input[type="file"]:hover {
 
 /* Color-code the direction for quick scanning */
 .direction-out {
-    color: #81D4FA; /* Light Blue for outgoing packets */
+    color: #81D4FA;
+    /* Light Blue for outgoing packets */
 }
+
 .direction-in {
-    color: #A5D6A7; /* Light Green for incoming packets */
+    color: #A5D6A7;
+    /* Light Green for incoming packets */
 }
 
-/* --- Reverted to Table-based Layout for BTSnoop --- */
-.btsnoop-table {
+/* --- CSS Grid Layout for BTSnoop --- */
+.btsnoop-grid-container {
+    display: grid;
+    grid-template-columns: 60px 120px 160px 160px 80px minmax(200px, 2fr) minmax(200px, 3fr);
     width: 100%;
-    table-layout: fixed; /* Crucial for performance and alignment */
-    border-collapse: collapse;
-    color: #e0e0e0;
+    min-width: 1200px;
+    /* Ensure horizontal scroll if needed */
 }
 
-.btsnoop-table thead {
+/* Header specific styling */
+.btsnoop-header-grid {
+    display: grid;
+    grid-template-columns: 60px 120px 160px 160px 80px minmax(200px, 2fr) minmax(200px, 3fr);
+    width: 100%;
+    min-width: 1200px;
     position: sticky;
     top: 0;
-    z-index: 2;
-    background-color: #3c4043;
+    z-index: 10;
+    background-color: #f2f2f2;
+    border-bottom: 1px solid #ccc;
 }
 
-.btsnoop-table tbody {
-    position: relative; /* Container for positioned rows */
-}
-
-.btsnoop-table th {
+.btsnoop-header-cell {
     padding: 8px 5px;
+    border-right: 1px solid #e0e0e0;
     text-align: left;
-    font-weight: 600;
-    border-bottom: 1px solid #5f6368;
     overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
+    text-overflow: ellipsis;
+    position: relative;
+    font-weight: bold;
+    color: #3c4043;
+    background-color: #f2f2f2;
 }
 
-.btsnoop-table td {
-    padding: 2px 5px;
-    border-bottom: 1px solid #2a2a2a;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    height: 20px; /* Match LINE_HEIGHT */
-}
-
-/* Column Widths */
-.btsnoop-table th:nth-child(1), .btsnoop-table td:nth-child(1) { width: 60px; }
-.btsnoop-table th:nth-child(2), .btsnoop-table td:nth-child(2) { width: 100px; }
-.btsnoop-table th:nth-child(3), .btsnoop-table td:nth-child(3) { width: 180px; }
-.btsnoop-table th:nth-child(4), .btsnoop-table td:nth-child(4) { width: 180px; }
-.btsnoop-table th:nth-child(5), .btsnoop-table td:nth-child(5) { width: 120px; }
-
-.btsnoop-column-filters input {
-    width: 95%;
-    box-sizing: border-box;
-    background-color: #4a4a4a;
-    color: #e0e0e0;
-    border: 1px solid #5f6368;
-    border-radius: 4px;
+.btsnoop-filter-cell {
     padding: 4px;
+    background-color: #f2f2f2;
+    border-right: 1px solid #e0e0e0;
+    border-bottom: 1px solid #ccc;
+}
+
+.btsnoop-filter-cell input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 4px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+}
+
+/* Body row styling */
+.btsnoop-row {
+    /* Virtual scroll requires absolute positioning, so we cannot use display: contents.
+       Instead, each row is its own grid container. */
+    display: grid;
+    grid-template-columns: 60px 120px 160px 160px 80px minmax(200px, 2fr) minmax(200px, 3fr);
+    width: 100%;
+    min-width: 1200px;
+    /* Match header width */
+    height: 20px;
+    /* Match LINE_HEIGHT */
+    box-sizing: border-box;
+}
+
+.btsnoop-cell {
+    padding: 0 5px;
+    /* Reduced padding for tighter rows */
+    border-right: 1px solid #444;
+    border-bottom: 1px solid #333;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    line-height: 20px;
+    /* Center text vertically */
+    color: #e0e0e0;
+    background-color: #2C2C2C;
+}
+
+.btsnoop-row:hover .btsnoop-cell {
+    background-color: #444;
+}
+
+.btsnoop-row.selected .btsnoop-cell {
+    background-color: #2c3e50;
+    color: #fff;
+}
+
+/* Resize handle */
+.resize-handle-col {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    cursor: col-resize;
+    z-index: 1;
+}
+
+.resize-handle-col:hover {
+    background-color: #4285f4;
+}
+/* BTSnoop Header Horizontal Scroll */
+#btsnoopHeader {
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%;
+}
+
+#btsnoopHeader::-webkit-scrollbar {
+    height: 0;
+    display: none;
+}
+
+/* Allow Data column (7th column) to wrap */
+.btsnoop-cell:nth-child(7) {
+    white-space: pre-wrap !important;
+    word-break: break-all;
+    overflow: visible;
+    min-height: 20px;
+    height: auto;
+}
+
+/* Adjust row height to accommodate wrapped content */
+.btsnoop-row {
+    min-height: 20px;
+    height: auto !important;
+}
+
+/* Alternating row backgrounds for BTSnoop */
+.btsnoop-row.even-row .btsnoop-cell {
+    background-color: #2C2C2C; /* Darker gray */
+}
+
+.btsnoop-row.odd-row .btsnoop-cell {
+    background-color: #333333; /* Lighter gray */
+}
+
+/* Hover and selection override alternating colors */
+.btsnoop-row:hover .btsnoop-cell {
+    background-color: #444 !important;
+}
+
+.btsnoop-row.selected .btsnoop-cell {
+    background-color: #2c3e50 !important;
+    color: #fff;
 }
