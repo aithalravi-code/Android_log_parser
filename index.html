@@ -148,7 +148,7 @@
                             <button id="logicAndBtn" class="logic-btn"
                                 title="Show lines that match ALL active keywords">AND</button>
                         </div>
-                        <input type="text" id="searchInput" class="search-input"
+                        <input type="text" id="searchInput" name="searchInput" class="search-input"
                             placeholder="Live search or type & Enter..." autocomplete="off" />
                         <div id="keywordChips" class="keyword-chips"></div>
                         <div id="autocompleteSuggestions" class="autocomplete-suggestions"></div>
@@ -156,8 +156,8 @@
                     <section class="time-range-section">
                         <label for="startTime">Time Range:</label>
                         <div class="time-filter-controls">
-                            <input type="datetime-local" id="startTime" />
-                            <input type="datetime-local" id="endTime" />
+                            <input type="datetime-local" id="startTime" name="startTime" />
+                            <input type="datetime-local" id="endTime" name="endTime" />
                         </div>
                         <!-- Slider container, now outside the controls flexbox -->
                         <div id="timeRangeSliderContainer"
@@ -226,6 +226,16 @@
                                 <label class="switch-label">
                                     <input type="checkbox" id="masterToggleDck" checked>
                                     <span class="tech-name">DCK</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- UWB Controls (Default Checked) -->
+                        <div class="tech-section">
+                            <div class="tech-master-toggle">
+                                <label class="switch-label">
+                                    <input type="checkbox" id="masterToggleUwb" checked>
+                                    <span class="tech-name">UWB / Nearby</span>
                                 </label>
                             </div>
                         </div>

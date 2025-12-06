@@ -226,15 +226,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let accountsList, deviceEventsTable, walletEventsTable;
     let storedHighlights = null; // Store highlights globally to preserve across BTSnoop processing
     let nfcFilterButtons, bleFilterButtons, dckFilterButtons;
-    let bleLogContainer, bleLogSizer, bleLogViewport;
     let bleKeysTable;
     let btsnoopFilterButtons;
     let appSearchInput;
     let btsnoopColumnFilters;
-    let nfcLogContainer, nfcLogSizer, nfcLogViewport;
-    let dckLogContainer, dckLogSizer, dckLogViewport;
     let btsnoopLogContainer, btsnoopLogViewport;
-    let kernelLogContainer, kernelLogSizer, kernelLogViewport;
     let btsnoopLogSizer;
     let btsnoopInitialView, btsnoopContentView, btsnoopFilterContainer;
 
@@ -267,21 +263,28 @@ document.addEventListener('DOMContentLoaded', () => {
     let dckLogLines = []; // Holds all DCK-related log lines
     let btsnoopPackets = []; // Holds parsed btsnoop packets
 
+    // --- Worker Setup ---
+    // Increment this version when worker logic changes to force updates
+    const workerVersion = 3;
+    let worker;
+
     // NEW: Connectivity Tab Globals
     let connectivityLogLines = []; // Mapped/Merged lines for the connectivity view
     let filteredConnectivityLogLines = []; // The currently filtered set derived from connectivityLogLines
-    let activeTechs = { ble: false, nfc: false, dck: true }; // Master Toggles State
+    let activeTechs = { ble: false, nfc: false, dck: true, uwb: true }; // Master Toggles State
+    let uwbLogLines = []; // Holds all UWB-related log lines
 
     let filteredBtsnoopPackets = []; // Holds the filtered set of btsnoop packets
-    // OPTIMIZATION Phase 3: Cache BTSnoop row positions
-    let btsnoopRowPositions = [];
-    let btsnoopTotalHeight = 0;
     let btsnoopConnectionEvents = []; // Holds LE Connection Complete events
     let btsnoopConnectionMap = new Map(); // Maps connection handle to BT address
     let cccStatsData = []; // Holds the filtered set of CCC packets
     let allAppVersions = []; // Holds all found app versions
-    let filteredKernelLogLines = []; // The currently filtered set of Kernel lines
     let filteredLogLines = []; // The currently filtered set of lines
+    // Global state for standard table selection persistence (Table ID -> Selected Row ID)
+    const selectedTableRows = new Map();
+    // OPTIMIZATION Phase 3: Cache BTSnoop row positions
+    let btsnoopRowPositions = [];
+    let btsnoopTotalHeight = 0;
     let fileTasks = []; // Holds all discovered file tasks for later processing (e.g., btsnoop)
     let logTags = []; // Unique list of tags for autocomplete
     let zipEntriesToProcess = []; // Temp storage for entries from a zip
@@ -289,7 +292,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeBleLayers = new Set(['manager', 'gatt', 'smp', 'hci']); // Default to all layers active
     let activeNfcLayers = new Set(['framework', 'hce', 'p2p', 'hal']); // Default to all layers active
     let activeBtsnoopFilters = new Set(['cmd', 'evt', 'acl', 'l2cap', 'smp', 'att']); // Holds active btsnoop filter types (e.g. 'cmd', 'evt') - Default ALL active
-    let activeDckLayers = new Set(['manager', 'hal', 'oem']); // Default to all layers active
     let filterVersion = 0; // "Cancellation token" for async filtering
     let isProcessing = false; // Flag to prevent race conditions during filtering
     let btsnoopColumnFilterDebounceTimer = null;
@@ -326,11 +328,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- OPTIMIZATION Phase 2: Lazy Loading State ---
     let tabsLoaded = {
         logs: true,      // Main logs always loaded
-        ble: false,      // Load on first visit
-        nfc: false,      // Load on first visit
-        dck: false,      // Load on first visit
-        kernel: false,   // Load on first visit
+        connectivity: false,
         btsnoop: false,  // Load on first visit
+        ccc: false,
         stats: false     // Load on first visit
     };
 
@@ -631,8 +631,7 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             techs: { ...activeTechs }, // Include connectivity toggle state
             activeBleLayers: Array.from(activeBleLayers).sort(),
-            activeNfcLayers: Array.from(activeNfcLayers).sort(),
-            activeDckLayers: Array.from(activeDckLayers).sort()
+            activeNfcLayers: Array.from(activeNfcLayers).sort()
         });
     }
 
@@ -695,36 +694,43 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (line.isMeta) return true;
                         if (!line.tag) return false;
                         const tagLower = line.tag.toLowerCase();
-                        return (
-                            tagLower.includes('bluetoothgatt') ||
-                            tagLower.includes('bluetoothadapter') ||
-                            tagLower.includes('bt_') ||
-                            tagLower.includes('bluetooth')
-                        );
+                        return tagLower.includes('uwb') || tagLower.includes('ranging') ||
+                            tagLower.includes('fiira') || tagLower.includes('radar') ||
+                            (tagLower.includes('ccc') && !tagLower.includes('dk')) ||
+                            tagLower.includes('nearby') || tagLower.includes('auth') ||
+                            tagLower.includes('mcu_log') || tagLower.includes('secure_element');
                     });
-
                     // Filter NFC
                     nfcLogLines = originalLogLines.filter(line => {
                         if (line.isMeta) return true;
                         if (!line.tag) return false;
                         const tagLower = line.tag.toLowerCase();
-                        return tagLower.includes('nfc');
+                        return tagLower.includes('nfc') || tagLower.includes('nci');
                     });
-
-                    // Filter DCK
+                    // Filter DCK (Digital Key only)
                     dckLogLines = originalLogLines.filter(line => {
                         if (line.isMeta) return true;
                         if (!line.tag) return false;
                         const tagLower = line.tag.toLowerCase();
-                        return (
-                            tagLower.includes('digitalkey') ||
-                            tagLower.includes('carkey') ||
-                            tagLower.includes('dck') ||
-                            tagLower.includes('digital_key') ||
-                            tagLower.includes('car_key')
-                        );
+                        return tagLower.includes('dk') || tagLower.includes('digital_key') ||
+                            tagLower.includes('car_key');
                     });
-                    console.log(`[Perf Phase2] Extracted Connectivity lines: BLE=${bleLogLines.length}, NFC=${nfcLogLines.length}, DCK=${dckLogLines.length}`);
+
+                    // Filter UWB & Nearby
+                    uwbLogLines = originalLogLines.filter(line => {
+                        if (line.isMeta) return true;
+                        if (!line.tag) return false;
+                        const tagLower = line.tag.toLowerCase();
+                        return tagLower.includes('uwb') || tagLower.includes('ranging') ||
+                            tagLower.includes('fiira') || tagLower.includes('nearby');
+                    });
+
+                    // Trigger initial setup for connectivity
+                    if (!connectivityScrollListenerAttached) {
+                        setupConnectivityTab();
+                    } else {
+                        applyConnectivityFilters();
+                    }
                     break;
 
                 case 'btsnoop':
@@ -736,7 +742,35 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
 
                 case 'ccc':
+                    // CCC Analysis is handled by setupCccTab which is called in refreshActiveTab
+                    console.log(`[Perf Phase2] ${tabId} tab ready (init deferred to setupCccTab)`);
+                    break;
+
                 case 'stats':
+                    console.log(`[Perf Phase2] Processing stats...`);
+
+                    // Calculate log level statistics
+                    const logStats = { total: 0, E: 0, W: 0, I: 0, D: 0, V: 0 };
+                    for (const line of originalLogLines) {
+                        if (line.isMeta) continue;
+                        logStats.total++;
+                        if (line.level && logStats[line.level] !== undefined) {
+                            logStats[line.level]++;
+                        }
+                    }
+
+                    // Render log level statistics and distribution chart
+                    renderStats(logStats);
+
+                    // Calculate and render dashboard stats (CPU, temp, battery)
+                    const dashboardStats = processForDashboardStats();
+                    renderDashboardStats(dashboardStats);
+
+                    // Render Charts
+                    if (cpuLoadPlotContainer) renderCpuPlot(dashboardStats.cpuDataPoints);
+                    if (temperatureStats) renderTemperaturePlot(dashboardStats.temperatureDataPoints);
+                    if (batteryStats) renderBatteryPlot(dashboardStats.batteryDataPoints);
+
                     console.log(`[Perf Phase2] ${tabId} tab ready`);
                     break;
             }
@@ -855,22 +889,12 @@ document.addEventListener('DOMContentLoaded', () => {
         appVersionsTable = document.getElementById('appVersionsTable')?.getElementsByTagName('tbody')[0];
         appSearchInput = document.getElementById('appSearchInput');
         temperatureStats = document.getElementById('temperatureStats');
-        bleLogContainer = document.getElementById('bleLogContainer'); bleLogSizer = document.getElementById('bleLogSizer');
         batteryStats = document.getElementById('batteryStats');
         batteryPlotContainer = document.getElementById('batteryPlotContainer');
-        bleLogViewport = document.getElementById('bleLogViewport');
-        nfcLogContainer = document.getElementById('nfcLogContainer');
-        nfcLogSizer = document.getElementById('nfcLogSizer');
-        nfcLogViewport = document.getElementById('nfcLogViewport');
-        dckLogContainer = document.getElementById('dckLogContainer');
-        dckLogSizer = document.getElementById('dckLogSizer');
-        dckLogViewport = document.getElementById('dckLogViewport');
+
         btsnoopLogContainer = document.getElementById('btsnoopLogContainer');
         btsnoopLogSizer = document.getElementById('btsnoopLogSizer');
         btsnoopConnectionEventsTable = document.getElementById('btsnoopConnectionEventsTable')?.getElementsByTagName('tbody')[0];
-        kernelLogContainer = document.getElementById('kernelLogContainer');
-        kernelLogSizer = document.getElementById('kernelLogSizer');
-        kernelLogViewport = document.getElementById('kernelLogViewport');
         btsnoopInitialView = document.getElementById('btsnoopInitialView');
         btsnoopContentView = document.getElementById('btsnoopContentView');
         btsnoopFilterContainer = document.getElementById('btsnoopFilterContainer');
@@ -887,13 +911,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // They will be attached dynamically when the tab is first accessed.
         if (keywordChipsContainer) keywordChipsContainer.addEventListener('mousedown', handleChipClick);
 
-        [logViewport, bleLogViewport, nfcLogViewport, dckLogViewport, kernelLogViewport].forEach(vp => {
-            if (vp) vp.addEventListener('mousedown', handleViewportInteraction);
-        });
-        if (dckLogViewport) dckLogViewport.addEventListener('mousedown', handleViewportInteraction);
-        if (kernelLogViewport) kernelLogViewport.addEventListener('mousedown', handleViewportInteraction);
+        // OPTIMIZATION: Attach global interaction handler (Selection, Copy) to Body
+        // This ensures it catches events from Log Viewports AND Standard Tables (CCC, Stats, etc.)
+        document.body.addEventListener('click', handleViewportInteraction);
+
         const connectivityLogViewport = document.getElementById('connectivityLogViewport');
-        if (connectivityLogViewport) connectivityLogViewport.addEventListener('mousedown', handleViewportInteraction);
+        /* Viewport specific listeners removed in favor of global body delegation */
         if (appSearchInput) appSearchInput.addEventListener('input', () => renderAppVersions(allAppVersions));
 
         // Bind master toggles
@@ -975,14 +998,6 @@ document.addEventListener('DOMContentLoaded', () => {
             exportBtsnoopXlsxBtn.addEventListener('click', () => exportBtsnoopToXlsx());
         }
 
-        const exportBleBtn = document.getElementById('exportBleBtn');
-        if (exportBleBtn) exportBleBtn.addEventListener('click', () => handleExport(bleLogLines, 'ble_logs.txt'));
-
-        const exportNfcBtn = document.getElementById('exportNfcBtn');
-        if (exportNfcBtn) exportNfcBtn.addEventListener('click', () => handleExport(nfcLogLines, 'nfc_logs.txt'));
-
-        const exportDckBtn = document.getElementById('exportDckBtn');
-        if (exportDckBtn) exportDckBtn.addEventListener('click', () => handleExport(dckLogLines, 'dck_logs.txt'));
 
         const exportConnectivityBtn = document.getElementById('exportConnectivityBtn');
         if (exportConnectivityBtn) exportConnectivityBtn.addEventListener('click', () => handleExport(filteredConnectivityLogLines, 'connectivity_logs.txt'));
@@ -1117,17 +1132,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         btsnoopPackets = [];
         btsnoopConnectionEvents = [];
-        kernelLogLines = [];
+        btsnoopConnectionEvents = [];
         isBtsnoopProcessed = false; // FIX: Reset the processing flag.
         allAppVersions = [];
         activeBtsnoopFilters = new Set(['cmd', 'evt', 'acl', 'l2cap', 'smp', 'att']);
         fileTasks = []; // Clear the list of discovered files
         if (bleKeysTable) bleKeysTable.innerHTML = '';
         if (appVersionsTable) appVersionsTable.innerHTML = '';
-        filteredKernelLogLines = [];
         if (accountsList) accountsList.innerHTML = '';
         if (deviceEventsTable) deviceEventsTable.innerHTML = '';
-        if (currentFileDisplay) currentFileDisplay.textContent = '';
+        if (deviceEventsTable) deviceEventsTable.innerHTML = '';
         renderFilterChips(); // Clear filter chips from the UI
         userAnchorLine = null; // Clear the user-selected anchor
 
@@ -1309,7 +1323,7 @@ document.addEventListener('DOMContentLoaded', () => {
             '        \'^\\\\s*(?:\' + // Allow optional leading whitespace\n' +
             '            \'(?<logcatDate>\\\\d{2}-\\\\d{2})\\\\s(?<logcatTime>\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{3,})\' + // MM-DD HH:mm:ss.SSS\n' +
             '            \'\\\\s+\' + // PID/TID/UID Separator\n' +
-            '            \'(?:(?:\\\\s*(?<pid>[\\\\w-]+)\\\\s+(?<tid>\\\\d+)\\\\s+(?:(?<uid>\\\\d+)\\\\s+)?)(?<level>[A-Z])\\\\s+(?<tag>[^\\\\s:]+?)(?::\\\\s|\\\\s+)|(?<level2>[A-Z])\\\\/(?<tag2>[^\\\\(\\\\s]+)(?:\\\\(\\\\s*(?<pid2>\\\\d+)\\\\))?:\\\\s)\' + // Handle alphanumeric PID (like \'shell\')\n' +
+            '            \'(?:(?:\\\\s*(?<pid>[\\\\w-]+)\\\\s+(?<tid>\\\\d+)\\\\s+(?:(?<uid>[\\\\w-]+)\\\\s+)?)(?<level>[A-Z])\\\\s+(?<tag>[^\\\\s:]+?)(?::\\\\s|\\\\s+)|(?<level2>[A-Z])\\\\/(?<tag2>[^\\\\(\\\\s]+)(?:\\\\(\\\\s*(?<pid2>\\\\d+)\\\\))?:\\\\s)\' + // Handle alphanumeric PID/UID\n' +
             '            \'(?<message>(?!.*Date: \\\\d{4}).+)\' + // Standard logcat message, negative lookahead to prevent matching custom format, changed .* to .+\n' +
             '        \'|\' +\n' +
             '            \'Date:\\\\s(?<customFullDate>\\\\d{4}-\\\\d{2}-\\\\d{2})\\\\s(?<customTime>\\\\d{2}:\\\\d{2}:\\\\d{2})\' + // Date: YYYY-MM-DD HH:mm:ss\n' +
@@ -1406,7 +1420,22 @@ document.addEventListener('DOMContentLoaded', () => {
             '                const finalTag = (tag || tag2 || \'\').trim();\n' +
             '                tagSet.add(finalTag);\n' +
             '                const finalLevel = (level || level2 || \'\').trim();\n' +
-            '                parsedLine = { isMeta: false, dateObj: lineDateObj, date: logcatDate, time: logcatTime, timestamp: fullTimestamp, level: finalLevel, pid: pid, tid: tid, uid: uid, tag: finalTag, message: message.trim(), originalText: lineText };\n' +
+            '                \n' +
+            '                // FIX: Detect UID PID TID format (3 numbers) vs PID TID (2 numbers)\n' +
+            '                // Current regex captures 1st->pid, 2nd->tid, 3rd->uid.\n' +
+            '                // If 3rd (uid) is present, it\'s usually the UID PID TID format.\n' +
+            '                let finalPid = pid;\n' +
+            '                let finalTid = tid;\n' +
+            '                let finalUid = uid;\n' +
+            '                \n' +
+            '                if (uid) {\n' +
+            '                    // Start swap: 1st=UID, 2nd=PID, 3rd=TID\n' +
+            '                    finalUid = pid;\n' +
+            '                    finalPid = tid;\n' +
+            '                    finalTid = uid; \n' +
+            '                }\n' +
+            '                \n' +
+            '                parsedLine = { isMeta: false, dateObj: lineDateObj, date: logcatDate, time: logcatTime, timestamp: fullTimestamp, level: finalLevel, pid: finalPid, tid: finalTid, uid: finalUid, tag: finalTag, message: message.trim(), originalText: lineText };\n' +
             '                if (stats[finalLevel] !== undefined) stats[finalLevel]++;\n' +
             '            } else if (match.groups.customFullDate) { // Custom YYYY-MM-DD format\n' +
             '                const { customFullDate, customTime, customMessage } = match.groups;\n' +
@@ -1440,10 +1469,12 @@ document.addEventListener('DOMContentLoaded', () => {
             '            const levelMatch = lineText.match(/\\s([VDIWE])\\s/);\n' +
             '            const level = levelMatch ? levelMatch[1] : \'V\';\n' +
             '            parsedLine = { isMeta: false, dateObj: null, date: \'N/A\', time: \'N/A\', originalText: lineText, level: level, lineNumber: i + 1 };\n' +
+            '            \n' +
+            '            // FIX: Explicitly check for Verbose level to ensure it is counted\n' +
             '            if (stats[level] !== undefined) {\n' +
             '                stats[level]++;\n' +
             '            } else {\n' +
-            '                stats.V++;\n' +
+            '                stats.V++; // Default to Verbose count if unknown\n' +
             '            }\n' +
             '        }\n' +
             '\n' +
@@ -1522,13 +1553,16 @@ document.addEventListener('DOMContentLoaded', () => {
             '\n' +
             '\n' +
             '        if (parsedLine) { // Ensure parsedLine is not null\n' +
-            '        if ((parsedLine.tag && bleTagRegex.test(parsedLine.tag)) || (parsedLine.message && bleMessageRegex.test(parsedLine.message))) {\n' +
+            '        // Capture Verbose lines that might have been missed by strict tag/message regexes if they are relevant\n' +
+            '        const isVerbose = parsedLine.level === \'V\';\n' +
+            '        \n' +
+            '        if ((parsedLine.tag && bleTagRegex.test(parsedLine.tag)) || (parsedLine.message && bleMessageRegex.test(parsedLine.message)) || (isVerbose && (bleTagRegex.test(lineText) || bleMessageRegex.test(lineText)))) {\n' +
             '            parsedLine.isBle = true;\n' +
             '        }\n' +
-            '        if ((parsedLine.tag && nfcTagRegex.test(parsedLine.tag)) || (parsedLine.message && nfcMessageRegex.test(parsedLine.message))) {\n' +
+            '        if ((parsedLine.tag && nfcTagRegex.test(parsedLine.tag)) || (parsedLine.message && nfcMessageRegex.test(parsedLine.message)) || (isVerbose && (nfcTagRegex.test(lineText) || nfcMessageRegex.test(lineText)))) {\n' +
             '            parsedLine.isNfc = true;\n' +
             '        }\n' +
-            '        if (dckRegex.test(lineText)) {\n' +
+            '        if (dckRegex.test(lineText) || (isVerbose && dckRegex.test(lineText))) {\n' +
             '            parsedLine.isDck = true;\n' +
             '        }\n' +
             '        }\n' +
@@ -1674,11 +1708,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     for (const line of fileDckLogs) dckLogLines.push(line);
                 }
 
-                const fileKernelLogs = result.parsedLines.filter(l => l.isKernel);
-                if (fileKernelLogs.length > 0) {
-                    if (fileHeader) kernelLogLines.push(fileHeader);
-                    for (const line of fileKernelLogs) kernelLogLines.push(line);
-                }
+
 
                 for (const line of result.parsedLines) {
                     originalLogLines.push(line);
@@ -1818,11 +1848,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         switch (activeTabId) {
             case 'logs':
-                applyFilters();
+                await applyFilters();
                 cacheFilteredResults('logs', filteredLogLines);
                 break;
             case 'connectivity':
-                if (!connectivityScrollListenerAttached) setupConnectivityTab(); else applyConnectivityFilters();
+                if (!connectivityScrollListenerAttached) await setupConnectivityTab(); else await applyConnectivityFilters();
                 cacheFilteredResults('connectivity', filteredConnectivityLogLines);
                 break;
             case 'btsnoop':
@@ -1864,10 +1894,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     results.push(currentHeader);
                 }
 
-                // Store new header, don't add yet
-                currentHeader = line;
-                headerHasMatches = false;
                 state.isInside = collapsedFileHeaders.has(line.originalText);
+
+                if (state.isInside) {
+                    // If collapsed, push the header immediately so it's visible (to allow un-collapsing)
+                    results.push(line);
+                    currentHeader = null; // Reset so we don't double-push or try to attach matches to it
+                    headerHasMatches = false;
+                } else {
+                    // Store new header, don't add yet (wait for a match)
+                    currentHeader = line;
+                    headerHasMatches = false;
+                }
                 continue;
             }
 
@@ -1919,6 +1957,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Each call to applyFilters gets a unique version number.
         // The async filtering loop will check if its version is still the latest.
         // If not, it means a new filter operation has started, and the old one should stop.
+        // --- Worker Setup ---
+        let worker;
         // Increment the version to invalidate any previous, slower filter calls.
         const currentVersion = ++filterVersion;
 
@@ -2019,10 +2059,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentVersion = ++filterVersion; // Invalidate previous filter runs
 
         // 1. Find the first visible line in the current viewport to use as an anchor.
-        let anchorLine = null;
-        if (targetLines.length > 0 && container.scrollTop > 0) {
+        // Prioritize the user-clicked anchor. Fallback to the top visible line from the PREVIOUS render.
+        let anchorLine = userAnchorLine;
+        if (!anchorLine && targetLines.length > 0 && container.scrollTop > 0) {
             const topVisibleIndex = Math.floor(container.scrollTop / LINE_HEIGHT);
-            anchorLine = targetLines[topVisibleIndex];
+            // Verify index bounds
+            if (topVisibleIndex < targetLines.length) {
+                anchorLine = targetLines[topVisibleIndex];
+            }
         }
 
         // OPTIMIZATION Phase 3: Web Worker Path for Main Logs
@@ -2063,8 +2107,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (newAnchorIndex !== -1) {
                         newScrollTop = newAnchorIndex * LINE_HEIGHT;
                     } else {
-                        // Anchor lost (filtered out), stick to top or relative? 
-                        // Keep 0 or logic below.
+                        // Anchor lost (filtered out). 
+                        // Try to keep relative position or just stay put?
+                        // If we reset to 0, it's annoying. Let's try to maintain the same pixel offset if possible, 
+                        // or at least clamping it to the new height.
+                        // Actually, if the anchor is gone, it means the context changed. 
+                        // Going to top (0) is safe, BUT if we are actively scrolling, we might want to be smarter.
+                        // For now, let's stick to 0 IF the list changed significantly, OR keep old scrollTop if plausible.
+                        // Better heuristic: find the nearest neighbor? Too expensive.
+                        // Fallback: If user had an explicit anchor (selection) and it's gone, clear the selection.
+                        if (userAnchorLine === anchorLine) {
+                            userAnchorLine = null;
+                        }
+                        // Default to top if anchor is lost
+                        newScrollTop = 0;
                     }
                 }
                 container.scrollTop = newScrollTop;
@@ -2112,12 +2168,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const newAnchorIndex = targetLines.findIndex(line => line === anchorLine);
             if (newAnchorIndex !== -1) {
                 newScrollTop = newAnchorIndex * LINE_HEIGHT;
+            } else {
+                // Anchor lost fallback (same as worker path)
+                if (userAnchorLine === anchorLine) {
+                    userAnchorLine = null;
+                }
+                newScrollTop = 0;
             }
         }
-        container.scrollTop = newScrollTop;
+
+        // Force the scroll position update
+        if (container.scrollTop !== newScrollTop) {
+            container.scrollTop = newScrollTop;
+        }
 
         // 7. Final render
         renderFn();
+
+        // Double check scroll after render (sometimes layout shifts affect it)
+        if (container.scrollTop !== newScrollTop) {
+            container.scrollTop = newScrollTop;
+        }
     }
     async function saveFilterState() {
         const filterConfig = {
@@ -2292,6 +2363,27 @@ document.addEventListener('DOMContentLoaded', () => {
         pidColorCache.set(pid, color);
         return color;
     }
+    // --- Helper for Standard Table Scroll Restoration ---
+    function restoreTableScroll(tableId) {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+
+        const selectedRowId = selectedTableRows.get(tableId);
+        if (!selectedRowId) return;
+
+        // Try to find the row with this ID
+        const row = table.querySelector(`tr[data-row-id="${selectedRowId}"]`);
+        if (row) {
+            row.classList.add('selected');
+            // Ensure meaningful scroll into view
+            row.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            console.log(`[Restore] Restored selection for ${tableId} -> ${selectedRowId}`);
+        } else {
+            // Anchor lost? Optional: clear selection or keep it if it might come back later.
+            // keeping it allows it to re-appear if filters change back.
+        }
+    }
+
     function renderVirtualLogs(container, sizer, viewport, lines) {
         if (!container || !sizer || !viewport || !lines) return;
 
@@ -2329,7 +2421,8 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 // --- New Android Studio Style Rendering ---
                 const levelHtml = `<span class="log-level-box log-level-${line.level}">${line.level}</span>`;
-                const pidColor = getColorForPid(line.pid);
+                // USER REQUEST: Color by TID instead of PID
+                const pidColor = getColorForPid(line.tid || line.pid);
 
                 let messageText = escapeHtml(line.message || line.originalText);
                 let tagText = escapeHtml(line.tag || '');
@@ -2346,19 +2439,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     tagText = tagText.replace(liveSearchRegex, (match) => `<mark class="live-search">${match}</mark>`);
                 }
 
+                // Update Regex for UID to be more permissive (alphanumeric) in case of 'root' etc.
+                // Note: The worker script string needs to be updated for the regex change to persist.
+                // Here we update the render logic to visual differences.
+
                 lineContent = `
                     <div class="log-line-content">
-                        <span class="log-meta">${line.timestamp || (line.date + ' ' + line.time)}</span>
-                        <span class="log-pid-tid" style="color: ${pidColor};">${line.pid || ''}${line.tid ? '-' + line.tid : ''}${line.uid ? ' ' + line.uid : ''}</span>
+                        <span class="log-meta copy-cell" data-log-text="${line.timestamp || (line.date + ' ' + line.time)}">${line.timestamp || (line.date + ' ' + line.time)}</span>
+                        <span class="log-pid-tid copy-cell" data-log-text="${line.pid || ''}${line.tid ? '-' + line.tid : ''}${line.uid ? ' ' + line.uid : ''}" style="color: ${pidColor};">
+                            <span class="copy-cell" data-log-text="${line.pid || ''}" style="font-weight: bold;">${line.pid || ''}</span>
+                            ${line.tid ? '<span class="copy-cell" data-log-text="' + line.tid + '" style="opacity: 0.8; font-size: 0.9em;">-' + line.tid + '</span>' : ''}
+                            ${line.uid ? '<span class="copy-cell" data-log-text="' + line.uid + '" style="opacity: 0.6; font-size: 0.8em; margin-left: 2px;"> ' + line.uid + '</span>' : ''}
+                        </span>
                         ${levelHtml}
-                        <span class="log-tag" title="${escapeHtml(line.tag || '')}">${tagText}</span>
-                        <span class="log-message" title="${escapeHtml(line.message || line.originalText)}">${messageText}</span>
+                        <span class="log-tag copy-cell" data-log-text="${escapeHtml(line.tag || '')}" title="${escapeHtml(line.tag || '')}">${tagText}</span>
+                        <span class="log-message copy-cell" data-log-text="${escapeHtml(line.message || line.originalText)}" title="${escapeHtml(line.message || line.originalText)}">${messageText}</span>
                     </div>
                 `;
             }
             const copyButtonHtml = line.isMeta ? '' : `<button class="copy-log-btn" data-log-text="${escapeHtml(line.originalText || line.text)}">📋</button>`;
             if (userAnchorLine === line) {
-                lineClass += ' selected-anchor';
+                lineClass += ' selected selected-anchor'; // Add standard selected class
             }
 
             let lineNumberHtml = '';
@@ -2409,12 +2510,12 @@ document.addEventListener('DOMContentLoaded', () => {
         renderUI();
     }
 
-    function renderUI(isInitialLoad = false) {
+    async function renderUI(isInitialLoad = false) {
         renderFilterChips();
         // This function's primary role is to re-apply filters when a UI control
         // (like a keyword chip) changes the filter state. The initial render is
         // handled at the end of processFiles.
-        refreshActiveTab();
+        await refreshActiveTab();
     }
 
     function handleExport(logLines, filename) {
@@ -2525,8 +2626,9 @@ document.addEventListener('DOMContentLoaded', () => {
     bindMasterToggle('masterToggleBle', 'ble', 'bleFiltersPanel');
     bindMasterToggle('masterToggleNfc', 'nfc', 'nfcFiltersPanel');
     bindMasterToggle('masterToggleDck', 'dck', 'dckFiltersPanel');
+    bindMasterToggle('masterToggleUwb', 'uwb', 'uwbFiltersPanel');
 
-    ['bleFiltersPanel', 'nfcFiltersPanel', 'dckFiltersPanel'].forEach(panelId => {
+    ['bleFiltersPanel', 'nfcFiltersPanel', 'dckFiltersPanel', 'uwbFiltersPanel'].forEach(panelId => {
         const panel = document.getElementById(panelId);
         if (panel) {
             panel.querySelectorAll('.filter-icon').forEach(btn => {
@@ -2633,11 +2735,11 @@ document.addEventListener('DOMContentLoaded', () => {
         let html = `
             <div class="stat-item"><strong>Total Lines:</strong> ${total.toLocaleString()}</div>
             <div class="stat-item"><strong>Error Rate:</strong> ${errorRate}%</div>
-            <div class="stat-item"><span class="log-level-E">Errors:</span> ${stats.E.toLocaleString()}</div>
-            <div class="stat-item"><span class="log-level-W">Warnings:</span> ${stats.W.toLocaleString()}</div>
-            <div class="stat-item"><span class="log-level-I">Info:</span> ${stats.I.toLocaleString()}</div>
-            <div class="stat-item"><span class="log-level-D">Debug:</span> ${stats.D.toLocaleString()}</div>
-            <div class="stat-item"><span class="log-level-V">Verbose:</span> ${stats.V.toLocaleString()}</div>
+            <div class="stat-item"><span class="log-level-E" style="color: #fff; background-color: #D32F2F; padding: 2px 6px; border-radius: 3px; font-weight: 500;">Errors:</span> ${stats.E.toLocaleString()}</div>
+            <div class="stat-item"><span class="log-level-W" style="color: #000; background-color: #FBC02D; padding: 2px 6px; border-radius: 3px; font-weight: 500;">Warnings:</span> ${stats.W.toLocaleString()}</div>
+            <div class="stat-item"><span class="log-level-I" style="color: #fff; background-color: #388E3C; padding: 2px 6px; border-radius: 3px; font-weight: 500;">Info:</span> ${stats.I.toLocaleString()}</div>
+            <div class="stat-item"><span class="log-level-D" style="color: #fff; background-color: #1976D2; padding: 2px 6px; border-radius: 3px; font-weight: 500;">Debug:</span> ${stats.D.toLocaleString()}</div>
+            <div class="stat-item"><span class="log-level-V" style="color: #fff; background-color: #757575; padding: 2px 6px; border-radius: 3px; font-weight: 500;">Verbose:</span> ${stats.V.toLocaleString()}</div>
         `;
         document.getElementById('logCounts').innerHTML = html;
 
@@ -2656,13 +2758,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (maxVal === 0) {
             document.getElementById('errorDistribution').innerHTML = '<p style="text-align: center; color: #666;">No log data available</p>';
         } else {
-            let distHtml = '<div style="margin-top: 1rem; display: flex; height: 100px; align-items: flex-end; gap: 5px; width: 100%;">';
+            const chartHeight = 120; // Total height in pixels
+            const totalLogs = stats.total || 1; // Avoid division by zero
+            let distHtml = `<div style="margin-top: 1rem; display: flex; height: ${chartHeight}px; min-height: ${chartHeight}px; align-items: flex-end; gap: 5px; width: 100%;">`;
             errorDistData.forEach(d => {
-                const height = (d.value / maxVal) * 100;
+                const percentage = ((d.value / totalLogs) * 100).toFixed(1); // Calculate percentage of total
+                const heightPx = Math.max(2, (d.value / totalLogs) * chartHeight); // Height based on percentage
                 distHtml += `
                     <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
-                        <div style="width: 80%; background-color: ${d.color}; height: ${height}%; min-height: 1px; border-radius: 2px 2px 0 0;" title="${d.label}: ${d.value.toLocaleString()}"></div>
-                        <span style="font-size: 0.7rem; margin-top: 4px; color: #555;">${d.label[0]}</span>
+                        <div style="width: 80%; background-color: ${d.color}; height: ${heightPx}px; border-radius: 2px 2px 0 0;" title="${d.label}: ${d.value.toLocaleString()} (${percentage}%)"></div>
+                        <span style="font-size: 0.7rem; margin-top: 4px; color: #fff; font-weight: 500;">${percentage}%</span>
                     </div>
                 `;
             });
@@ -3536,15 +3641,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 const peerAddress = msg.peerAddress || btsnoopConnectionMap.get(handleNumber)?.address || 'N/A';
 
-                html += `<tr>
-                    <td>${msg.timestamp}</td>
-                    <td>${peerAddress}</td>
+                // Generate unique row ID for scroll restoration
+                // Using timestamp + type + subtype + mostly-unique suffix if needed
+                const rowId = `ccc-${msg.timestamp.replace(/[^a-zA-Z0-9]/g, '')}-${msg.type}-${msg.subtype}`;
+
+                html += `<tr data-row-id="${rowId}">
+                    <td class="copy-cell" data-log-text="${msg.timestamp}">${msg.timestamp}</td>
+                    <td class="copy-cell" data-log-text="${peerAddress}">${peerAddress}</td>
                     <td><span class="badge ${msg.direction === 'Sending' ? 'badge-out' : 'badge-in'}">${msg.direction}</span></td>
-                    <td>${categoryName}</td>
-                    <td>${displayType}</td>
-                    <td>${innerMessage}</td>
-                    <td style="overflow-wrap: anywhere; word-break: break-all;">${params}</td>
-                    <td style="color: #999;">${msg.fullHex}</td>
+                    <td class="copy-cell" data-log-text="${categoryName}">${categoryName}</td>
+                    <td class="copy-cell" data-log-text="${displayType.replace(/<[^>]*>/g, '')}">${displayType}</td>
+                    <td class="copy-cell" data-log-text="${innerMessage}">${innerMessage}</td>
+                    <td class="copy-cell" data-log-text="${params.replace(/<[^>]*>/g, '')}" style="overflow-wrap: anywhere; word-break: break-all;">${params}</td>
+                    <td class="copy-cell" data-log-text="${msg.fullHex}" style="color: #999;">${msg.fullHex}</td>
                 </tr>`;
             });
 
@@ -3555,6 +3664,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         updateCccTableBody();
+        // Restore selection/scroll for CCC Table
+        restoreTableScroll('cccTable');
     }
 
     // --- Highlights Processing ---
@@ -3606,10 +3717,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const peerAddress = event.peerAddress || btsnoopConnectionMap.get(handleNumber)?.address || 'N/A';
 
-                    keyTableHtml += `<tr>
-                        <td>${peerAddress}</td>
+                    // Generate unique row ID for scroll restoration
+                    const rowId = `ble-key-${event.keyValue}`;
+
+                    keyTableHtml += `<tr data-row-id="${rowId}">
+                        <td class="copy-cell" data-log-text="${peerAddress}">${peerAddress}</td>
                         <td>${event.keyType}</td>
-                        <td><span style="font-family: monospace; font-size: 0.9em;">${event.keyValue}</span></td>
+                        <td class="copy-cell" data-log-text="${event.keyValue}"><span style="font-family: monospace; font-size: 0.9em;">${event.keyValue}</span></td>
                     </tr>`;
                 }
                 bleKeysTbody.innerHTML = keyTableHtml;
@@ -3633,13 +3747,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Add to table if it's the first time we see this event, or if its value has changed.
                 if (lastValue === undefined || lastValue.value !== event.detail) {
                     const previousValue = lastValue ? lastValue.value : 'N/A';
-                    tableHtml += `<tr>
-                            <td>${event.date || 'N/A'}</td>
-                            <td>${event.time || 'N/A'}</td>
-                            <td>${escapeHtml(event.event)}</td>
-                            <td>${escapeHtml(event.detail)}</td>
-                            <td>${escapeHtml(previousValue)}</td>
-                            <td class="log-line-cell">${escapeHtml(event.originalText)}</td>
+
+                    // Generate unique row ID
+                    const rowId = `dev-evt-${event.timestamp ? event.timestamp.replace(/[^a-zA-Z0-9]/g, '') : 'na'}-${event.event.replace(/[^a-zA-Z0-9]/g, '')}`;
+
+                    tableHtml += `<tr data-row-id="${rowId}">
+                            <td class="copy-cell" data-log-text="${event.date || ''}">${event.date || 'N/A'}</td>
+                            <td class="copy-cell" data-log-text="${event.time || ''}">${event.time || 'N/A'}</td>
+                            <td class="copy-cell" data-log-text="${escapeHtml(event.event)}">${escapeHtml(event.event)}</td>
+                            <td class="copy-cell" data-log-text="${escapeHtml(event.detail)}">${escapeHtml(event.detail)}</td>
+                            <td class="copy-cell" data-log-text="${escapeHtml(previousValue)}">${escapeHtml(previousValue)}</td>
+                            <td class="copy-cell log-line-cell" data-log-text="${escapeHtml(event.originalText)}">${escapeHtml(event.originalText)}</td>
                         </tr>`;
                     lastState.set(event.event, { value: event.detail });
                 }
@@ -3653,6 +3771,13 @@ document.addEventListener('DOMContentLoaded', () => {
         setupTableFilters('deviceEventsTable');
         setupTableFilters('bleKeysTable');
         setupTableFilters('btsnoopConnectionEventsTable');
+
+        // Restore selection/scroll
+        restoreTableScroll('deviceEventsTable');
+        restoreTableScroll('bleKeysTable');
+        restoreTableScroll('btsnoopConnectionEventsTable');
+
+        // Make tables resizable
 
         // Make tables resizable
         if (typeof makeTableResizable === 'function') {
@@ -3945,6 +4070,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
+        // DEBUG: Trace active techs and line availability
+        console.log(`[Connectivity] Filtering... BLE:${activeTechs.ble}(${bleLogLines.length}), NFC:${activeTechs.nfc}(${nfcLogLines.length}), DCK:${activeTechs.dck}(${dckLogLines.length}), UWB:${activeTechs.uwb}(${uwbLogLines.length})`);
+
         // BLE Logic
         if (activeTechs.ble) {
             const bleKeywords = {
@@ -3958,14 +4086,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             bleLogLines.forEach(line => {
                 if (line.isMeta) { addLine(line); return; }
-                // If activeLayers is empty, it means no specific layer selected. 
-                // If the USER wants "ALL" when none selected, we change logic.
-                // But existing behavior suggests checking what is active.
-                // If nothing active, show nothing for this tech?
-                // Let's assume if master is ON, at least one filter should be ON or we show nothing?
-                // The user said "individual filter laid out so user can add which ever is relavent".
-                // We'll stick to: if no granulr filter active, show nothing (except headers).
                 if (activeLayers.size === 0) return;
+
+                // FIX: Allow Verbose lines to pass if they are flagged as BLE, even if they don't match strict layer keywords
+                if (line.level === 'V') {
+                    addLine(line);
+                    return;
+                }
 
                 const hit = Array.from(activeLayers).some(layer => bleKeywords[layer]?.test(line.originalText));
                 if (hit) addLine(line);
@@ -3986,6 +4113,13 @@ document.addEventListener('DOMContentLoaded', () => {
             nfcLogLines.forEach(line => {
                 if (line.isMeta) { addLine(line); return; }
                 if (activeLayers.size === 0) return;
+
+                // FIX: Allow Verbose lines
+                if (line.level === 'V') {
+                    addLine(line);
+                    return;
+                }
+
                 const hit = Array.from(activeLayers).some(layer => nfcKeywords[layer]?.test(line.originalText));
                 if (hit) addLine(line);
             });
@@ -3994,6 +4128,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // DCK Logic
         if (activeTechs.dck) {
             dckLogLines.forEach(line => {
+                // DCK currently has no sub-layers, so just add
+                addLine(line);
+            });
+        }
+
+        // UWB Logic
+        if (activeTechs.uwb) {
+            uwbLogLines.forEach(line => {
                 addLine(line);
             });
         }
@@ -4022,8 +4164,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Find parent tech-section for styling. If panel exists use it, else use toggle's parent.
             const techSection = panel ? panel.closest('.tech-section') : toggle.closest('.tech-section');
 
-            // Init state
-            toggle.checked = activeTechs[techKey];
+            // Init state: Use HTML checked attribute as source of truth, sync activeTechs to it
+            activeTechs[techKey] = toggle.checked;
 
             const updatePanelState = () => {
                 if (!activeTechs[techKey]) {
@@ -4558,9 +4700,13 @@ document.addEventListener('DOMContentLoaded', () => {
         let anchorPacket = selectedBtsnoopPacket;
         // If no selected packet, or it's not in the current view, fall back to the top visible packet.
         if (!anchorPacket && filteredBtsnoopPackets.length > 0 && btsnoopLogContainer.scrollTop > 0) {
-            const topVisibleIndex = Math.floor(btsnoopLogContainer.scrollTop / LINE_HEIGHT);
+            const topVisibleIndex = Math.floor(btsnoopLogContainer.scrollTop / LINE_HEIGHT); // Approx
             anchorPacket = filteredBtsnoopPackets[topVisibleIndex];
         }
+
+        // Store the anchor used for this render cycle
+        const currentAnchor = anchorPacket;
+
         // --- End Scroll Restoration ---
 
         const columnFilters = Array.from(btsnoopColumnFilters)
@@ -4655,7 +4801,7 @@ document.addEventListener('DOMContentLoaded', () => {
             input.type = 'text';
             input.dataset.column = i;
             input.id = `btsnoop-filter-col-${i}`;
-            input.name = `btsnoop-filter-col-${i}`;
+            input.name = `btsnoop-filter-col-${i}`; // Added name attribute
             input.placeholder = `Filter ${text}...`;
             cell.appendChild(input);
             headerGrid.appendChild(cell);
@@ -4778,21 +4924,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Scroll to selected packet if needed
-        if (selectedBtsnoopPacket) {
-            const selectedIndex = filteredBtsnoopPackets.findIndex(p => p.number === selectedBtsnoopPacket.number);
-            if (selectedIndex !== -1 && btsnoopRowPositions[selectedIndex] !== undefined) {
-                const selectedPosition = btsnoopRowPositions[selectedIndex];
-                // Estimate height again or use cached? We didn't cache heights individually, just positions.
-                // Height = next pos - current pos (or estimate).
-                const nextPos = btsnoopRowPositions[selectedIndex + 1];
-                const selectedHeight = nextPos ? (nextPos - selectedPosition) : 20;
+        // Scroll to selected packet OR restore anchor position
+        const targetPacket = selectedBtsnoopPacket || (typeof currentAnchor !== 'undefined' ? currentAnchor : null);
 
-                const centerOffset = Math.floor(containerHeight / 2) - (selectedHeight / 2);
-                const targetScroll = Math.max(0, selectedPosition - centerOffset);
-                // Only scroll if selected packet is not in view
-                if (selectedPosition < scrollTop || selectedPosition > scrollTop + containerHeight) {
-                    console.log('[BTSnoop Scroll] Scrolling to selected packet', selectedBtsnoopPacket.number, 'at position', selectedPosition);
-                    container.scrollTop = targetScroll;
+        if (targetPacket) {
+            const targetIndex = filteredBtsnoopPackets.findIndex(p => p.number === targetPacket.number);
+            if (targetIndex !== -1 && btsnoopRowPositions[targetIndex] !== undefined) {
+                const targetPosition = btsnoopRowPositions[targetIndex];
+
+                // Only force scroll if it's a selection (always visible) OR if we are restoring an anchor
+                // For selection: center it. For anchor: put it at top (approx).
+                if (selectedBtsnoopPacket) {
+                    const nextPos = btsnoopRowPositions[targetIndex + 1];
+                    const selectedHeight = nextPos ? (nextPos - targetPosition) : 20;
+                    const centerOffset = Math.floor(containerHeight / 2) - (selectedHeight / 2);
+                    const targetScroll = Math.max(0, targetPosition - centerOffset);
+
+                    if (targetPosition < scrollTop || targetPosition > scrollTop + containerHeight) {
+                        console.log('[BTSnoop Scroll] Scrolling to selected packet', targetPacket.number);
+                        container.scrollTop = targetScroll;
+                    }
+                } else {
+                    // Just restore the anchor to the top-ish (simple restore)
+                    // If we just re-filtered, we want to stay near this packet
+                    // But we won't force it if we are already there-ish. 
+                    // Actually, for restoration, we should set it.
+                    container.scrollTop = targetPosition;
                 }
             }
         }
@@ -4922,134 +5079,145 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleViewportInteraction(event) {
         const target = event.target;
-        if (target.classList.contains('copy-log-btn')) {
-            const logText = target.dataset.logText;
+        // Debug logging to trace clicks
+        console.log('[Click Debug] Target:', target.tagName, 'Classes:', target.className, 'ParentTable:', target.closest('table')?.id);
+
+        // 1. Handle Copy Actions (Button or Ctrl+Click)
+        const isCopyBtn = target.classList.contains('copy-log-btn');
+        const isCtrlClick = (event.ctrlKey || event.metaKey);
+        const copyTarget = target.closest('.copy-cell') || target.closest('.btsnoop-copy-cell');
+
+        if (isCopyBtn || (isCtrlClick && copyTarget)) {
+            const logText = isCopyBtn ? target.dataset.logText : copyTarget.dataset.logText;
+
             if (logText) {
                 navigator.clipboard.writeText(logText).then(() => {
-                    // Success feedback
-                    const originalText = target.textContent;
-                    target.textContent = 'Copied!';
-                    target.style.background = '#34a853'; // Green for success
+                    console.log('[Copy] Copied:', logText.length, 'chars');
+
+                    // Visual feedback
+                    const feedbackEl = isCopyBtn ? target : copyTarget;
+                    const originalBg = feedbackEl.style.backgroundColor;
+                    const originalColor = feedbackEl.style.color;
+                    const originalText = isCopyBtn ? feedbackEl.textContent : null;
+
+                    feedbackEl.style.backgroundColor = '#34a853';
+                    feedbackEl.style.color = '#fff';
+                    if (isCopyBtn) feedbackEl.textContent = '✓';
+
                     setTimeout(() => {
-                        target.textContent = originalText;
-                        target.style.background = ''; // Revert background
-                    }, 1200);
-                }).catch(err => {
-                    console.error('Failed to copy log line:', err);
-                });
+                        feedbackEl.style.backgroundColor = originalBg;
+                        feedbackEl.style.color = originalColor;
+                        if (isCopyBtn) feedbackEl.textContent = originalText;
+                    }, 600);
+                }).catch(err => console.error('Copy failed:', err));
             }
-        } else if (target.closest('.btsnoop-copy-cell')) {
-            // Handle clicking on a BTSnoop cell
-            const cell = target.closest('.btsnoop-copy-cell');
-            const row = target.closest('.btsnoop-row');
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        }
 
-            console.log('[BTSnoop Click] Cell clicked, row:', row?.dataset.packetNumber, 'ctrl:', event.ctrlKey, 'meta:', event.metaKey);
+        // 2. Handle Generic Table Selection (CCC, Stats, etc.)
+        // Ensure we catch interactions for tables that might not be in a 'log-viewport'
+        const parentTable = target.closest('table');
+        if (parentTable && target.closest('tr') && !target.closest('thead')) {
+            // Check for text selection
+            if (window.getSelection().toString().length > 0) return;
 
-            // 1. Handle Selection (single click without modifiers)
-            if (row && row.dataset.packetNumber && !event.ctrlKey && !event.metaKey) {
-                const packetNum = parseInt(row.dataset.packetNumber, 10);
-                const packet = filteredBtsnoopPackets.find(p => p.number === packetNum);
+            // Check if this is an interactive table (by class or specific ID)
+            const isInteractive = parentTable.classList.contains('ccc-table') ||
+                parentTable.classList.contains('highlight-table') ||
+                ['cccTable', 'deviceEventsTable', 'bleKeysTable', 'btsnoopConnectionEventsTable'].includes(parentTable.id);
 
-                if (packet) {
-                    if (selectedBtsnoopPacket === packet) {
-                        selectedBtsnoopPacket = null; // Deselect
-                        console.log('[BTSnoop] Deselected packet', packetNum);
-                    } else {
-                        selectedBtsnoopPacket = packet; // Select
-                        console.log('[BTSnoop] Selected packet', packetNum);
-                    }
-                    // Fast re-render to show selection state
-                    renderBtsnoopVirtualLogs();
+            if (isInteractive) {
+                const row = target.closest('tr');
+                const tbody = row.closest('tbody');
+
+                if (tbody) {
+                    Array.from(tbody.children).forEach(r => r.classList.remove('selected'));
                 }
-            }
+                row.classList.add('selected');
 
-            // 2. Handle Copy (Ctrl+Click or Cmd+Click)
-            if ((event.ctrlKey || event.metaKey) && cell) {
-                console.log('[BTSnoop Copy] Attempting to copy:', cell.dataset.logText?.substring(0, 50));
-                const logText = cell.dataset.logText;
-                if (logText) {
-                    navigator.clipboard.writeText(logText).then(() => {
-                        console.log('[BTSnoop Copy] Successfully copied:', logText.length, 'characters');
-                        // Visual feedback
-                        const originalBg = cell.style.backgroundColor;
-                        const originalColor = cell.style.color;
-                        cell.style.backgroundColor = '#34a853';
-                        cell.style.color = '#fff';
-                        setTimeout(() => {
-                            cell.style.backgroundColor = originalBg;
-                            cell.style.color = originalColor;
-                        }, 300);
-                    }).catch(err => {
-                        console.error('[BTSnoop Copy] Failed to copy:', err);
-                    });
+                // Persist selection using unique ID
+                if (parentTable.id && row.dataset.rowId) {
+                    selectedTableRows.set(parentTable.id, row.dataset.rowId);
+                    console.log(`[Interaction] Selected row ${row.dataset.rowId} in ${parentTable.id}`);
                 }
-                event.preventDefault();
-                event.stopPropagation();
+                return;
             }
         }
-        else if (target.closest('.log-line-meta')) {
-            // Handle collapsing/expanding file logs in ANY viewport
-            const lineDiv = target.closest('.log-line-meta');
-            const lineIndex = parseInt(lineDiv.dataset.lineIndex, 10);
-            const activeViewport = target.closest('.log-viewport');
-            let sourceArray = filteredLogLines; // Default to main logs
 
-            if (activeViewport.id === 'connectivityLogViewport') sourceArray = filteredConnectivityLogLines;
-            else if (activeViewport === kernelLogViewport) sourceArray = filteredKernelLogLines;
 
-            if (!isNaN(lineIndex) && sourceArray[lineIndex]) {
-                const clickedLine = sourceArray[lineIndex];
-                if (collapsedFileHeaders.has(clickedLine.originalText)) {
-                    collapsedFileHeaders.delete(clickedLine.originalText);
-                } else {
-                    collapsedFileHeaders.add(clickedLine.originalText);
-                }
-                // Re-apply the correct filter function for the active tab
-                if (activeViewport.id === 'connectivityLogViewport') applyConnectivityFilters();
-                else if (activeViewport === kernelLogViewport) processForKernel(); // Kernel has no sub-filters
-                else applyFilters(); // Main log view
 
-            }
-        } else if (target.closest('.log-line')) {
-            // Prevent text selection from being cleared by the highlight re-render
-            // if the user is dragging to select.
-            if (event.detail > 1 || (event.buttons === 1 && window.getSelection().toString().length > 0)) {
+
+        // 3. Handle Log Line Selection (Virtual Viewports)
+        if (target.closest('.log-line')) {
+            // Check for text selection - if user is selecting text, don't trigger row select
+            if (window.getSelection().toString().length > 0) {
                 return;
             }
 
-            // Handle clicking on the line itself to set it as an anchor
             const lineDiv = target.closest('.log-line');
             const lineIndex = parseInt(lineDiv.dataset.lineIndex, 10);
+            const activeViewport = target.closest('.log-viewport');
 
-            if (!isNaN(lineIndex) && filteredLogLines[lineIndex]) {
-                const clickedLine = filteredLogLines[lineIndex];
+            // Determine source array based on viewport ID
+            let sourceArray = filteredLogLines; // Default
+            if (activeViewport && activeViewport.id === 'connectivityLogViewport') {
+                sourceArray = filteredConnectivityLogLines;
+            }
 
-                // Toggle anchor: if clicking the same line, deselect it. Otherwise, select the new one.
+            if (!isNaN(lineIndex) && sourceArray[lineIndex]) {
+                const clickedLine = sourceArray[lineIndex];
+
+                // Toggle anchor
                 if (userAnchorLine === clickedLine) {
                     userAnchorLine = null;
                 } else {
                     userAnchorLine = clickedLine;
+                    console.log('Selected Anchor:', userAnchorLine);
                 }
 
-                // Re-render the currently visible lines to show/hide the highlight.
-                // This is much faster than a full applyFilters() call.
-                handleMainLogScroll();
+                // Force Re-render to update highlights
+                if (activeViewport && activeViewport.id === 'connectivityLogViewport') {
+                    renderConnectivityVirtualLogs();
+                } else {
+                    handleMainLogScroll();
+                }
             }
-        } else {
-            // Clear BTSnoop selection if clicking outside BTSnoop cells
-            if (selectedBtsnoopPacket && !target.closest('.btsnoop-copy-cell') && !target.closest('.btsnoop-header-cell')) {
-                console.log('[BTSnoop] Clearing selection - clicked outside');
-                selectedBtsnoopPacket = null;
-                renderBtsnoopVirtualLogs();
+        }
+        // 4. Handle BTSnoop Row Selection (Virtual List)
+        const btsnoopRow = target.closest('.btsnoop-row');
+        if (btsnoopRow) {
+            // Check for text selection
+            if (window.getSelection().toString().length > 0) return;
+
+            const packetNum = parseInt(btsnoopRow.dataset.packetNumber, 10);
+            if (!isNaN(packetNum)) {
+                const packet = filteredBtsnoopPackets.find(p => p.number === packetNum);
+                if (packet) {
+                    if (selectedBtsnoopPacket === packet) {
+                        selectedBtsnoopPacket = null; // Toggle off
+                    } else {
+                        selectedBtsnoopPacket = packet;
+                    }
+                    console.log('[Interaction] Selected BTSnoop Packet:', selectedBtsnoopPacket ? selectedBtsnoopPacket.number : 'None');
+                    renderBtsnoopVirtualLogs();
+                }
             }
+            return;
+        }
+
+        // 5. Handle BTSnoop Deselection (Click outside)
+        else if (selectedBtsnoopPacket && !target.closest('.btsnoop-copy-cell') && !target.closest('.btsnoop-header-cell')) {
+            // Clicked outside BTSnoop table while selected -> Clear selection
+            selectedBtsnoopPacket = null;
+            renderBtsnoopVirtualLogs();
         }
     }
 
     // --- Memory Cleanup on Exit ---
     // Ensure all data, including persisted data in IndexedDB, is cleared when the user leaves.
-    window.addEventListener('beforeunload', async (event) => {
-        await clearPreviousState(true); // true to clear persisted data
-    });
+
 
     // --- Application Initialization ---
     async function initializeApp() {
@@ -5057,6 +5225,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             await openDb(); // Ensure the database is open before any other operations.
+
+            // Clean slate on refresh as requested
+            await clearData();
+            console.log('[Init] Cleared old data.');
 
             // Attach file input listeners. The state is cleared inside processFiles.
             if (zipInput) {
@@ -5069,28 +5241,10 @@ document.addEventListener('DOMContentLoaded', () => {
             initializeDynamicElements();
             injectLogLevelStyles();
 
-            await checkForPersistedFilters();
+            // No persistence check - we cleared everything
+            if (skeletonLoader) skeletonLoader.style.display = 'none';
 
-            // OPTIMIZATION Phase 2: Check if we have persisted data
-            const persistedFileName = await loadData('fileName');
-            const hasPersistedData = persistedFileName && persistedFileName.value;
-
-            if (hasPersistedData) {
-                // Show skeleton while loading persisted data
-                if (skeletonLoader) {
-                    skeletonLoader.style.display = 'flex';
-                    console.log('[Perf Phase2] Showing skeleton loader - loading persisted data...');
-                }
-            } else {
-                if (skeletonLoader) skeletonLoader.style.display = 'none';
-            }
-
-            // Load persisted data in background
-            const sessionRestored = await checkForPersistedLogs();
-
-            if (!sessionRestored) {
-                await applyFilters();
-            }
+            await applyFilters();
 
             // Hide skeleton with fade out
             if (skeletonLoader && skeletonLoader.style.display !== 'none') {

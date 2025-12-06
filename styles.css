@@ -997,6 +997,89 @@ input[type="file"]:hover {
 }
 
 /* Special case for Verbose bar to make text visible */
+/* Log Line Structure */
+.log-line-content {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.log-meta {
+    width: 150px;
+    min-width: 150px;
+    display: inline-block;
+    color: #9aa0a6;
+    margin-right: 10px;
+    overflow: hidden;
+    text-overflow: clip;
+    /* Prefer clip over ellipsis for timestamps if tight */
+}
+
+/* Updated PID/TID/UID column - fixed width to prevent jitter, but wide enough */
+.log-pid-tid {
+    width: 180px;
+    /* Increased from implicit default */
+    min-width: 180px;
+    display: inline-block;
+    margin-right: 10px;
+    text-align: right;
+    font-family: 'Roboto Mono', monospace;
+    overflow: visible;
+    /* Ensure content is not hidden */
+    white-space: nowrap;
+}
+
+.log-tag {
+    width: 140px;
+    min-width: 140px;
+    display: inline-block;
+    margin-right: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+}
+
+.log-message {
+    flex: 1;
+    display: inline-block;
+    overflow: visible;
+    white-space: pre;
+}
+
+/* Log Level Box */
+.log-level-box {
+    display: inline-block;
+    width: 20px;
+    text-align: center;
+    border-radius: 2px;
+    font-weight: bold;
+    margin-right: 10px;
+    color: #fff;
+}
+
+/* Level Specific Colors */
+.log-level-V {
+    background-color: #BDBDBD;
+    color: #000;
+}
+
+.log-level-D {
+    background-color: #2196F3;
+}
+
+.log-level-I {
+    background-color: #4CAF50;
+}
+
+.log-level-W {
+    background-color: #FF9800;
+}
+
+.log-level-E {
+    background-color: #F44336;
+}
+
 .dist-bar.log-line-V {
     color: #202124;
     /* Dark text for light grey bar */
@@ -1606,8 +1689,30 @@ input[type="file"]:hover {
 #cccTab tr:hover,
 .stats-table tr:hover,
 .ccc-table tr:hover,
-.highlight-table tr:hover {
+.highlight-table tr:hover,
+.log-line:hover {
     background-color: #2c2c2c !important;
+}
+
+/* Generic Table & Log Line Selection Highlighting */
+.ccc-table tr.selected,
+.highlight-table tr.selected,
+.stats-table tr.selected,
+.log-line.selected {
+    background-color: #2c3e50 !important;
+    /* Dark blue selection */
+    color: #fff !important;
+}
+
+.ccc-table tr.selected td,
+.highlight-table tr.selected td,
+.stats-table tr.selected td,
+.log-line.selected .log-message,
+.log-line.selected .log-tag,
+.log-line.selected .log-pid-tid,
+.log-line.selected .log-meta {
+    color: #fff !important;
+    /* Ensure text is white on selection */
 }
 
 /* BTSnoop Virtual View (Div-based) Dark Mode */
@@ -1825,7 +1930,10 @@ input[type="file"]::file-selector-button:hover {
 
 /* Allow wrapping for specific columns if needed */
 .ccc-table td:last-child,
+.ccc-table td:nth-last-child(2),
 .highlight-table td:last-child {
     white-space: normal;
-    word-break: break-word;
+    word-break: break-all;
+    overflow: visible;
+    text-overflow: clip;
 }
