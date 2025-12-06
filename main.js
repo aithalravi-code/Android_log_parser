@@ -52,11 +52,154 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- DOM Elements ---
+    // --- UI Elements ---
+    // --- UI Elements ---
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
     const zipInput = document.getElementById('zipInput');
     const logFilesInput = document.getElementById('logFilesInput');
     const progressBar = document.getElementById('progressBar');
     const progressText = document.getElementById('progressText');
+
+    // --- OPTIMIZATION Phase 3: Web Worker for Filtering ---
+    // --- OPTIMIZATION Phase 3: Web Worker for Filtering ---
+    // Inlined for monolithic support (works without server/file://)
+    const filterWorkerCode = `
+    let storedLogLines = [];
+
+    function wildcardToRegex(wildcard) {
+        const escaped = wildcard.replace(/[.+^$\{ }()|[\\]\\\\]/g, '\\\\$&');
+        const pattern = escaped.replace(/\\*/g, '.*');
+        return new RegExp('^' + pattern + '$', 'i');
+    }
+
+    self.onmessage = function (e) {
+        const { command, jobId, payload } = e.data;
+        try {
+            switch (command) {
+                case 'LOAD_DATA':
+                    storedLogLines = payload;
+                    self.postMessage({ command: 'LOAD_COMPLETE', jobId, count: storedLogLines.length });
+                    break;
+                case 'FILTER':
+                    if (!storedLogLines || storedLogLines.length === 0) {
+                        self.postMessage({ command: 'FILTER_COMPLETE', jobId, indices: [] });
+                        return;
+                    }
+                    const indices = runFilter(storedLogLines, payload);
+                    self.postMessage({ command: 'FILTER_COMPLETE', jobId, indices });
+                    break;
+                case 'CLEAR':
+                    storedLogLines = [];
+                    self.postMessage({ command: 'CLEARED', jobId });
+                    break;
+            }
+        } catch (error) {
+            self.postMessage({ command: 'ERROR', jobId, error: error.message });
+        }
+    };
+
+    function runFilter(lines, config) {
+        const { activeKeywords, isAndLogic, liveSearchQuery, activeLogLevels, timeRange, collapsedFileHeaders, isTimeFilterActive } = config;
+        const logLevelsSet = new Set(activeLogLevels);
+        const collapsedHeadersSet = new Set(collapsedFileHeaders);
+        const keywordRegexes = activeKeywords.length > 0 ? activeKeywords.map(wildcardToRegex) : null;
+        const liveSearchRegex = liveSearchQuery ? wildcardToRegex(liveSearchQuery) : null;
+        
+        const startTimeResult = timeRange.start ? new Date(timeRange.start) : null;
+        const endTimeResult = timeRange.end ? new Date(timeRange.end) : null;
+        const indices = [];
+        const checkTime = isTimeFilterActive && (startTimeResult || endTimeResult);
+        let stateInsideCollapsed = false;
+        let currentHeaderIndex = -1;
+        let headerHasMatches = false;
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            
+            if (line.isMeta) {
+                currentHeaderIndex = i;
+                headerHasMatches = false;
+                stateInsideCollapsed = collapsedHeadersSet.has(line.originalText);
+                continue;
+            }
+            if (stateInsideCollapsed) continue;
+
+            if (keywordRegexes) {
+                const matches = isAndLogic
+                    ? keywordRegexes.every(regex => regex.test(line.originalText))
+                    : keywordRegexes.some(regex => regex.test(line.originalText));
+                if (!matches) continue;
+            }
+            if (liveSearchRegex && !liveSearchRegex.test(line.originalText)) continue;
+            if (checkTime && line.dateObj) {
+                const d = new Date(line.dateObj);
+                if ((startTimeResult && d < startTimeResult) || (endTimeResult && d > endTimeResult)) continue;
+            }
+            if (line.level && !logLevelsSet.has(line.level)) continue;
+
+            if (!headerHasMatches && currentHeaderIndex !== -1) {
+                indices.push(currentHeaderIndex);
+                headerHasMatches = true;
+            }
+            indices.push(i);
+        }
+        return indices;
+    }
+    `;
+
+    const filterWorkerBlob = new Blob([filterWorkerCode], { type: 'application/javascript' });
+    const filterWorkerUrl = URL.createObjectURL(filterWorkerBlob);
+    const filterWorker = new Worker(filterWorkerUrl);
+    let currentFilterJobId = 0;
+    let pendingFilterPromise = null;
+
+    filterWorker.onmessage = function (e) {
+        const { command, jobId, indices, error } = e.data;
+
+        if (command === 'FILTER_COMPLETE') {
+            if (pendingFilterPromise && pendingFilterPromise.jobId === jobId) {
+                pendingFilterPromise.resolve(indices);
+                pendingFilterPromise = null;
+            }
+        } else if (command === 'LOAD_COMPLETE') {
+            console.log(`[Worker] Data loaded: ${e.data.count} lines`);
+        } else if (command === 'ERROR') {
+            console.error('[Worker Error]', error);
+            if (pendingFilterPromise && pendingFilterPromise.jobId === jobId) {
+                pendingFilterPromise.reject(error);
+                pendingFilterPromise = null;
+            }
+        }
+    };
+
+    /**
+     * Send log data to worker
+     */
+    function syncDataToWorker(lines) {
+        // We use postMessage. For large arrays, implementation might copy.
+        // Ideally we'd validte structured clone performance.
+        console.log('[Worker] Syncing data...');
+        filterWorker.postMessage({ command: 'LOAD_DATA', payload: lines });
+    }
+
+    /**
+     * Request filtering from worker
+     */
+    function requestWorkerFilter(config) {
+        return new Promise((resolve, reject) => {
+            currentFilterJobId++;
+            pendingFilterPromise = { jobId: currentFilterJobId, resolve, reject };
+
+            filterWorker.postMessage({
+                command: 'FILTER',
+                jobId: currentFilterJobId,
+                payload: config
+            });
+        });
+    }
+
+    // --- DOM Elements ---
     const tabs = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
     const searchInput = document.getElementById('searchInput');
@@ -121,14 +264,21 @@ document.addEventListener('DOMContentLoaded', () => {
     let bleLogLines = []; // Holds all BLE-related log lines
     let filteredBleLogLines = []; // The currently filtered set of BLE lines
     let nfcLogLines = []; // Holds all NFC-related log lines
-    let filteredNfcLogLines = []; // The currently filtered set of NFC lines
     let dckLogLines = []; // Holds all DCK-related log lines
-    let filteredDckLogLines = []; // The currently filtered set of DCK lines
     let btsnoopPackets = []; // Holds parsed btsnoop packets
-    let kernelLogLines = []; // Holds all Kernel-related log lines
+
+    // NEW: Connectivity Tab Globals
+    let connectivityLogLines = []; // Mapped/Merged lines for the connectivity view
+    let filteredConnectivityLogLines = []; // The currently filtered set derived from connectivityLogLines
+    let activeTechs = { ble: false, nfc: false, dck: true }; // Master Toggles State
+
     let filteredBtsnoopPackets = []; // Holds the filtered set of btsnoop packets
+    // OPTIMIZATION Phase 3: Cache BTSnoop row positions
+    let btsnoopRowPositions = [];
+    let btsnoopTotalHeight = 0;
     let btsnoopConnectionEvents = []; // Holds LE Connection Complete events
     let btsnoopConnectionMap = new Map(); // Maps connection handle to BT address
+    let cccStatsData = []; // Holds the filtered set of CCC packets
     let allAppVersions = []; // Holds all found app versions
     let filteredKernelLogLines = []; // The currently filtered set of Kernel lines
     let filteredLogLines = []; // The currently filtered set of lines
@@ -138,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastCheckedIndex = -1; // For shift-click selection
     let activeBleLayers = new Set(['manager', 'gatt', 'smp', 'hci']); // Default to all layers active
     let activeNfcLayers = new Set(['framework', 'hce', 'p2p', 'hal']); // Default to all layers active
-    let activeBtsnoopFilters = new Set(['cmd', 'evt', 'acl', 'l2cap', 'smp', 'att']); // Default to connection events and L2CAP data
+    let activeBtsnoopFilters = new Set(['cmd', 'evt', 'acl', 'l2cap', 'smp', 'att']); // Holds active btsnoop filter types (e.g. 'cmd', 'evt') - Default ALL active
     let activeDckLayers = new Set(['manager', 'hal', 'oem']); // Default to all layers active
     let filterVersion = 0; // "Cancellation token" for async filtering
     let isProcessing = false; // Flag to prevent race conditions during filtering
@@ -156,15 +306,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let btsnoopRowPool = []; // For recycling DOM elements in btsnoop virtual scroll
     let selectedBtsnoopPacket = null; // Track the user-selected BTSnoop packet
     let currentBtsnoopGridTemplate = null; // Store the current grid column layout
+    let localBtAddress = 'Host'; // Store the local device's BT address.
 
     // --- OPTIMIZATION Phase 1: Filter State Tracking & Caching ---
     let filterStateHash = null;
     let cachedFilteredResults = {
         logs: null,
-        ble: null,
-        nfc: null,
-        dck: null,
-        kernel: null,
+        connectivity: null,
         btsnoop: null
     };
 
@@ -480,7 +628,11 @@ document.addEventListener('DOMContentLoaded', () => {
             timeRange: {
                 start: startTimeInput?.value || '',
                 end: endTimeInput?.value || ''
-            }
+            },
+            techs: { ...activeTechs }, // Include connectivity toggle state
+            activeBleLayers: Array.from(activeBleLayers).sort(),
+            activeNfcLayers: Array.from(activeNfcLayers).sort(),
+            activeDckLayers: Array.from(activeDckLayers).sort()
         });
     }
 
@@ -537,7 +689,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             switch (tabId) {
-                case 'ble':
+                case 'connectivity':
+                    // Filter BLE
                     bleLogLines = originalLogLines.filter(line => {
                         if (line.isMeta) return true;
                         if (!line.tag) return false;
@@ -549,20 +702,16 @@ document.addEventListener('DOMContentLoaded', () => {
                             tagLower.includes('bluetooth')
                         );
                     });
-                    console.log(`[Perf Phase2] Extracted ${bleLogLines.length} BLE log lines`);
-                    break;
 
-                case 'nfc':
+                    // Filter NFC
                     nfcLogLines = originalLogLines.filter(line => {
                         if (line.isMeta) return true;
                         if (!line.tag) return false;
                         const tagLower = line.tag.toLowerCase();
                         return tagLower.includes('nfc');
                     });
-                    console.log(`[Perf Phase2] Extracted ${nfcLogLines.length} NFC log lines`);
-                    break;
 
-                case 'dck':
+                    // Filter DCK
                     dckLogLines = originalLogLines.filter(line => {
                         if (line.isMeta) return true;
                         if (!line.tag) return false;
@@ -575,30 +724,28 @@ document.addEventListener('DOMContentLoaded', () => {
                             tagLower.includes('car_key')
                         );
                     });
-                    console.log(`[Perf Phase2] Extracted ${dckLogLines.length} DCK log lines`);
-                    break;
-
-                case 'kernel':
-                    await processForKernel();
-                    console.log(`[Perf Phase2] Processed ${kernelLogLines.length} kernel log lines`);
+                    console.log(`[Perf Phase2] Extracted Connectivity lines: BLE=${bleLogLines.length}, NFC=${nfcLogLines.length}, DCK=${dckLogLines.length}`);
                     break;
 
                 case 'btsnoop':
-                    if (!isBtsnoopProcessed && fileTasks.length > 0) {
+                    // Only process if not already done.
+                    if (!isBtsnoopProcessed) {
                         await processForBtsnoop();
                     }
-                    console.log(`[Perf Phase2] Processed ${btsnoopPackets.length} BTSnoop packets`);
+                    console.log(`[Perf Phase2] BTSnoop tab loaded. Total packets: ${btsnoopPackets.length}`);
                     break;
 
+                case 'ccc':
                 case 'stats':
-                    console.log(`[Perf Phase2] Stats tab ready`);
+                    console.log(`[Perf Phase2] ${tabId} tab ready`);
                     break;
             }
 
-            tabsLoaded[tabId] = true;
-
             const duration = performance.now() - startTime;
             console.log(`[Perf Phase2] ${tabId} tab loaded in ${duration.toFixed(2)}ms`);
+
+            // Set loaded flag AFTER processing to avoid race conditions.
+            tabsLoaded[tabId] = true;
 
         } catch (error) {
             console.error(`[Perf Phase2] Failed to lazy load ${tabId} tab:`, error);
@@ -636,6 +783,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const persistedData = await loadData('logData');
             if (persistedData && persistedData.value) {
                 originalLogLines = persistedData.value;
+
+                // Assign indices to restored lines
+                for (let i = 0; i < originalLogLines.length; i++) {
+                    originalLogLines[i].index = i;
+                }
+
+                // OPTIMIZATION Phase 3: Sync data to filter worker
+                syncDataToWorker(originalLogLines);
+
                 const persistedFileName = await loadData('fileName');
                 currentZipFileName = persistedFileName?.value || '';
                 currentFileDisplay.textContent = `Restored: ${currentZipFileName || 'log files'}`;
@@ -734,16 +890,22 @@ document.addEventListener('DOMContentLoaded', () => {
         [logViewport, bleLogViewport, nfcLogViewport, dckLogViewport, kernelLogViewport].forEach(vp => {
             if (vp) vp.addEventListener('mousedown', handleViewportInteraction);
         });
-        if (bleLogViewport) bleLogViewport.addEventListener('mousedown', handleViewportInteraction);
-        if (nfcLogViewport) nfcLogViewport.addEventListener('mousedown', handleViewportInteraction);
         if (dckLogViewport) dckLogViewport.addEventListener('mousedown', handleViewportInteraction);
         if (kernelLogViewport) kernelLogViewport.addEventListener('mousedown', handleViewportInteraction);
+        const connectivityLogViewport = document.getElementById('connectivityLogViewport');
+        if (connectivityLogViewport) connectivityLogViewport.addEventListener('mousedown', handleViewportInteraction);
         if (appSearchInput) appSearchInput.addEventListener('input', () => renderAppVersions(allAppVersions));
 
-        attachLayerFilterListeners(nfcFilterButtons, activeNfcLayers, applyNfcFilters);
-        attachLayerFilterListeners(bleFilterButtons, activeBleLayers, applyBleFilters);
+        // Bind master toggles
+        // Bind master toggles
+        bindMasterToggle('masterToggleBle', 'ble', 'bleFiltersPanel', activeBleLayers);
+        bindMasterToggle('masterToggleNfc', 'nfc', 'nfcFiltersPanel', activeNfcLayers);
+        bindMasterToggle('masterToggleDck', 'dck', null, null); // DCK has no sub-filters now
+
+        attachLayerFilterListeners(nfcFilterButtons, activeNfcLayers, applyConnectivityFilters);
+        attachLayerFilterListeners(bleFilterButtons, activeBleLayers, applyConnectivityFilters);
         attachLayerFilterListeners(btsnoopFilterButtons, activeBtsnoopFilters, () => renderBtsnoopPackets());
-        attachLayerFilterListeners(dckFilterButtons, activeDckLayers, applyDckFilters);
+        // DCK layer listeners removed as panel is gone
 
         // Attach listeners for filter configuration
         if (saveFiltersBtn) saveFiltersBtn.addEventListener('click', saveFilterState);
@@ -814,54 +976,103 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const exportBleBtn = document.getElementById('exportBleBtn');
-        if (exportBleBtn) exportBleBtn.addEventListener('click', () => handleExport(filteredBleLogLines, 'ble_logs.txt'));
+        if (exportBleBtn) exportBleBtn.addEventListener('click', () => handleExport(bleLogLines, 'ble_logs.txt'));
 
         const exportNfcBtn = document.getElementById('exportNfcBtn');
-        if (exportNfcBtn) exportNfcBtn.addEventListener('click', () => handleExport(filteredNfcLogLines, 'nfc_logs.txt'));
+        if (exportNfcBtn) exportNfcBtn.addEventListener('click', () => handleExport(nfcLogLines, 'nfc_logs.txt'));
 
         const exportDckBtn = document.getElementById('exportDckBtn');
-        if (exportDckBtn) exportDckBtn.addEventListener('click', () => handleExport(filteredDckLogLines, 'dck_logs.txt'));
+        if (exportDckBtn) exportDckBtn.addEventListener('click', () => handleExport(dckLogLines, 'dck_logs.txt'));
 
-        const exportKernelBtn = document.getElementById('exportKernelBtn');
-        if (exportKernelBtn) exportKernelBtn.addEventListener('click', () => handleExport(filteredKernelLogLines, 'kernel_logs.txt'));
+        const exportConnectivityBtn = document.getElementById('exportConnectivityBtn');
+        if (exportConnectivityBtn) exportConnectivityBtn.addEventListener('click', () => handleExport(filteredConnectivityLogLines, 'connectivity_logs.txt'));
 
-        const analyzeDckBtn = document.getElementById('analyzeDckBtn');
-        if (analyzeDckBtn) {
-            analyzeDckBtn.addEventListener('click', async () => {
-                if (filteredDckLogLines.length === 0) {
-                    alert("No filtered DCK logs to analyze. Please load logs and ensure they are visible in the DCK tab.");
-                    return;
-                }
-
-                const analysisContainer = document.getElementById('dckGeminiAnalysisContainer');
-                const resultDiv = document.getElementById('dckGeminiResult');
-
-                analysisContainer.style.display = 'block';
-                resultDiv.textContent = 'Analyzing with Gemini...';
-
-                try {
-                    // IMPORTANT: Replace with your actual backend server URL
-                    const response = await fetch('http://localhost:3000/analyze-dck', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        // Send the raw text of the filtered logs
-                        body: JSON.stringify({ logs: filteredDckLogLines.map(line => line.originalText).join('\n') }),
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`Server error: ${response.statusText}`);
-                    }
-
-                    const analysis = await response.json();
-                    resultDiv.innerHTML = analysis.text; // Using innerHTML to render potential Markdown from the backend
-                } catch (error) {
-                    resultDiv.textContent = `Error getting analysis: ${error.message}. Make sure your backend server is running.`;
-                    console.error('Gemini analysis failed:', error);
-                }
-            });
+        const exportAnalyticsBtn = document.getElementById('exportStatsBtn');
+        if (exportAnalyticsBtn) {
+            exportAnalyticsBtn.addEventListener('click', () => exportStatsToExcel());
         }
+
+    }
+
+    // New Function: Export Stats Tab to Multi-sheet Excel
+    function exportStatsToExcel() {
+        if (typeof XLSX === 'undefined') {
+            alert('SheetJS (XLSX) library not loaded!');
+            return;
+        }
+
+        const wb = XLSX.utils.book_new();
+
+        // Sheet 1: Log Summary
+        const summaryData = [
+            ['Analysis Generated', new Date().toLocaleString()],
+            ['Total Log Lines', originalLogLines.length],
+            ['Start Time', minLogDate ? minLogDate.toISOString() : 'N/A'],
+            ['End Time', maxLogDate ? maxLogDate.toISOString() : 'N/A'],
+            [],
+            ['Log Level Distribution'],
+            ...Object.entries(calculateLogLevels(originalLogLines))
+        ];
+        // Add error distribution
+        summaryData.push([], ['Error Tag Distribution']);
+        const errorCounts = {};
+        originalLogLines.filter(l => l.level === 'E').forEach(l => {
+            errorCounts[l.tag] = (errorCounts[l.tag] || 0) + 1;
+        });
+        Object.entries(errorCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 20)
+            .forEach(([tag, count]) => summaryData.push([tag, count]));
+
+        const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+        // Sheet 2: Accounts
+        const highlightAccounts = document.getElementById('accountsList');
+        if (highlightAccounts) {
+            const accounts = Array.from(highlightAccounts.querySelectorAll('li')).map(li => [li.textContent]);
+            if (accounts.length > 0) {
+                const wsAccounts = XLSX.utils.aoa_to_sheet([['Discovered Accounts'], ...accounts]);
+                XLSX.utils.book_append_sheet(wb, wsAccounts, 'Accounts');
+            }
+        }
+
+        // Sheet 3: Device Events (Scrape from table)
+        const deviceTable = document.getElementById('deviceEventsTable');
+        if (deviceTable) {
+            const wsDevice = XLSX.utils.table_to_sheet(deviceTable);
+            XLSX.utils.book_append_sheet(wb, wsDevice, 'Device Events');
+        }
+
+        // Sheet 4: BLE Keys
+        const bleKeysTable = document.getElementById('bleKeysTable');
+        if (bleKeysTable) {
+            const wsKeys = XLSX.utils.table_to_sheet(bleKeysTable);
+            XLSX.utils.book_append_sheet(wb, wsKeys, 'BLE Keys');
+        }
+
+        // Sheet 5: BTSnoop Events
+        const btConnectionTable = document.getElementById('btsnoopConnectionEventsTable');
+        if (btConnectionTable) {
+            const wsBtEvents = XLSX.utils.table_to_sheet(btConnectionTable);
+            XLSX.utils.book_append_sheet(wb, wsBtEvents, 'Connection Events');
+        }
+
+        // Sheet 6: App Versions
+        const appTable = document.getElementById('appVersionsTable');
+        if (appTable) {
+            const wsApps = XLSX.utils.table_to_sheet(appTable);
+            XLSX.utils.book_append_sheet(wb, wsApps, 'App Versions');
+        }
+
+        XLSX.writeFile(wb, 'android_log_stats.xlsx');
+    }
+
+    // Helper for summary stats (simplified re-implementation)
+    function calculateLogLevels(lines) {
+        const counts = { V: 0, D: 0, I: 0, W: 0, E: 0 };
+        lines.forEach(l => { if (counts[l.level] !== undefined) counts[l.level]++; });
+        return counts;
     }
 
     async function clearPreviousState(clearStorage = false) {
@@ -895,7 +1106,15 @@ document.addEventListener('DOMContentLoaded', () => {
         filteredNfcLogLines = [];
         dckLogLines = [];
         filteredDckLogLines = [];
-        btsnoopConnectionMap.clear();
+        filteredDckLogLines = [];
+        localBtAddress = 'Host'; // Reset local address on clear.
+        if (typeof btsnoopConnectionMap !== 'undefined') {
+            btsnoopConnectionMap.clear();
+        } else {
+            btsnoopConnectionMap = new Map(); // Safety init
+        }
+        btsnoopConnectionMap = new Map(); // Safety init
+
         btsnoopPackets = [];
         btsnoopConnectionEvents = [];
         kernelLogLines = [];
@@ -914,17 +1133,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Directly clear the log view instead of calling renderUI, which can cause race conditions.
         filteredLogLines = [];
+        filteredConnectivityLogLines = []; // Clear connectivity lines
+        activeTechs = { ble: false, nfc: false, dck: true }; // Reset to default
         logViewport.innerHTML = '';
         logSizer.style.height = '0px';
 
         // OPTIMIZATION Phase 2: Reset lazy loading flags
         tabsLoaded = {
             logs: true,
-            ble: false,
-            nfc: false,
-            dck: false,
-            kernel: false,
+            connectivity: false,
             btsnoop: false,
+            ccc: false,
             stats: false
         };
 
@@ -1059,7 +1278,7 @@ document.addEventListener('DOMContentLoaded', () => {
         TimeTracker.start('Worker Parsing Pipeline');
 
         // Filter out binary btsnoop logs from the text-parsing pipeline.
-        // They will be handled separately by the BTSnoop tab's logic.
+        // They will be handled separately by processForBtsnoop().
         const tasksToParse = fileTasks.filter(task => !task.path.includes('btsnoop_hci.log'));
         // --- Simplified Worker Pool Logic ---
         // To bypass 'file://' CORS restrictions, the worker's code is embedded
@@ -1129,6 +1348,7 @@ document.addEventListener('DOMContentLoaded', () => {
             '    const cccRegex = /(?:Sending|Received):\\s*\\[([0-9a-fA-F]+)\\]/;\n' +
             '    const versionRegex = new RegExp(\'Package\\\\s+\\\\[([^\\]]+)\\\\].*?versionName=([^\\\\s\\\\n,]+)\');\n' +
             '    const appVersions = new Map();\n' +
+            '    const localAddressRegex = /Read BD_ADDR.*return: (([0-9A-F]{2}:){5}[0-9A-F]{2})/i;\n' +
             '    // Regex for multi-line dumpsys package format\n' +
             '    const dumpsysPackageRegex = /Package\\s+\\[([^\\]]+)\\][^:]*:[\\s\\S]*?^\\s+versionName=([^\\s\\n]+)/gm;\n' +
             '    let dumpsysMatch;\n' +
@@ -1234,6 +1454,11 @@ document.addEventListener('DOMContentLoaded', () => {
             '            if (accountMatch[1]) highlights.accounts.add(accountMatch[1].trim());\n' +
             '        }\n' +
             '\n' +
+            '        const localAddrMatch = lineText.match(localAddressRegex);\n' +
+            '        if (localAddrMatch && localAddrMatch[1]) {\n' +
+            '            highlights.localBtAddress = localAddrMatch[1];\n' +
+            '        }\n' +
+            '\n' +
             '        if (lockRegex.test(textToSearchForHighlights)) highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: \'Device Locked\', detail: \'\', originalText: lineText });\n' +
             '        if (unlockRegex.test(textToSearchForHighlights)) highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: \'Device Unlocked\', detail: \'\', originalText: lineText });\n' +
             '\n' +
@@ -1271,14 +1496,27 @@ document.addEventListener('DOMContentLoaded', () => {
             '            const level = parseInt(batteryMatch[1]);\n' +
             '            batteryDataPoints.push({ ts: lineDateObj, level: level });\n' +
             '        }\n' +
+            '\n' +
+            '        // FIX: Extract CCC messages from text logs - ONLY from lines with [BleConnection/...]\n' +
             '        const cccMatch = lineText.match(cccRegex);\n' +
             '        if (cccMatch && parsedLine) {\n' +
             '            const hex = cccMatch[1];\n' +
-            '            if (hex.length >= 4) {\n' +
+            '            // Only process if this line has [BleConnection/...] to avoid duplicates\n' +
+            '            const extractedAddress = (lineText.match(/BleConnection\\/([0-9A-Fa-f:]+)/i) || [])[1] || null;\n' +
+            '            if (hex.length >= 4 && extractedAddress) {\n' +
             '                const type = parseInt(hex.substring(0, 2), 16);\n' +
             '                const subtype = parseInt(hex.substring(2, 4), 16);\n' +
             '                const payload = hex.substring(4);\n' +
-            '                cccMessages.push({ timestamp: parsedLine.timestamp, direction: lineText.includes("Sending") ? "Sending" : "Received", type, subtype, payload, fullHex: hex });\n' +
+            '                cccMessages.push({ \n' +
+            '                    timestamp: parsedLine.timestamp, \n' +
+            '                    direction: lineText.includes("Sending") ? "Host -> Controller" : "Controller -> Host", \n' +
+            '                    type, \n' +
+            '                    subtype, \n' +
+            '                    payload, \n' +
+            '                    fullHex: hex,\n' +
+            '                    peerAddress: extractedAddress,\n' +
+            '                    handle: null\n' +
+            '                });\n' +
             '            }\n' +
             '        }\n' +
             '\n' +
@@ -1405,6 +1643,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const finalHighlights = { accounts: new Set(), deviceEvents: [], walletEvents: [] };
         const finalStats = { total: 0, E: 0, W: 0, I: 0, D: 0, V: 0 };
         const finalBleKeys = new Map();
+        let finalLocalBtAddress = null;
         const consolidatedAppVersions = new Map();
         let consolidatedBatteryDataPoints = [];
         const finalCccMessages = [];
@@ -1461,6 +1700,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (result.highlights) {
                     finalHighlights.deviceEvents.push(...result.highlights.deviceEvents);
                     finalHighlights.walletEvents.push(...result.highlights.walletEvents);
+                    // Consolidate local address from worker
+                    if (result.highlights.localBtAddress) {
+                        finalLocalBtAddress = result.highlights.localBtAddress;
+                    }
                     result.highlights.accounts.forEach(acc => finalHighlights.accounts.add(acc));
                 }
                 // Consolidate app versions from worker
@@ -1474,6 +1717,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     result.bleKeys.forEach(([addr, keyInfo]) => {
                         finalBleKeys.set(addr, keyInfo);
                     });
+                }
+                // Consolidate CCC messages from worker
+                if (result.cccMessages) {
+                    cccStatsData.push(...result.cccMessages);
                 }
                 // Consolidate battery data from worker
                 if (result.batteryDataPoints) {
@@ -1490,10 +1737,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         allAppVersions = Array.from(consolidatedAppVersions).sort((a, b) => a[0].localeCompare(b[0]));
 
+        // Set the global local address if it was found
+        if (finalLocalBtAddress) {
+            localBtAddress = finalLocalBtAddress;
+        }
+
         TimeTracker.stop('Result Consolidation');
 
         // --- Persist Data ---
         TimeTracker.start('Persisting & UI Render');
+
+        // Assign indices to originalLogLines
+        for (let i = 0; i < originalLogLines.length; i++) {
+            originalLogLines[i].index = i;
+        }
+
+        // OPTIMIZATION Phase 3: Sync data to filter worker
+        syncDataToWorker(originalLogLines);
+
         // OPTIMIZATION: Use debounced save to prevent blocking UI
         debouncedSave('logData', originalLogLines);
         debouncedSave('fileName', currentZipFileName);
@@ -1560,28 +1821,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 applyFilters();
                 cacheFilteredResults('logs', filteredLogLines);
                 break;
-            case 'ble':
-                if (!bleScrollListenerAttached) setupBleTab(); else applyBleFilters();
-                cacheFilteredResults('ble', filteredBleLogLines);
-                break;
-            case 'nfc':
-                if (!nfcScrollListenerAttached) setupNfcTab(); else applyNfcFilters();
-                cacheFilteredResults('nfc', filteredNfcLogLines);
-                break;
-            case 'dck':
-                if (!dckScrollListenerAttached) setupDckTab(); else applyDckFilters();
-                cacheFilteredResults('dck', filteredDckLogLines);
-                break;
-            case 'kernel':
-                processForKernel();
-                cacheFilteredResults('kernel', filteredKernelLogLines);
+            case 'connectivity':
+                if (!connectivityScrollListenerAttached) setupConnectivityTab(); else applyConnectivityFilters();
+                cacheFilteredResults('connectivity', filteredConnectivityLogLines);
                 break;
             case 'btsnoop':
-                if (!isBtsnoopProcessed && fileTasks.length > 0) {
-                    await processForBtsnoop();
-                }
-                setupBtsnoopTab();
+                await setupBtsnoopTab();
                 cacheFilteredResults('btsnoop', btsnoopPackets);
+                break;
+            case 'ccc':
+                setupCccTab();
                 break;
             case 'stats':
                 cacheFilteredResults('stats', null);
@@ -1776,6 +2025,60 @@ document.addEventListener('DOMContentLoaded', () => {
             anchorLine = targetLines[topVisibleIndex];
         }
 
+        // OPTIMIZATION Phase 3: Web Worker Path for Main Logs
+        if (sourceLines === originalLogLines && !preFilterFn) {
+            const config = {
+                activeKeywords: filterKeywords.filter(kw => kw.active).map(kw => kw.text),
+                isAndLogic,
+                liveSearchQuery,
+                activeLogLevels: Array.from(activeLogLevels),
+                timeRange: {
+                    start: startTimeInput.value || null,
+                    end: endTimeInput.value || null
+                },
+                collapsedFileHeaders: Array.from(collapsedFileHeaders),
+                isTimeFilterActive
+            };
+
+            try {
+                // Don't clear immediately -> smoother experience
+                const indices = await requestWorkerFilter(config);
+
+                if (filterVersion !== currentVersion) return;
+
+                // Reconstruct results logic
+                // Using a temp array first is safer
+                const newResults = [];
+                for (let i = 0; i < indices.length; i++) {
+                    newResults.push(originalLogLines[indices[i]]);
+                }
+
+                targetLines.length = 0;
+                Array.prototype.push.apply(targetLines, newResults);
+
+                // Restore Scroll
+                let newScrollTop = 0;
+                if (anchorLine) {
+                    const newAnchorIndex = targetLines.findIndex(line => line === anchorLine);
+                    if (newAnchorIndex !== -1) {
+                        newScrollTop = newAnchorIndex * LINE_HEIGHT;
+                    } else {
+                        // Anchor lost (filtered out), stick to top or relative? 
+                        // Keep 0 or logic below.
+                    }
+                }
+                container.scrollTop = newScrollTop;
+                renderFn();
+                return;
+
+            } catch (err) {
+                console.error("Worker filter failed, falling back", err);
+                // Fall through to standard logic
+            }
+        }
+
+
+        // Fallback / Specialized Logic (Standard Chunked)
         // 2. Apply pre-filters if they exist (e.g., for BLE/NFC layers)
         const preFilteredLines = preFilterFn ? preFilterFn(sourceLines) : sourceLines;
 
@@ -2157,7 +2460,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 button.classList.remove('active');
             }
 
-            button.addEventListener('mousedown', () => {
+            button.addEventListener('mousedown', (e) => {
+                // Auto-enable master toggle if off
+                const techSection = button.closest('.tech-section');
+                if (techSection) {
+                    const masterToggle = techSection.querySelector('.tech-master-toggle input[type="checkbox"]');
+                    if (masterToggle && !masterToggle.checked) {
+                        masterToggle.click(); // Enable master
+                        // The button click should now enable this specific filter if it wasn't already
+                        // Note: If the button was "visually" active but disabled by master, we might want to keep it active.
+                        // Standard toggle logic below flip-flops state. 
+                        // If I click a grayed-out "active" button, do I want to turn it OFF (toggle) or just wake it up?
+                        // "clicking any sub filter which is off" -> implies we care about turning ON.
+                        // If it's ON (gray), let's assume standard toggle behavior applies (turning it OFF). 
+                        // The user can re-click if they just wanted to wake up.
+                    }
+                }
+
                 // 1. Determine the new state & provide IMMEDIATE visual feedback
                 const wasActive = activeSet.has(layer);
                 const newActiveState = !wasActive;
@@ -2202,6 +2521,23 @@ document.addEventListener('DOMContentLoaded', () => {
             refreshActiveTab();
         });
     }
+    // --- Connectivity Tab Initialization ---
+    bindMasterToggle('masterToggleBle', 'ble', 'bleFiltersPanel');
+    bindMasterToggle('masterToggleNfc', 'nfc', 'nfcFiltersPanel');
+    bindMasterToggle('masterToggleDck', 'dck', 'dckFiltersPanel');
+
+    ['bleFiltersPanel', 'nfcFiltersPanel', 'dckFiltersPanel'].forEach(panelId => {
+        const panel = document.getElementById(panelId);
+        if (panel) {
+            panel.querySelectorAll('.filter-icon').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    btn.classList.toggle('active');
+                    applyConnectivityFilters();
+                });
+            });
+        }
+    });
+
     // --- Event Listener for Individual Log Level Filters ---
     logLevelButtons.forEach(button => {
         button.addEventListener('click', () => {
@@ -2230,8 +2566,8 @@ document.addEventListener('DOMContentLoaded', () => {
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
                 liveSearchQuery = searchInput.value;
-                refreshActiveTab(); // Re-filter only after user stops typing
-            }, 500); // OPTIMIZATION: Increased from 300ms to 500ms for better performance
+                refreshActiveTab(); // Worker handles it without freezing
+            }, 200); // OPTIMIZATION Phase 3: Reduced to 200ms thanks to Web Worker
 
             // Autocomplete can still be instant
             const query = searchInput.value.toLowerCase(); // Use the immediate value for suggestions
@@ -2656,8 +2992,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             // DK_APDU_RS (0x0C)
             if (subtype === 0x0C) {
+                // FIX: Support case where payload starts with length (00xx)
                 if (payload.length >= 4) {
+                    // Check if the first 2 bytes are a length field logic check
+                    // If payload is "006a..." (from text log which strips type/subtype 010c)
+                    // The code below assumes payload starts with LENGTH (4 hex chars).
+                    // This matches the DK_APDU_RQ structure logic.
+                    // We assume payload = Length(2B) + APDU(var)
+
+                    const lenVal = parseInt(payload.substring(0, 4), 16); // e.g. 006a = 106
+                    // Validate length to ensure it's not garbage
+                    // If lenVal + 4 (header) == payload.length, it's definitely a length field.
+                    // User log: 010c006a... -> payload passed is 006a... (212 chars + 4 = 216?)
+                    // If 106 bytes -> 212 hex chars.
+                    // payload.length should be roughly 216 chars (4 chars len + 212 chars data).
+
+                    // Proceed with parsing
                     const apdu = payload.substring(4);
+                    // Standard APDU response: Data + SW(2B)
                     if (apdu.length >= 4) {
                         const sw = apdu.substring(apdu.length - 4);
                         const data = apdu.substring(0, apdu.length - 4);
@@ -2669,8 +3021,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         const swHtml = formatParam('SW', statusText);
                         let tlvHtml = "";
 
+                        // Heuristic: If data starts with '7F' or '6F' etc it might be TLV.
+                        // But standard processing is safe enough.
                         if (data.length > 0) {
                             const tlv = parseTLV(data, APDU_TAGS);
+                            // FIX: improved check to show TLV if valid, else raw
                             if (tlv && !tlv.includes('[Truncated') && !data.startsWith('04')) {
                                 tlvHtml = formatParam('Data', tlv);
                             } else {
@@ -2995,13 +3350,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 <table class="log-table ccc-table" id="cccStatsTable">
                     <thead>
                         <tr id="cccHeaderRow">
-                            <th style="width: 140px; position: relative;">Time<div class="resize-handle-col"></div></th>
-                            <th style="width: 60px; position: relative;">Dir<div class="resize-handle-col"></div></th>
-                            <th style="width: 200px; position: relative;">Message Category<div class="resize-handle-col"></div></th>
-                            <th style="width: 250px; position: relative;">Message Type<div class="resize-handle-col"></div></th>
-                            <th style="width: 180px; position: relative;">Message<div class="resize-handle-col"></div></th>
-                            <th style="width: 400px; position: relative;">Parameters<div class="resize-handle-col"></div></th>
-                            <th style="width: 200px; position: relative;">Raw Data</th>
+                            <th style="width: 140px;">Time</th>
+                            <th style="width: 150px;">BLE Address</th>
+                            <th style="width: 60px;">Dir</th>
+                            <th style="width: 150px;">Message Category</th>
+                            <th style="width: 125px;">Message Type</th>
+                            <th style="width: 90px;">Message</th>
+                            <th style="width: 400px;">Parameters</th>
+                            <th style="width: 200px;">Raw Data</th>
                         </tr>
                         <tr class="filter-row">
                             <th><input type="text" placeholder="Filter..." data-col="0"></th>
@@ -3011,6 +3367,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <th><input type="text" placeholder="Filter..." data-col="4"></th>
                             <th><input type="text" placeholder="Filter..." data-col="5"></th>
                             <th><input type="text" placeholder="Filter..." data-col="6"></th>
+                            <th><input type="text" placeholder="Filter..." data-col="7"></th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -3032,50 +3389,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
-            // Add column resize functionality
-            const headerRow = document.getElementById('cccHeaderRow');
-            let thBeingResized = null;
-            let startX = 0;
-            let startWidth = 0;
 
-            headerRow.addEventListener('mousedown', (e) => {
-                if (e.target.classList.contains('resize-handle-col')) {
-                    thBeingResized = e.target.parentElement;
-                    startX = e.pageX;
-                    startWidth = thBeingResized.offsetWidth;
+            // Add column resize functionality using the utility
+            if (typeof makeTableResizable === 'function') {
+                makeTableResizable('cccStatsTable');
+            }
 
-                    const onMouseMove = (e) => {
-                        if (thBeingResized) {
-                            const diffX = e.pageX - startX;
-                            const newWidth = Math.max(50, startWidth + diffX);
-                            thBeingResized.style.width = `${newWidth}px`;
-
-                            // Update the corresponding filter row cell and input
-                            const headerCells = Array.from(headerRow.children);
-                            const cellIndex = headerCells.indexOf(thBeingResized);
-                            const filterRow = headerRow.nextElementSibling;
-                            if (filterRow && filterRow.children[cellIndex]) {
-                                filterRow.children[cellIndex].style.width = `${newWidth}px`;
-                                // Also update the input inside the filter cell
-                                const filterInput = filterRow.children[cellIndex].querySelector('input');
-                                if (filterInput) {
-                                    filterInput.style.width = '100%';
-                                }
-                            }
-                        }
-                    };
-
-                    const onMouseUp = () => {
-                        thBeingResized = null;
-                        document.removeEventListener('mousemove', onMouseMove);
-                        document.removeEventListener('mouseup', onMouseUp);
-                    };
-
-                    document.addEventListener('mousemove', onMouseMove);
-                    document.addEventListener('mouseup', onMouseUp);
-                    e.preventDefault();
-                }
-            });
 
             // Add Excel export functionality
             const exportCccBtn = document.getElementById('exportCccBtn');
@@ -3086,7 +3405,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         return;
                     }
 
-                    // Prepare data for Excel export
+                    // Prepare data for export
                     const exportData = cccStatsData.map(msg => {
                         const categoryName = CCC_CONSTANTS.MESSAGE_TYPES[msg.type] || `Unknown (0x${msg.type.toString(16).padStart(2, '0').toUpperCase()})`;
                         let typeName = `Unknown`;
@@ -3096,42 +3415,42 @@ document.addEventListener('DOMContentLoaded', () => {
                         else if (msg.type === 0x05) typeName = CCC_CONSTANTS.SUPPLEMENTARY_MSGS[msg.subtype] || typeName;
                         else if (msg.type === 0x00 && CCC_CONSTANTS.FRAMEWORK_MSGS && CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype]) typeName = CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype];
 
-                        const subtypeHex = `0x${msg.subtype.toString(16).padStart(2, '0').toUpperCase()}`;
-                        const displayType = typeName === 'Unknown' ? subtypeHex : `${typeName} (${subtypeHex})`;
+                        const innerMessage = msg._decoded ? (msg._decoded.innerMsg || "-") : "-";
+                        const params = msg._decoded ? (msg._decoded.params || "") : "";
+                        const paramsText = params.replace(/<[^>]*>/g, '');
 
-                        if (!msg._decoded) {
-                            msg._decoded = decodePayload(msg.type, msg.subtype, msg.payload);
+                        // FIX: Use robust address resolution
+                        let handleNumber = -1;
+                        if (msg.handle !== undefined && msg.handle !== null) {
+                            if (typeof msg.handle === 'string' && msg.handle.startsWith('0x')) {
+                                handleNumber = parseInt(msg.handle, 16);
+                            } else {
+                                handleNumber = Number(msg.handle);
+                            }
                         }
-                        const innerMessage = msg._decoded.innerMsg || "-";
-                        const params = msg._decoded.params || "";
-                        const paramsText = params.replace(/<[^>]*>/g, ''); // Strip HTML
+                        const peerAddress = msg.peerAddress || btsnoopConnectionMap.get(handleNumber)?.address || 'N/A';
 
                         return {
-                            'Time': msg.timestamp,
-                            'Direction': msg.direction,
-                            'Message Category': categoryName,
-                            'Message Type': displayType,
+                            Time: msg.timestamp,
+                            'BLE Address': peerAddress,
+                            Dir: msg.direction,
+                            'Category': categoryName,
+                            'Type': typeName,
                             'Message': innerMessage,
                             'Parameters': paramsText,
-                            'Raw Data': `'${msg.fullHex || ''}`  // Prefix with ' to force text format in Excel
+                            'Raw Data': msg.fullHex
                         };
                     });
 
-                    // Create worksheet and workbook
                     const ws = XLSX.utils.json_to_sheet(exportData);
                     const wb = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(wb, ws, 'CCC Stats');
-
-                    // Generate filename with timestamp
-                    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-                    const filename = `CCC_Stats_${timestamp}.xlsx`;
-
-                    // Save file
-                    XLSX.writeFile(wb, filename);
+                    XLSX.utils.book_append_sheet(wb, ws, "CCC_Analysis");
+                    XLSX.writeFile(wb, "ccc_analysis.xlsx");
                 });
             }
         }
 
+        // --- Helper: Update Table Body ---
         function updateCccTableBody() {
             const tbody = container.querySelector('tbody');
             if (!tbody) return;
@@ -3148,7 +3467,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (msg.type === 0x00 && CCC_CONSTANTS.FRAMEWORK_MSGS && CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype]) typeName = CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype];
 
                 const subtypeHex = `0x${msg.subtype.toString(16).padStart(2, '0').toUpperCase()}`;
-                const displayType = typeName === 'Unknown' ? subtypeHex : `${typeName} (${subtypeHex})`;
+                let displayType = typeName;
+                if (typeName === 'Unknown') displayType = subtypeHex;
+                else displayType = `${typeName} (${subtypeHex})`; // Plain text for filtering
 
                 if (!msg._decoded) {
                     msg._decoded = decodePayload(msg.type, msg.subtype, msg.payload);
@@ -3157,8 +3478,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const params = msg._decoded.params || "";
                 const paramsText = params.replace(/<[^>]*>/g, '');
 
+                // FIX: Resolve address for filtering
+                let handleNumber = -1;
+                if (msg.handle !== undefined && msg.handle !== null) {
+                    if (typeof msg.handle === 'string' && msg.handle.startsWith('0x')) {
+                        handleNumber = parseInt(msg.handle, 16);
+                    } else {
+                        handleNumber = Number(msg.handle);
+                    }
+                }
+                const peerAddress = msg.peerAddress || btsnoopConnectionMap.get(handleNumber)?.address || 'N/A';
+
                 const columns = [
                     msg.timestamp,
+                    peerAddress,
                     msg.direction,
                     categoryName,
                     displayType,
@@ -3192,8 +3525,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const innerMessage = msg._decoded.innerMsg || "-";
                 const params = msg._decoded.params || "";
 
+                // FIX: Resolve address for display
+                let handleNumber = -1;
+                if (msg.handle !== undefined && msg.handle !== null) {
+                    if (typeof msg.handle === 'string' && msg.handle.startsWith('0x')) {
+                        handleNumber = parseInt(msg.handle, 16);
+                    } else {
+                        handleNumber = Number(msg.handle);
+                    }
+                }
+                const peerAddress = msg.peerAddress || btsnoopConnectionMap.get(handleNumber)?.address || 'N/A';
+
                 html += `<tr>
                     <td>${msg.timestamp}</td>
+                    <td>${peerAddress}</td>
                     <td><span class="badge ${msg.direction === 'Sending' ? 'badge-out' : 'badge-in'}">${msg.direction}</span></td>
                     <td>${categoryName}</td>
                     <td>${displayType}</td>
@@ -3204,7 +3549,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (filtered.length === 0) {
-                html = '<tr><td colspan="7">No matching messages found.</td></tr>';
+                html = '<tr><td colspan="8">No matching messages found.</td></tr>';
             }
             tbody.innerHTML = html;
         }
@@ -3249,10 +3594,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     seenKeys.add(event.keyValue);
 
                     // Resolve peer address from connection map if handle is available
-                    // FIX: Convert handle string (e.g., "0x0003") to a number (3) for map lookup.
-                    const handleNumber = event.handle ? parseInt(event.handle, 16) : -1;
-                    const peerAddress = btsnoopConnectionMap.get(handleNumber)?.address || 'N/A';
-                    // FIX: Close the table row tag '</tr>'
+                    // FIX: Handle both hex string (0x...) and raw number formats from worker
+                    let handleNumber = -1;
+                    if (event.handle !== undefined && event.handle !== null) {
+                        if (typeof event.handle === 'string' && event.handle.startsWith('0x')) {
+                            handleNumber = parseInt(event.handle, 16);
+                        } else {
+                            handleNumber = Number(event.handle);
+                        }
+                    }
+
+                    const peerAddress = event.peerAddress || btsnoopConnectionMap.get(handleNumber)?.address || 'N/A';
+
                     keyTableHtml += `<tr>
                         <td>${peerAddress}</td>
                         <td>${event.keyType}</td>
@@ -3281,13 +3634,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (lastValue === undefined || lastValue.value !== event.detail) {
                     const previousValue = lastValue ? lastValue.value : 'N/A';
                     tableHtml += `<tr>
-                        <td>${event.date || 'N/A'}</td>
-                        <td>${event.time || 'N/A'}</td>
-                        <td>${escapeHtml(event.event)}</td>
-                        <td>${escapeHtml(event.detail)}</td>
-                        <td>${escapeHtml(previousValue)}</td>
-                        <td class="log-line-cell">${escapeHtml(event.originalText)}</td>
-                    </tr>`;
+                            <td>${event.date || 'N/A'}</td>
+                            <td>${event.time || 'N/A'}</td>
+                            <td>${escapeHtml(event.event)}</td>
+                            <td>${escapeHtml(event.detail)}</td>
+                            <td>${escapeHtml(previousValue)}</td>
+                            <td class="log-line-cell">${escapeHtml(event.originalText)}</td>
+                        </tr>`;
                     lastState.set(event.event, { value: event.detail });
                 }
             });
@@ -3295,7 +3648,62 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             deviceEventsTable.innerHTML = '<tr><td colspan="6">No specific device or setting events found.</td></tr>';
         }
+
+        // Setup filters for all highlight tables
+        setupTableFilters('deviceEventsTable');
+        setupTableFilters('bleKeysTable');
+        setupTableFilters('btsnoopConnectionEventsTable');
+
+        // Make tables resizable
+        if (typeof makeTableResizable === 'function') {
+            makeTableResizable('deviceEventsTable');
+            makeTableResizable('bleKeysTable');
+            makeTableResizable('btsnoopConnectionEventsTable');
+        }
     }
+
+    // Helper to generic table filtering
+    function setupTableFilters(tableId) {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+
+        const inputs = table.querySelectorAll('.filter-row input');
+        // Debounce map for this table
+        if (!table._filterState) table._filterState = {};
+
+        inputs.forEach(input => {
+            // Remove old listeners to avoid duplicates if re-run (simplified approach)
+            // A better way is to attach once, but renderHighlights runs multiple times.
+            // We'll replace the element to clear listeners or check a flag.
+            if (input._hasListener) return;
+            input._hasListener = true;
+
+            input.addEventListener('input', (e) => {
+                const colIndex = parseInt(e.target.dataset.col, 10);
+                const value = e.target.value.toLowerCase();
+                table._filterState[colIndex] = value;
+
+                // Apply filters
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+
+                rows.forEach(row => {
+                    let visible = true;
+                    // Check all active filters
+                    for (const [cIdx, filterTerm] of Object.entries(table._filterState)) {
+                        if (!filterTerm) continue;
+                        const cell = row.children[cIdx];
+                        if (!cell || !cell.textContent.toLowerCase().includes(filterTerm)) {
+                            visible = false;
+                            break;
+                        }
+                    }
+                    row.style.display = visible ? '' : 'none';
+                });
+            });
+        });
+    }
+
     function processForDashboardStats() {
         const cpuRegex = /(\d+)% user \+ (\d+)% kernel|Load: ([\d.]+)/i;
         const tempRegex = /(?:temp(?:erature)?|tsens_tz_sensor\d+):?\s*[:=]\s*(\d+)/i;
@@ -3503,129 +3911,185 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-    // --- BLE Log Processing ---
+    // --- Connectivity Tab Logic ---
+    let connectivityScrollListenerAttached = false;
 
-    async function setupBleTab() {
-        if (!bleScrollListenerAttached && bleLogContainer instanceof HTMLElement) {
-            bleLogContainer.addEventListener('scroll', renderBleVirtualLogs);
-            bleScrollListenerAttached = true;
+    async function setupConnectivityTab() {
+        const container = document.getElementById('connectivityLogContainer');
+        if (!connectivityScrollListenerAttached && container) {
+            container.addEventListener('scroll', renderConnectivityVirtualLogs);
+            connectivityScrollListenerAttached = true;
         }
-        await applyBleFilters();
+        await applyConnectivityFilters();
     }
-    function applyBleFilters() {
-        const layerKeywords = {
-            manager: /BluetoothManager|BluetoothAdapter/i,
-            gatt: /GATT|BtGatt/i,
-            smp: /SMP/i,
-            hci: /HCI/i
+
+    function renderConnectivityVirtualLogs() {
+        // Re-use the generic virtual logger but targeting the connectivity container
+        renderVirtualLogs(
+            document.getElementById('connectivityLogContainer'),
+            document.getElementById('connectivityLogSizer'),
+            document.getElementById('connectivityLogViewport'),
+            filteredConnectivityLogLines
+        );
+    }
+
+    async function applyConnectivityFilters() {
+        // 1. Gather filtered lines from each active tech
+        let candidates = [];
+        const usedIds = new Set();
+        const addLine = (line) => {
+            // Use line index as unique identifier to prevent duplicates
+            if (!usedIds.has(line.index)) {
+                candidates.push(line);
+                usedIds.add(line.index);
+            }
         };
 
-        const preFilterFn = (lines) => {
-            if (activeBleLayers.size === 0) return [];
-            return lines.filter(line => {
-                if (line.isMeta) return true; // Always include file headers
-                return Array.from(activeBleLayers).some(layer => layerKeywords[layer]?.test(line.originalText));
+        // BLE Logic
+        if (activeTechs.ble) {
+            const bleKeywords = {
+                manager: /BluetoothManager|BluetoothAdapter/i,
+                gatt: /GATT|BtGatt/i,
+                smp: /SMP/i,
+                hci: /HCI/i
+            };
+            const activeLayers = new Set();
+            document.querySelectorAll('#bleFiltersPanel .filter-icon.active').forEach(b => activeLayers.add(b.dataset.bleFilter));
+
+            bleLogLines.forEach(line => {
+                if (line.isMeta) { addLine(line); return; }
+                // If activeLayers is empty, it means no specific layer selected. 
+                // If the USER wants "ALL" when none selected, we change logic.
+                // But existing behavior suggests checking what is active.
+                // If nothing active, show nothing for this tech?
+                // Let's assume if master is ON, at least one filter should be ON or we show nothing?
+                // The user said "individual filter laid out so user can add which ever is relavent".
+                // We'll stick to: if no granulr filter active, show nothing (except headers).
+                if (activeLayers.size === 0) return;
+
+                const hit = Array.from(activeLayers).some(layer => bleKeywords[layer]?.test(line.originalText));
+                if (hit) addLine(line);
             });
-        };
-
-        return applyFiltersAsync(bleLogLines, filteredBleLogLines, bleLogContainer, renderBleVirtualLogs, preFilterFn);
-    }
-
-    function renderBleVirtualLogs() {
-        renderVirtualLogs(bleLogContainer, bleLogSizer, bleLogViewport, filteredBleLogLines);
-    }
-
-    async function setupDckTab() {
-        if (!dckScrollListenerAttached && dckLogContainer instanceof HTMLElement) {
-            dckLogContainer.addEventListener('scroll', renderDckVirtualLogs);
-            dckScrollListenerAttached = true;
         }
-        await applyDckFilters();
-    }
 
-    function applyDckFilters() {
-        const layerKeywords = {
-            // Correct DCK Layer Keywords
-            manager: /DigitalCarKeyManager|CarKey|Dck/i, // High-level framework
-            hal: /UwbTransport|UwbConnector|IDigitalCarKey/i, // HAL and transport layers
-            oem: /oem-dck|vendor.google.automotive.dck/i // OEM-specific logs
-        };
+        // NFC Logic
+        if (activeTechs.nfc) {
+            const nfcKeywords = {
+                framework: /NfcManager|NfcService|TagDispatcher|NfcTag/i,
+                hce: /HostEmulationManager|ApduServiceInfo/i,
+                p2p: /P2pLinkManager/i,
+                hal: /NxpNci|NxpExtns|libnfc|libnfc-nci/i
+            };
+            const activeLayers = new Set();
+            document.querySelectorAll('#nfcFiltersPanel .filter-icon.active').forEach(b => activeLayers.add(b.dataset.nfcFilter));
 
-        const preFilterFn = (lines) => {
-            if (activeDckLayers.size === 0) return [];
-            return lines.filter(line => {
-                if (line.isMeta) return true; // Always include file headers
-                return Array.from(activeDckLayers).some(layer => layerKeywords[layer]?.test(line.originalText));
+            nfcLogLines.forEach(line => {
+                if (line.isMeta) { addLine(line); return; }
+                if (activeLayers.size === 0) return;
+                const hit = Array.from(activeLayers).some(layer => nfcKeywords[layer]?.test(line.originalText));
+                if (hit) addLine(line);
             });
-        };
-
-        return applyFiltersAsync(dckLogLines, filteredDckLogLines, dckLogContainer, renderDckVirtualLogs, preFilterFn);
-    }
-
-    function renderDckVirtualLogs() {
-        renderVirtualLogs(dckLogContainer, dckLogSizer, dckLogViewport, filteredDckLogLines);
-    }
-
-    async function setupNfcTab() {
-        if (!nfcScrollListenerAttached && nfcLogContainer instanceof HTMLElement) {
-            nfcLogContainer.addEventListener('scroll', renderNfcVirtualLogs);
-            nfcScrollListenerAttached = true;
         }
-        await applyNfcFilters();
-    }
 
-    function applyNfcFilters() {
-        const layerKeywords = {
-            framework: /NfcManager|NfcService|TagDispatcher|NfcTag/i,
-            hce: /HostEmulationManager|ApduServiceInfo/i,
-            p2p: /P2pLinkManager/i,
-            hal: /NxpNci|NxpExtns|libnfc|libnfc-nci/i
-        };
-
-        const preFilterFn = (lines) => {
-            if (activeNfcLayers.size === 0) return [];
-            return lines.filter(line => {
-                if (line.isMeta) return true; // Always include file headers
-                return Array.from(activeNfcLayers).some(layer => layerKeywords[layer]?.test(line.originalText));
+        // DCK Logic
+        if (activeTechs.dck) {
+            dckLogLines.forEach(line => {
+                addLine(line);
             });
-        };
-
-        return applyFiltersAsync(nfcLogLines, filteredNfcLogLines, nfcLogContainer, renderNfcVirtualLogs, preFilterFn);
-    }
-
-    function renderNfcVirtualLogs() {
-        renderVirtualLogs(nfcLogContainer, nfcLogSizer, nfcLogViewport, filteredNfcLogLines);
-    }
-
-    // --- Kernel Log Processing ---
-    async function processForKernel() {
-        // OPTIMIZATION: This function is now much simpler. It just applies filters
-        // to the pre-populated kernelLogLines array.
-        if (!kernelScrollListenerAttached && kernelLogContainer instanceof HTMLElement) {
-            kernelLogContainer.addEventListener('scroll', renderKernelVirtualLogs);
-            kernelScrollListenerAttached = true;
         }
 
-        return applyFiltersAsync(kernelLogLines, filteredKernelLogLines, kernelLogContainer, renderKernelVirtualLogs);
+        // Sort by index to maintain chronological order
+        candidates.sort((a, b) => a.index - b.index);
+
+        // Update global source
+        connectivityLogLines = candidates;
+
+        // Apply main filters (Search, Level, Time)
+        return applyFiltersAsync(
+            connectivityLogLines,
+            filteredConnectivityLogLines,
+            document.getElementById('connectivityLogContainer'),
+            renderConnectivityVirtualLogs
+        );
     }
 
-    function renderKernelVirtualLogs() {
-        renderVirtualLogs(kernelLogContainer, kernelLogSizer, kernelLogViewport, filteredKernelLogLines);
+    // Master Toggle Handler Helper
+    function bindMasterToggle(id, techKey, filterPanelId, activeSet) { // Added activeSet
+        const toggle = document.getElementById(id);
+        const panel = filterPanelId ? document.getElementById(filterPanelId) : null;
+
+        if (toggle) {
+            // Find parent tech-section for styling. If panel exists use it, else use toggle's parent.
+            const techSection = panel ? panel.closest('.tech-section') : toggle.closest('.tech-section');
+
+            // Init state
+            toggle.checked = activeTechs[techKey];
+
+            const updatePanelState = () => {
+                if (!activeTechs[techKey]) {
+                    if (techSection) techSection.classList.add('disabled');
+                    // Visually disable but allow interaction to auto-enable
+                } else {
+                    if (techSection) techSection.classList.remove('disabled');
+                }
+            };
+
+            updatePanelState();
+
+            toggle.addEventListener('change', () => {
+                activeTechs[techKey] = toggle.checked;
+                updatePanelState();
+
+                // Trigger refresh
+                refreshActiveTab();
+            });
+        }
     }
-    // --- BTSnoop Tab Setup ---
+
+    async function setupCccTab() {
+        // Ensure BTSnoop processing is done, as CCC stats depend on it
+        if (!isBtsnoopProcessed && fileTasks.length > 0) {
+            await processForBtsnoop();
+        }
+
+        // Populate cccStatsData if empty
+        // Populate cccStatsData if empty
+        if ((!cccStatsData || cccStatsData.length === 0) && btsnoopPackets && btsnoopPackets.length > 0) {
+            // Filter for packets that have numeric 'type' (indicating decoded CCC message)
+            cccStatsData = btsnoopPackets.filter(p => typeof p.type === 'number');
+        } else if (btsnoopPackets && btsnoopPackets.length > 0) {
+            // Merge strategy: Append unique btsnoop packets if not already present
+            const btsnoopCcc = btsnoopPackets.filter(p => typeof p.type === 'number');
+            // Simple append for now to ensure visibility
+            // cccStatsData.push(...btsnoopCcc); 
+            // Logic: If text logs exist, we might have exact duplicates if we assume logs cover same events. 
+            // But usually they are disjoint (text vs binary). 
+            // Safest: Don't overwrite. Append if needed.
+            // For now, I'll assume users want to see everything.
+            const existingCount = cccStatsData.length;
+            // Check if we already merged? 
+        }
+
+        // Render the CCC stats to the new container
+        renderCccStats(cccStatsData);
+    }
+
     async function setupBtsnoopTab() {
         console.log('[BTSnoop Debug] 1. setupBtsnoopTab called.');
         if (!btsnoopScrollListenerAttached && btsnoopLogContainer instanceof HTMLElement) {
             // FIX: Attach the correct virtual scroll listener.
             btsnoopLogContainer.addEventListener('scroll', () => {
-                clearTimeout(btsnoopScrollThrottleTimer);
-                btsnoopScrollThrottleTimer = setTimeout(renderBtsnoopVirtualLogs, 16);
-            });
-            // Sync horizontal scroll with header
-            btsnoopLogContainer.addEventListener('scroll', () => {
-                const header = document.getElementById('btsnoopHeader');
-                if (header && header.firstChild) {
-                    header.scrollLeft = btsnoopLogContainer.scrollLeft;
+                if (!window.btsnoopScrollFrame) {
+                    window.btsnoopScrollFrame = requestAnimationFrame(() => {
+                        renderBtsnoopVirtualLogs();
+                        window.btsnoopScrollFrame = null;
+
+                        // Sync horizontal scroll
+                        const header = document.getElementById('btsnoopHeader');
+                        if (header && header.firstChild) {
+                            header.scrollLeft = btsnoopLogContainer.scrollLeft;
+                        }
+                    });
                 }
             });
             btsnoopScrollListenerAttached = true;
@@ -3633,48 +4097,109 @@ document.addEventListener('DOMContentLoaded', () => {
         // FIX: Trigger the initial render after setting up the tab.
         console.log('[BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.');
         createBtsnoopFilterHeader(); // Ensure header and filters are created
+        attachBtsnoopFilterListeners(); // Attach listeners to the filter buttons (CMD, EVT, etc.)
         renderBtsnoopPackets();
     }
+
+    function attachBtsnoopFilterListeners() {
+        const container = document.getElementById('btsnoopFilterContainer');
+        if (!container) return;
+
+        const buttons = container.querySelectorAll('.filter-icon');
+        buttons.forEach(btn => {
+            // Remove old listeners to avoid duplicates (safeguard)
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+
+            newBtn.addEventListener('click', () => {
+                const type = newBtn.dataset.btsnoopFilter;
+                newBtn.classList.toggle('active');
+
+                if (newBtn.classList.contains('active')) {
+                    activeBtsnoopFilters.add(type);
+                } else {
+                    activeBtsnoopFilters.delete(type);
+                }
+
+                // Trigger re-filter and re-render
+                renderBtsnoopPackets();
+            });
+
+            // Sync initial state
+            if (activeBtsnoopFilters.has(newBtn.dataset.btsnoopFilter)) {
+                newBtn.classList.add('active');
+            } else {
+                newBtn.classList.remove('active'); // Should be active by default if set matches
+            }
+        });
+    }
+
     // --- BTSnoop Log Processing ---
     async function processForBtsnoop() {
-        const exportXlsxBtn = document.getElementById('exportBtsnoopXlsxBtn');
+        return new Promise(async (resolve, reject) => {
+            const exportXlsxBtn = document.getElementById('exportBtsnoopXlsxBtn');
 
-        // FIX: Ensure the database is open before proceeding.
-        if (!db) {
-            return;
-        }
+            // FIX: Ensure the database is open before proceeding.
+            if (!db) {
+                return reject('DB not open');
+            }
 
-        if (!btsnoopInitialView || !btsnoopContentView || !btsnoopFilterContainer) return;
+            if (!btsnoopInitialView || !btsnoopContentView || !btsnoopFilterContainer) return reject('BTSnoop UI elements not found');
 
-        TimeTracker.start('BTSnoop Processing');
+            // Check if worker code has changed and invalidate cache
+            const workerVersion = '2025-12-07-00:09';
+            const storedVersion = localStorage.getItem('btsnoopWorkerVersion');
+            if (storedVersion !== workerVersion) {
+                console.log('[BTSnoop] Worker code changed (v' + workerVersion + '), clearing ALL cache...');
+                // Clear IndexedDB btsnoopStore
+                if (db) {
+                    const tx = db.transaction([BTSNOOP_STORE_NAME], 'readwrite');
+                    await tx.objectStore(BTSNOOP_STORE_NAME).clear();
+                    await new Promise((resolve, reject) => {
+                        tx.oncomplete = resolve;
+                        tx.onerror = reject;
+                    });
+                }
+                // Clear btsnoopPackets from logStore too!
+                await saveData('btsnoopPackets', null);
+                // Clear in-memory cache
+                btsnoopPackets = [];
+                btsnoopConnectionEvents = [];
+                isBtsnoopProcessed = false; // Force re-processing
+                localStorage.setItem('btsnoopWorkerVersion', workerVersion);
+                console.log('[BTSnoop] All cache cleared (including logStore), will force re-process');
+            }
 
-        const btsnoopTasks = fileTasks.filter(task =>
-            /btsnoop_hci\.log.*/.test(task.path)
-        );
+            TimeTracker.start('BTSnoop Processing');
 
-        if (btsnoopTasks.length === 0) {
-            btsnoopInitialView.innerHTML = '<p>No btsnoop_hci.log files found.</p>';
-            TimeTracker.stop('BTSnoop Processing');
-            return;
-        }
+            const btsnoopTasks = fileTasks.filter(task =>
+                /btsnoop_hci\.log.*/.test(task.path)
+            );
 
-        // FIX: Clear previous connection events to prevent duplication
-        btsnoopConnectionEvents = [];
+            if (btsnoopTasks.length === 0) {
+                btsnoopInitialView.innerHTML = '<p>No btsnoop_hci.log files found.</p>';
+                TimeTracker.stop('BTSnoop Processing');
+                isBtsnoopProcessed = true; // Mark as "processed" even if no files, to prevent re-running.
+                return resolve();
+            }
 
-        // Clear previous data from IndexedDB
-        const transaction = db.transaction([BTSNOOP_STORE_NAME], 'readwrite');
-        const store = transaction.objectStore(BTSNOOP_STORE_NAME);
-        await new Promise(resolve => store.clear().onsuccess = resolve);
+            // FIX: Clear previous connection events to prevent duplication
+            btsnoopConnectionEvents = [];
 
-        btsnoopInitialView.innerHTML = `<p>Found ${btsnoopTasks.length} btsnoop file(s). Parsing and storing packets...</p><div id="btsnoop-progress"></div>`;
-        const progressDiv = document.getElementById('btsnoop-progress');
+            // Clear previous data from IndexedDB
+            // OPTIMIZATION Phase 3: We now use single blob storage (logStore) so explicit clear isn't needed (overwrite).
+            // btsnoopPackets accumulator reset
+            btsnoopPackets = [];
 
-        try {
-            const bufferPromises = btsnoopTasks.map(task => (task.file || task.blob).arrayBuffer());
-            const fileBuffers = await Promise.all(bufferPromises);
+            btsnoopInitialView.innerHTML = `<p>Found ${btsnoopTasks.length} btsnoop file(s). Parsing and storing packets...</p><div id="btsnoop-progress"></div>`;
+            const progressDiv = document.getElementById('btsnoop-progress');
 
-            // FIX: Embed the worker script to avoid file:// origin security errors.
-            const btsnoopWorkerScript = `
+            try {
+                const bufferPromises = btsnoopTasks.map(task => (task.file || task.blob).arrayBuffer());
+                const fileBuffers = await Promise.all(bufferPromises);
+
+                // FIX: Embed the worker script to avoid file:// origin security errors.
+                const btsnoopWorkerScript = `
                 // --- Dictionaries for HCI Parsing ---
                 const HCI_COMMANDS = { 0x200C: 'LE Set Scan Enable', 0x200B: 'LE Set Scan Parameters', 0x2006: 'LE Set Advertising Parameters', 0x200A: 'LE Set Advertising Enable', 0x200D: 'LE Create Connection' };
                 const HCI_EVENTS = { 0x0E: 'Command Complete', 0x0F: 'Command Status', 0x3E: 'LE Meta Event' };
@@ -3685,7 +4210,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // --- Main Worker Logic ---
                 self.onmessage = async (event) => {
-                    const { fileBuffers } = event.data;
+                    const { fileBuffers, localBtAddress } = event.data; // Receive local address
                     if (!fileBuffers || fileBuffers.length === 0) {
                         self.postMessage({ type: 'error', message: 'No file buffers received.' });
                         return;
@@ -3711,7 +4236,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (offset + 24 > finalBuffer.byteLength) break;
 
                             const includedLength = dataView.getUint32(offset + 4, false);
-                            const flags = dataView.getUint32(offset + 12, false);
+                            const flags = dataView.getUint32(offset + 8, false); // FIX: Flags are at offset 8, not 12.
                             const timestampMicro = dataView.getBigUint64(offset + 16, false);
 
                             const timestampMs = Number(timestampMicro - BTSNOOP_EPOCH_DELTA) / 1000;
@@ -3724,7 +4249,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const packetData = new Uint8Array(finalBuffer, offset, includedLength);
                             const direction = (flags & 1) === 0 ? 'Host -> Controller' : 'Controller -> Host';
 
-                            const interpretation = interpretHciPacket(packetData, connectionMap, packetNumber, direction, timestampStr);
+                            const interpretation = interpretHciPacket(packetData, connectionMap, packetNumber, direction, timestampStr, localBtAddress);
 
                             const packet = { ...interpretation, number: packetNumber, timestamp: timestampStr, direction };
                             packets.push(packet);
@@ -3768,40 +4293,48 @@ document.addEventListener('DOMContentLoaded', () => {
                     return finalArray.buffer;
                 }
 
-                function interpretHciPacket(data, connectionMap, packetNum, direction, timestampStr) {
+                function interpretHciPacket(data, connectionMap, packetNum, direction, timestampStr, localBtAddress) {
                     if (data.length === 0) return { type: 'Empty', summary: 'Empty Packet', tags: [], data: '' };
                     const packetType = data[0];
                     const tags = [];
                     const hexData = Array.from(data, byte => byte.toString(16).padStart(2, '0')).join(' ');
-                    let source = 'Host', destination = 'Controller';
+                    let source, destination;
 
                     switch (packetType) {
-                        case 1: // Command
+                        case 1: // HCI Command - ALWAYS Host -> Controller
                             tags.push('cmd');
+                            source = 'Host';
+                            destination = 'Controller';
                             if (data.length < 4) return { type: 'HCI Cmd', summary: 'Malformed', tags, source, destination, data: hexData };
-                            // FIX: Correctly parse little-endian OCF and OGF for the full opcode.
-                            const ocf = data[1] | ((data[2] & 0x03) << 8); // Opcode Command Field
-                            const ogf = (data[2] >> 2) & 0x3F; // Opcode Group Field
+                            const ocf = data[1] | ((data[2] & 0x03) << 8);
+                            const ogf = (data[2] >> 2) & 0x3F;
                             const opcode = (ogf << 10) | ocf;
                             const paramLength = data[3];
                             const opName = HCI_COMMANDS[opcode] || \`Unknown OpCode: 0x\${opcode.toString(16).padStart(4, '0')}\`;
                             return { type: 'HCI Cmd', summary: \`\${opName}, Len: \${paramLength}\`, tags, source, destination, data: hexData };
-                        case 2: // ACL Data
+                        case 2: // ACL Data - Direction from flags, use connection map for address
                             tags.push('acl');
-                            if (data.length < 5) return { type: 'ACL Data', summary: 'Malformed', tags, source, destination, data: hexData };
+                            if (data.length < 5) return { type: 'ACL Data', summary: 'Malformed', tags, source: 'Host', destination: 'Controller', data: hexData };
                             const handle = ((data[2] & 0x0F) << 8) | data[1];
                             const dataLength = (data[4] << 8) | data[3];
                             const connInfo = connectionMap.get(handle);
-                            if (connInfo) { source = direction === 'Controller -> Host' ? connInfo.address : 'Host'; destination = direction === 'Host -> Controller' ? connInfo.address : 'Host'; }
-                            else { source = direction === 'Controller -> Host' ? \`Handle 0x\${handle.toString(16)}\` : 'Host'; destination = direction === 'Host -> Controller' ? \`Handle 0x\${handle.toString(16)}\` : 'Host'; }
+                            const remoteAddr = connInfo ? connInfo.address : \`Handle 0x\${handle.toString(16)}\`;
+                            // Direction determines who is source and who is destination
+                            if (direction === 'Host -> Controller') {
+                                source = localBtAddress;
+                                destination = remoteAddr;
+                            } else {
+                                source = remoteAddr;
+                                destination = localBtAddress;
+                            }
                             let aclSummary = \`Len: \${dataLength}\`;
                             if (data.length >= 9) {
                                 tags.push('l2cap');
                                 const l2capLength = (data[6] << 8) | data[5];
                                 const cid = (data[8] << 8) | data[7];
                                 aclSummary += \`, L2CAP Len: \${l2capLength}, CID: \${L2CAP_CIDS[cid] || '0x' + cid.toString(16)}\`;
-                                if (cid === 4 && data.length >= 10) { 
-                                    tags.push('att'); 
+                                if (cid === 4 && data.length >= 10) {
+                                    tags.push('att');
                                     const attOpcode = data[9]; 
                                     aclSummary += \` > ATT: \${ATT_OPCODES[attOpcode] || 'Op ' + attOpcode.toString(16)}\`; 
                                 }
@@ -3812,21 +4345,27 @@ document.addEventListener('DOMContentLoaded', () => {
                                     
                                     // Extract IRK and LTK keys from SMP packets
                                     if (smpCode === 0x06 && data.length >= 26) { // Encryption Info (LTK) - 16 bytes
-                                        const ltk = Array.from(data.slice(10, 26)).reverse().map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+                                        const ltk = Array.from(data.slice(10, 26)).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
                                         aclSummary += ' [LTK Found]';
-                                        self.postMessage({ type: 'connectionEvent', event: { packetNum, handle, keyType: 'LTK', keyValue: ltk, timestamp: timestampStr } });
+                                        // FIX: Use source address to identify who sent the key (Owner)
+                                        const peerAddr = source;
+                                        self.postMessage({ type: 'connectionEvent', event: { packetNum, handle, keyType: 'LTK', keyValue: ltk, timestamp: timestampStr, peerAddress: peerAddr } });
                                     }
                                     else if (smpCode === 0x08 && data.length >= 26) { // Identity Info (IRK) - 16 bytes
-                                        const irk = Array.from(data.slice(10, 26)).reverse().map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-                                        self.postMessage({ type: 'connectionEvent', event: { packetNum, handle, keyType: 'IRK', keyValue: irk, timestamp: timestampStr } });
+                                        const irk = Array.from(data.slice(10, 26)).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+                                        // FIX: Use source address to identify who sent the key (Owner)
+                                        const peerAddr = source;
+                                        self.postMessage({ type: 'connectionEvent', event: { packetNum, handle, keyType: 'IRK', keyValue: irk, timestamp: timestampStr, peerAddress: peerAddr } });
                                         aclSummary += \` [IRK Found]\`;
                                     }
                                 }
                             }
                             return { type: 'ACL Data', summary: aclSummary, tags, source, destination, data: hexData, handle };
-                        case 4: // Event
+                        case 4: // HCI Event - ALWAYS Controller -> Host (destination is localBtAddress)
                             tags.push('evt');
-                            if (data.length < 3) return { type: 'HCI Evt', summary: 'Malformed', tags, source, destination, data: hexData };
+                            source = 'Controller';
+                            destination = localBtAddress;
+                            if (data.length < 3) return { type: 'HCI Evt', summary: 'Malformed', tags, source, destination, data: hexData};
                             const eventCode = data[1];
                             const eventLength = data[2];
                             let summary = \`\${HCI_EVENTS[eventCode] || 'Unknown Event'}, Len: \${eventLength}\`;
@@ -3841,140 +4380,122 @@ document.addEventListener('DOMContentLoaded', () => {
                                     const peerAddressSlice = isEnhanced ? data.slice(10, 16) : data.slice(9, 15);
                                     const peerAddress = Array.from(peerAddressSlice).reverse().map(b => b.toString(16).padStart(2, '0')).join(':').toUpperCase();
                                     if (connectionHandle) { connectionMap.set(connectionHandle, { address: peerAddress, packetNum: packetNum }); }
-                                    destination = peerAddress;
+                                    // Destination is always the host for an event. The peer is the remote device.
                                     summary += \` (Handle: 0x\${connectionHandle.toString(16)}, Peer: \${peerAddress})\`;
                                     // Send connection event with timestamp
                                     self.postMessage({ type: 'connectionEvent', event: { packetNum: packetNum, timestamp: timestampStr, handle: \`0x\${connectionHandle.toString(16).padStart(4, '0')}\`, address: peerAddress, rawData: hexData } });
                                 }
                             }
                             return { type: 'HCI Evt', summary, tags, source, destination, data: hexData };
-                        default: return { type: \`Unknown (0x\${packetType.toString(16)})\`, summary: 'Unknown packet type', tags, source, destination, data: hexData };
+                        default:
+                            source = 'Unknown';
+                            destination = 'Unknown';
+                            return { type: \`Unknown (0x\${packetType.toString(16)})\`, summary: 'Unknown packet type', tags, source, destination, data: hexData };
                     }
                 }
             `;
-            const blob = new Blob([btsnoopWorkerScript], { type: 'application/javascript' });
-            const workerURL = URL.createObjectURL(blob);
-            const worker = new Worker(workerURL);
-            let totalPacketsStored = 0;
+                // Cache bust: 2025-12-07-11:55 - Fixed ReferenceError for localBtAddress in worker.
+                const blob = new Blob([btsnoopWorkerScript], { type: 'application/javascript' });
+                const workerURL = URL.createObjectURL(blob);
+                const worker = new Worker(workerURL);
+                let totalPacketsStored = 0;
 
-            worker.onmessage = async (event) => {
-                const { type, packets, message, stack, connectionMap } = event.data;
+                worker.onmessage = async (event) => {
+                    const { type, packets, message, stack, connectionMap } = event.data;
 
-                if (type === 'chunk') {
-                    const tx = db.transaction([BTSNOOP_STORE_NAME], 'readwrite');
-                    const store = tx.objectStore(BTSNOOP_STORE_NAME);
-                    for (const packet of packets) {
-                        store.put(packet);
+                    if (type === 'chunk') {
+                        // OPTIMIZATION Phase 3: Accumulate in memory, save once at end
+                        for (const packet of packets) {
+                            btsnoopPackets.push(packet);
+                        }
+                        totalPacketsStored += packets.length;
+                        progressDiv.textContent = `Parsed ${totalPacketsStored.toLocaleString()} packets...`;
+                    } else if (type === 'connectionEvent') {
+                        // The worker sends the complete event object with the correct timestamp. Simply push it.
+                        btsnoopConnectionEvents.push(event.data.event);
+                    } else if (type === 'complete') {
+                        btsnoopConnectionMap = new Map(Object.entries(connectionMap));
+                        progressDiv.textContent = `Parsed ${totalPacketsStored.toLocaleString()} packets. finalizing...`;
+
+                        // Post-processing to resolve handles (in memory now)
+                        await resolveBtsnoopHandles(btsnoopConnectionMap);
+
+                        // OPTIMIZATION: Save all packets as a single blob (fast)
+                        progressDiv.textContent = `Saving ${totalPacketsStored.toLocaleString()} packets...`;
+                        await saveData('btsnoopPackets', btsnoopPackets);
+
+                        // Show the content view and hide the initial parsing view.
+                        const btsnoopToolbar = document.getElementById('btsnoopToolbar');
+                        btsnoopContentView.style.display = 'flex';
+                        btsnoopFilterContainer.style.display = 'block';
+                        btsnoopInitialView.style.display = 'none';
+                        if (btsnoopToolbar) btsnoopToolbar.style.display = 'block'; // Show toolbar with export button
+
+                        TimeTracker.stop('BTSnoop Processing');
+
+                        isBtsnoopProcessed = true; // Set the flag to true
+
+                        // Preserve existing highlights data instead of creating empty arrays
+                        if (storedHighlights) {
+                            renderHighlights(storedHighlights);
+                        }
+                        renderBtsnoopConnectionEvents();
+                        // The setupBtsnoopTab function will now handle the initial render correctly.
+                        setupBtsnoopTab();
+                        worker.terminate();
+                        URL.revokeObjectURL(workerURL); // Clean up the blob URL
+                    } else if (type === 'error') {
+                        reject(new Error(`BTSnoop Worker Error: ${message}\n${stack}`));
                     }
-                    await new Promise(resolve => tx.oncomplete = resolve);
-                    totalPacketsStored += packets.length;
-                    progressDiv.textContent = `Stored ${totalPacketsStored.toLocaleString()} packets...`;
-                } else if (type === 'connectionEvent') {
-                    // The worker sends the complete event object with the correct timestamp. Simply push it.
-                    btsnoopConnectionEvents.push(event.data.event);
-                } else if (type === 'complete') {
-                    btsnoopConnectionMap = new Map(Object.entries(connectionMap));
-                    progressDiv.textContent = `Stored ${totalPacketsStored.toLocaleString()} packets. Finalizing...`;
+                };
 
-                    // Post-processing to resolve handles
-                    await resolveBtsnoopHandles(btsnoopConnectionMap);
-
-                    // FIX: Show the content view and hide the initial parsing view.
-                    // This was the missing step that caused a blank screen.
-                    const btsnoopToolbar = document.getElementById('btsnoopToolbar');
-                    btsnoopContentView.style.display = 'flex';
-                    btsnoopFilterContainer.style.display = 'block';
-                    btsnoopInitialView.style.display = 'none';
-                    if (btsnoopToolbar) btsnoopToolbar.style.display = 'block'; // Show toolbar with export button
-
+                worker.onerror = (err) => {
+                    console.error('Error from btsnoop-worker:', err);
+                    btsnoopInitialView.innerHTML = `<p>An unexpected error occurred during parsing: ${err.message}</p>`;
+                    URL.revokeObjectURL(workerURL);
                     TimeTracker.stop('BTSnoop Processing');
+                };
 
-                    isBtsnoopProcessed = true; // Set the flag to true
-                    // FIX: Render the connection events table now that it's populated
-                    // FIX: Re-render the highlights to populate the BLE Keys table now that we have the data.
-                    // This requires rebuilding the highlights object from the consolidated data.
-                    // Preserve existing highlights data instead of creating empty arrays
-                    if (storedHighlights) {
-                        renderHighlights(storedHighlights);
-                    }
-                    renderBtsnoopConnectionEvents();
-                    // The setupBtsnoopTab function will now handle the initial render correctly.
-                    setupBtsnoopTab();
-                    worker.terminate();
-                    URL.revokeObjectURL(workerURL); // Clean up the blob URL
-                } else if (type === 'error') {
-                    throw new Error(`BTSnoop Worker Error: ${message}\n${stack}`);
+                worker.postMessage({ fileBuffers, localBtAddress: localBtAddress }, fileBuffers);
+
+            } catch (error) {
+                console.error('Error processing btsnoop log:', error);
+                btsnoopInitialView.innerHTML = `<p>Error: ${error.message}</p>`;
+                // FIX: Resolve the promise on error
+                if (window.resolveBtsnoopProcessing) {
+                    window.resolveBtsnoopProcessing();
+                    btsnoopProcessingPromise = null;
                 }
-            };
-
-            worker.onerror = (err) => {
-                console.error('Error from btsnoop-worker:', err);
-                btsnoopInitialView.innerHTML = `<p>An unexpected error occurred during parsing: ${err.message}</p>`;
-                URL.revokeObjectURL(workerURL);
                 TimeTracker.stop('BTSnoop Processing');
-            };
-
-            worker.postMessage({ fileBuffers }, fileBuffers);
-
-        } catch (error) {
-            console.error('Error processing btsnoop log:', error);
-            btsnoopInitialView.innerHTML = `<p>Error: ${error.message}</p>`;
-            TimeTracker.stop('BTSnoop Processing');
-        }
+            }
+        });
     }
 
     async function resolveBtsnoopHandles(connectionMap) {
-        const tx = db.transaction([BTSNOOP_STORE_NAME], 'readwrite');
-        const store = tx.objectStore(BTSNOOP_STORE_NAME);
+        // OPTIMIZATION Phase 3: Process in memory (Array) instead of DB Cursor
+        console.log('[Perf] Resolving btsnoop handles in memory...');
+        const start = performance.now();
+        let updates = 0;
 
-        let cursor = await new Promise((resolve, reject) => {
-            const request = store.openCursor();
-            if (!request) {
-                resolve(null); // Resolve with null if the store is empty
-                return;
-            }
-            request.onsuccess = e => resolve(e.target.result);
-            request.onerror = e => reject(e.target.error);
-        });
+        for (let i = 0; i < btsnoopPackets.length; i++) {
+            const packet = btsnoopPackets[i];
 
-        // FIX: Process updates in async batches to avoid blocking the main thread.
-        const processBatch = async () => {
-            if (!cursor) return; // Done
-
-            const BATCH_SIZE = 2000;
-            for (let i = 0; i < BATCH_SIZE && cursor; i++) {
-                const packet = cursor.value;
-                let needsUpdate = false;
-
-                if (packet.handle !== undefined && connectionMap.has(packet.handle)) {
-                    const connInfo = connectionMap.get(packet.handle);
-                    if (packet.direction === 'Controller -> Host' && packet.source !== connInfo.address) {
-                        packet.source = connInfo.address;
-                        needsUpdate = true;
-                    } else if (packet.direction !== 'Controller -> Host' && packet.destination !== connInfo.address) {
-                        packet.destination = connInfo.address;
-                        needsUpdate = true;
-                    }
+            if (packet.handle !== undefined && connectionMap.has(packet.handle)) {
+                const connInfo = connectionMap.get(packet.handle);
+                if (packet.direction === 'Controller -> Host' && String(packet.source).startsWith('Handle')) {
+                    packet.source = connInfo.address;
+                    updates++;
+                } else if (packet.direction === 'Host -> Controller' && String(packet.destination).startsWith('Handle')) {
+                    packet.destination = connInfo.address;
+                    updates++;
                 }
-
-                if (needsUpdate) {
-                    cursor.update(packet);
-                }
-
-                // FIX: Robustly handle the end of the cursor to prevent TypeError.
-                cursor = await new Promise((resolve, reject) => {
-                    const request = cursor.continue();
-                    // If request is null, we've hit the end. Resolve with null.
-                    if (!request) resolve(null);
-                    else request.onsuccess = e => resolve(e.target.result);
-                });
             }
-            // Yield to the main thread before processing the next batch
-            setTimeout(processBatch, 0);
-        };
 
-        await processBatch();
-        return new Promise(resolve => tx.oncomplete = resolve);
+            // Yield every 20k items to keep UI responsive
+            if (i % 20000 === 0 && i > 0) await new Promise(r => setTimeout(r, 0));
+        }
+
+        console.log(`[Perf] Resolved handles for ${updates} packets in ${(performance.now() - start).toFixed(2)}ms`);
     }
 
     function renderBtsnoopConnectionEvents() {
@@ -3991,7 +4512,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <tr>
                     <td>${event.packetNum}</td>
                     <td>${event.timestamp || 'N/A'}</td>
-                    <td>${event.handle || 'N/A'}</td>
+                    <td>${event.address || 'N/A'}</td>
                     <td>${event.address || 'N/A'}</td>
                     <td>${escapeHtml(event.rawData)}</td>
                 </tr>`).join('');
@@ -4049,13 +4570,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }))
             .filter(f => f.value);
 
-        const allPackets = await new Promise((resolve, reject) => {
-            const tx = db.transaction([BTSNOOP_STORE_NAME], 'readonly');
-            tx.objectStore(BTSNOOP_STORE_NAME).getAll().onsuccess = e => resolve(e.target.result);
-            tx.onerror = e => reject(e.target.error);
-        });
+        // OPTIMIZATION Phase 3: Load from single blob
+        const stored = await loadData('btsnoopPackets');
+        const allPackets = stored && stored.value ? stored.value : [];
 
         filteredBtsnoopPackets = allPackets.filter(packet => {
+            // FIX: If no filters are active, SHOW ALL. Previously it might have been restrictive.
+            // Check if ANY filter tag matches the packet's tags.
+            // Packet tags are an array (e.g. ['cmd', 'hci']).
+            // If activeBtsnoopFilters has entries, at least one must match.
             const passesTags = activeBtsnoopFilters.size === 0 || packet.tags.some(tag => activeBtsnoopFilters.has(tag));
             if (!passesTags) return false;
 
@@ -4084,6 +4607,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         // Store scroll position for later (after render)
         // --- End Scroll Restoration ---
+
+        // OPTIMIZATION Phase 3: Pre-calculate row positions for virtual scrolling
+        // This moves O(N) calculation from scroll event (16ms) to filter event (once).
+        btsnoopRowPositions = new Float32Array(filteredBtsnoopPackets.length); // Use TypedArray for memory efficiency
+        btsnoopTotalHeight = 0;
+
+        for (let i = 0; i < filteredBtsnoopPackets.length; i++) {
+            btsnoopRowPositions[i] = btsnoopTotalHeight;
+            const packet = filteredBtsnoopPackets[i];
+            const dataLength = packet.data?.length || 0;
+            const estimatedLines = Math.max(1, Math.ceil(dataLength / 100));
+            const height = 20 * estimatedLines;
+            btsnoopTotalHeight += height;
+        }
 
         TimeTracker.stop('BTSnoop Filtering');
         renderBtsnoopVirtualLogs(); // Render the filtered results - scroll will happen inside
@@ -4196,54 +4733,44 @@ document.addEventListener('DOMContentLoaded', () => {
         const viewport = document.getElementById('btsnoopLogViewport');
         const container = document.getElementById('btsnoopLogContainer');
 
-        console.log('[BTSnoop Debug] 4. renderBtsnoopVirtualLogs called, packets:', filteredBtsnoopPackets.length);
+        if (viewport) viewport.style.position = 'relative'; // Ensure relative positioning logic
 
-        if (!container || !sizer || !viewport) {
-            console.error('[BTSnoop Debug] Missing elements:', { container: !!container, sizer: !!sizer, viewport: !!viewport });
-            return;
-        }
+        if (!container || !sizer || !viewport) return;
 
-        // Calculate cumulative heights for variable-height rows
-        const rowHeights = [];
-        const rowPositions = [];
-        let totalHeight = 0;
-
-        filteredBtsnoopPackets.forEach((packet, idx) => {
-            rowPositions[idx] = totalHeight;
-            // Estimate height: 20px base + extra for wrapped data
-            const dataLength = packet.data?.length || 0;
-            const estimatedLines = Math.max(1, Math.ceil(dataLength / 100)); // ~100 chars per line
-            const height = 20 * estimatedLines;
-            rowHeights[idx] = height;
-            totalHeight += height;
-        });
-
-        // Set the total height of the scrollable area
-        sizer.style.height = `${totalHeight}px`;
+        // Use cached total height
+        sizer.style.height = `${btsnoopTotalHeight}px`;
 
         const scrollTop = container.scrollTop;
         const containerHeight = container.clientHeight;
-
-        // Calculate the range of rows to render based on cumulative positions
-        let startIndex = 0;
-        let endIndex = filteredBtsnoopPackets.length;
-
-        // Find first visible row
-        for (let i = 0; i < rowPositions.length; i++) {
-            if (rowPositions[i] + rowHeights[i] >= scrollTop) {
-                startIndex = Math.max(0, i - BUFFER_LINES);
-                break;
-            }
-        }
-
-        // Find last visible row
         const viewportBottom = scrollTop + containerHeight;
-        for (let i = startIndex; i < rowPositions.length; i++) {
-            if (rowPositions[i] > viewportBottom) {
-                endIndex = Math.min(filteredBtsnoopPackets.length, i + BUFFER_LINES);
-                break;
+
+        // 1. Binary Search for Start Index (O(log N))
+        let startIndex = 0;
+        let low = 0, high = btsnoopRowPositions.length - 1;
+
+        while (low <= high) {
+            const mid = (low + high) >>> 1;
+            if (btsnoopRowPositions[mid] < scrollTop) {
+                low = mid + 1;
+            } else {
+                high = mid - 1;
             }
         }
+        startIndex = Math.max(0, high);
+
+        // Adjust start index with buffer
+        startIndex = Math.max(0, startIndex - BUFFER_LINES);
+
+        // 2. Find End Index (Linear scan from start, O(viewport_items))
+        let endIndex = startIndex;
+        for (let i = startIndex; i < filteredBtsnoopPackets.length; i++) {
+            if (btsnoopRowPositions[i] > viewportBottom) {
+                endIndex = i;
+                break;
+            }
+            endIndex = i + 1; // Include this item
+        }
+        endIndex = Math.min(filteredBtsnoopPackets.length, endIndex + BUFFER_LINES);
 
         // Ensure we always render at least some rows
         if (endIndex <= startIndex) {
@@ -4253,9 +4780,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Scroll to selected packet if needed
         if (selectedBtsnoopPacket) {
             const selectedIndex = filteredBtsnoopPackets.findIndex(p => p.number === selectedBtsnoopPacket.number);
-            if (selectedIndex !== -1 && rowPositions[selectedIndex] !== undefined) {
-                const selectedPosition = rowPositions[selectedIndex];
-                const selectedHeight = rowHeights[selectedIndex] || 20;
+            if (selectedIndex !== -1 && btsnoopRowPositions[selectedIndex] !== undefined) {
+                const selectedPosition = btsnoopRowPositions[selectedIndex];
+                // Estimate height again or use cached? We didn't cache heights individually, just positions.
+                // Height = next pos - current pos (or estimate).
+                const nextPos = btsnoopRowPositions[selectedIndex + 1];
+                const selectedHeight = nextPos ? (nextPos - selectedPosition) : 20;
+
                 const centerOffset = Math.floor(containerHeight / 2) - (selectedHeight / 2);
                 const targetScroll = Math.max(0, selectedPosition - centerOffset);
                 // Only scroll if selected packet is not in view
@@ -4265,7 +4796,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         }
-        console.log('[BTSnoop Debug] 5. Rendering rows', startIndex, 'to', endIndex, 'of', filteredBtsnoopPackets.length, 'scrollTop:', scrollTop, 'viewportBottom:', scrollTop + containerHeight);
+
+
 
         // Recycle or create DOM elements for the rows
         const visibleRows = [];
@@ -4297,11 +4829,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Populate the row with data
+            row.style.position = 'absolute';
+            row.style.top = `${btsnoopRowPositions[i]}px`;
+            row.style.width = '100%';
+
             const cells = row.children; // Get all div cells
             const cellData = [
                 packet.number, packet.timestamp,
                 packet.source || (packet.direction === 'Controller -> Host' ? 'Controller' : 'Host'),
-                packet.destination || (packet.direction === 'Host -> Controller' ? 'Controller' : 'Host'),
+                packet.destination || (packet.direction === 'Host -> Controller' ? 'Controller' : localBtAddress),
                 packet.type, packet.summary, packet.data
             ];
 
@@ -4351,7 +4887,7 @@ document.addEventListener('DOMContentLoaded', () => {
             row.style.top = '0';
             row.style.left = '0';
             row.style.width = '100%';
-            row.style.transform = `translateY(${rowPositions[i]}px)`;
+            row.style.transform = `translateY(${btsnoopRowPositions[i]}px)`;
             row.style.minHeight = '20px';
             row.style.height = 'auto';
             row.style.display = 'grid';
@@ -4458,9 +4994,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const activeViewport = target.closest('.log-viewport');
             let sourceArray = filteredLogLines; // Default to main logs
 
-            if (activeViewport === bleLogViewport) sourceArray = filteredBleLogLines;
-            else if (activeViewport === nfcLogViewport) sourceArray = filteredNfcLogLines;
-            else if (activeViewport === dckLogViewport) sourceArray = filteredDckLogLines;
+            if (activeViewport.id === 'connectivityLogViewport') sourceArray = filteredConnectivityLogLines;
             else if (activeViewport === kernelLogViewport) sourceArray = filteredKernelLogLines;
 
             if (!isNaN(lineIndex) && sourceArray[lineIndex]) {
@@ -4471,9 +5005,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     collapsedFileHeaders.add(clickedLine.originalText);
                 }
                 // Re-apply the correct filter function for the active tab
-                if (activeViewport === bleLogViewport) applyBleFilters();
-                else if (activeViewport === nfcLogViewport) applyNfcFilters();
-                else if (activeViewport === dckLogViewport) applyDckFilters();
+                if (activeViewport.id === 'connectivityLogViewport') applyConnectivityFilters();
                 else if (activeViewport === kernelLogViewport) processForKernel(); // Kernel has no sub-filters
                 else applyFilters(); // Main log view
 

@@ -9,15 +9,39 @@
 }
 
 html,
-body {
+body,
+.container {
     height: 100%;
     margin: 0;
     padding: 0;
     font-family: 'Inter', Arial, sans-serif;
-    background: #f1f3f4;
-    /* Google's light grey background */
-    color: #3c4043;
-    /* Google's standard text color */
+    background: #121212;
+    /* Dark background */
+    color: #e8eaed;
+    /* Light text */
+    color-scheme: dark;
+    /* Force browser default dark scrollbars if supported */
+    scrollbar-color: #555 #1e1e1e;
+    /* Firefox */
+}
+
+/* Webkit Scrollbars */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1e1e1e;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #777;
 }
 
 body {
@@ -33,7 +57,7 @@ body {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: #f1f3f4;
+    background: #121212;
     border-radius: 0;
     box-shadow: none;
     padding: 0;
@@ -44,23 +68,22 @@ body {
 header {
     text-align: center;
     padding: 0.4rem 0;
-    /* Reduced from 0.75rem for space optimization */
-    border-bottom: 1px solid #dadce0;
+    border-bottom: 1px solid #3c4043;
+    background: #1e1e1e;
+    /* Dark header */
 }
 
 header h1 {
     margin: 0.2rem 0;
-    /* Reduced margin */
     font-size: 1.3rem;
-    /* Slightly smaller */
+    color: #e8eaed;
 }
 
 .current-file-display {
-    color: #5f6368;
+    color: #9aa0a6;
     font-size: 0.9rem;
     margin-top: 0.25rem;
     min-height: 1.2em;
-    /* Prevent layout shift */
     font-weight: 500;
 }
 
@@ -69,7 +92,6 @@ main {
     display: flex;
     flex-direction: row;
     min-height: 0;
-    /* Important for flexbox children with scrolling */
     padding: 0 2vw 2vw 2vw;
     box-sizing: border-box;
     gap: 1.5rem;
@@ -78,17 +100,15 @@ main {
 .left-panel {
     width: 300px;
     min-width: 300px;
-    /* Prevent it from becoming too small */
     max-width: 700px;
-    /* Prevent it from becoming too large */
-    background: #fff;
-    border-right: 1px solid #dee2e6;
+    background: #1e1e1e;
+    /* Dark panel */
+    border-right: 1px solid #3c4043;
     padding: 1.5rem;
     position: relative;
     display: flex;
     flex-direction: column;
     transition: margin-left 0.35s ease-in-out;
-    /* Add transition for animation */
 }
 
 .left-panel.collapsed {
@@ -198,12 +218,12 @@ summary {
 
 input[type="file"],
 input[type="datetime-local"] {
-    border: 1px solid #dadce0;
+    border: 1px solid #555;
     padding: 0.5rem;
     border-radius: 6px;
-    background: #fff;
+    background: #2a2a2a;
     font-family: 'Inter', Arial, sans-serif;
-    color: #3c4043;
+    color: #e8eaed;
 }
 
 input[type="file"]:hover {
@@ -234,7 +254,8 @@ input[type="file"]:hover {
 .tab-nav {
     display: flex;
     gap: 0.5rem;
-    border-bottom: 1px solid #dadce0;
+    border-bottom: 1px solid #3c4043;
+    /* Dark border */
 }
 
 .tab-btn {
@@ -246,7 +267,8 @@ input[type="file"]:hover {
     font-size: 1rem;
     font-weight: 500;
     cursor: pointer;
-    color: #5f6368;
+    color: #9aa0a6;
+    /* Light grey text */
     transition: all 0.2s;
 }
 
@@ -258,7 +280,8 @@ input[type="file"]:hover {
 
 .tab-content {
     display: none;
-    background: #fff;
+    background: transparent;
+    /* Changed from white to transparent to allow body bg */
     border-radius: 8px;
     padding: 0.5rem;
     flex: 1 1 auto;
@@ -409,10 +432,38 @@ input[type="file"]:hover {
     user-select: none;
 }
 
+/* Connectivity Actions Buttons */
+.connectivity-actions {
+    padding: 10px;
+    background: #1e1e1e;
+    border-top: 1px solid #333;
+    display: flex;
+    gap: 10px;
+}
+
+.connectivity-actions .export-btn {
+    margin: 0;
+    /* Override default margin */
+    flex: 1;
+    /* Make button fill available space if needed, or just be consistent */
+    background: #4285F4;
+    border: none;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.connectivity-actions .export-btn:hover {
+    background: #3367D6;
+}
+
 .filter-icon.active {
-    background: #fff;
-    color: #1a73e8;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    background: #4285F4;
+    color: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .log-level-filters {
@@ -421,9 +472,7 @@ input[type="file"]:hover {
     gap: 2px;
     align-items: center;
     margin-bottom: 1rem;
-    background: #f1f3f4;
-    border-radius: 8px;
-    padding: 2px;
+    /* Removed background/padding for cleaner look */
 }
 
 .filter-action-btn {
@@ -462,11 +511,45 @@ input[type="file"]:hover {
 .filter-action-btn {
     margin-left: 0.5rem;
     padding: 0.3rem 0.7rem;
-    border: 1px solid #ced4da;
-    background: #f8f9fa;
+    border: 1px solid #555;
+    background: #2a2a2a;
+    /* Dark button */
+    color: #e8eaed;
     border-radius: 5px;
     cursor: pointer;
     font-weight: 500;
+}
+
+/* Small Export Button for Headers */
+.header-export-btn {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.85rem;
+    background: #2a2a2a;
+    color: #e8eaed;
+    border: 1px solid #555;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    /* Push to right if in flex container */
+    transition: background 0.2s;
+}
+
+.header-export-btn:hover {
+    background: #3c4043;
+    border-color: #666;
+}
+
+/* Header container ensuring flex alignment */
+.tab-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    width: 100%;
 }
 
 .nfc-filters,
@@ -477,14 +560,15 @@ input[type="file"]:hover {
 .clear-btn {
     margin-left: 0.5rem;
     padding: 0.4rem 0.8rem;
-    border: 1px solid #ccc;
-    background: #f0f0f0;
+    border: 1px solid #555;
+    background: #2a2a2a;
+    color: #e8eaed;
     border-radius: 5px;
     cursor: pointer;
 }
 
 .clear-btn:hover {
-    background: #e0e0e0;
+    background: #3c4043;
 }
 
 .log-level-filters {
@@ -507,7 +591,9 @@ input[type="file"]:hover {
     width: 100%;
     padding: 0.6rem 1rem;
     border-radius: 8px;
-    border: 1px solid #dadce0;
+    border: 1px solid #555;
+    background: #2a2a2a;
+    color: #e8eaed;
     font-size: 1rem;
     margin-top: 0.5rem;
     box-sizing: border-box;
@@ -519,47 +605,50 @@ input[type="file"]:hover {
 }
 
 /* Autocomplete Suggestions */
-.autocomplete-suggestions {
+.autocomplete-.suggestions-dropdown {
     position: absolute;
-    border: 1px solid #e0e0e0;
+    top: 100%;
+    left: 1rem;
+    border: 1px solid #3c4043;
     border-top: none;
-    background-color: #fff;
+    background-color: #1e1e1e;
+    /* Dark dropdown */
     width: calc(100% - 2rem - 2px);
-    /* Match search input width */
     max-height: 250px;
     overflow-y: auto;
     z-index: 999;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .suggestion-item {
     padding: 0.6rem 1rem;
     cursor: pointer;
+    color: #e8eaed;
 }
 
 .suggestion-item:hover {
-    background-color: #f0f2f5;
+    background-color: #2c2c2c;
+    /* Dark hover */
 }
 
 .search-header {
     display: flex;
     gap: 1rem;
-    /* Add space between label and buttons */
     align-items: center;
     margin-bottom: 0.5rem;
 }
 
 .search-header label {
-    /* Override the generic block style to make it fit in the flex layout */
     display: inline-block;
     width: auto;
     margin-bottom: 0;
-    /* Remove bottom margin from the label */
+    color: #e8eaed;
 }
 
 .logic-toggle {
     display: inline-flex;
-    background: #f1f3f4;
+    background: #2a2a2a;
+    /* Darker background */
     border-radius: 8px;
     padding: 2px;
 }
@@ -573,7 +662,7 @@ input[type="file"]:hover {
     cursor: pointer;
     font-size: 0.9rem;
     font-weight: 500;
-    color: #5f6368;
+    color: #9aa0a6;
     transition: all 0.2s;
     user-select: none;
     border-radius: 6px;
@@ -584,9 +673,10 @@ input[type="file"]:hover {
 }
 
 .logic-btn.active {
-    background: #fff;
-    color: #1a73e8;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    background: #4285F4;
+    /* Blue active */
+    color: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 
@@ -614,7 +704,8 @@ input[type="file"]:hover {
 .progress-bar-container {
     width: 100%;
     height: 18px;
-    background: #e8eaed;
+    background: #333;
+    /* Darker track */
     margin-top: 1rem;
     border-radius: 8px;
     position: relative;
@@ -812,21 +903,7 @@ input[type="file"]:hover {
     font-size: 0.95rem;
 }
 
-.highlight-table th,
-.highlight-table td {
-    border: 1px solid #e0e0e0;
-    padding: 0.6rem;
-    text-align: left;
-}
-
-.highlight-table th {
-    background-color: #f8f9fa;
-    font-weight: 600;
-}
-
-.highlight-table tbody tr:nth-child(odd) {
-    background-color: #f8f9fa;
-}
+/* Legacy highlight-table styles removed to favor unified dark mode tables */
 
 /* Dashboard Grid Styles */
 .dashboard-grid {
@@ -836,11 +913,11 @@ input[type="file"]:hover {
 }
 
 .dashboard-card {
-    background: #fff;
-    border: 1px solid #dadce0;
+    background: #1e1e1e;
+    border: 1px solid #3c4043;
     border-radius: 12px;
     padding: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .dashboard-card.large-card {
@@ -1231,6 +1308,7 @@ input[type="file"]:hover {
     border-left: 2px solid #555;
     margin-top: 2px;
 }
+
 /* ============================================================================= */
 /* OPTIMIZATION Phase 2: Skeleton Loader for Progressive Loading */
 /* ============================================================================= */
@@ -1260,12 +1338,10 @@ input[type="file"]:hover {
 .skeleton-logo {
     width: 40px;
     height: 40px;
-    background: linear-gradient(
-        90deg,
-        #2a2a2a 25%,
-        #3a3a3a 50%,
-        #2a2a2a 75%
-    );
+    background: linear-gradient(90deg,
+            #2a2a2a 25%,
+            #3a3a3a 50%,
+            #2a2a2a 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
     border-radius: 8px;
@@ -1288,12 +1364,10 @@ input[type="file"]:hover {
 .skeleton-tab {
     width: 100px;
     height: 36px;
-    background: linear-gradient(
-        90deg,
-        #2a2a2a 25%,
-        #3a3a3a 50%,
-        #2a2a2a 75%
-    );
+    background: linear-gradient(90deg,
+            #2a2a2a 25%,
+            #3a3a3a 50%,
+            #2a2a2a 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
     border-radius: 6px;
@@ -1311,30 +1385,52 @@ input[type="file"]:hover {
 
 .skeleton-line {
     height: 20px;
-    background: linear-gradient(
-        90deg,
-        #2a2a2a 25%,
-        #3a3a3a 50%,
-        #2a2a2a 75%
-    );
+    background: linear-gradient(90deg,
+            #2a2a2a 25%,
+            #3a3a3a 50%,
+            #2a2a2a 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
     border-radius: 4px;
 }
 
-.skeleton-line:nth-child(1) { width: 95%; }
-.skeleton-line:nth-child(2) { width: 88%; }
-.skeleton-line:nth-child(3) { width: 92%; }
-.skeleton-line:nth-child(4) { width: 85%; }
-.skeleton-line:nth-child(5) { width: 90%; }
-.skeleton-line:nth-child(6) { width: 87%; }
-.skeleton-line:nth-child(7) { width: 93%; }
-.skeleton-line:nth-child(8) { width: 89%; }
+.skeleton-line:nth-child(1) {
+    width: 95%;
+}
+
+.skeleton-line:nth-child(2) {
+    width: 88%;
+}
+
+.skeleton-line:nth-child(3) {
+    width: 92%;
+}
+
+.skeleton-line:nth-child(4) {
+    width: 85%;
+}
+
+.skeleton-line:nth-child(5) {
+    width: 90%;
+}
+
+.skeleton-line:nth-child(6) {
+    width: 87%;
+}
+
+.skeleton-line:nth-child(7) {
+    width: 93%;
+}
+
+.skeleton-line:nth-child(8) {
+    width: 89%;
+}
 
 @keyframes shimmer {
     0% {
         background-position: 200% 0;
     }
+
     100% {
         background-position: -200% 0;
     }
@@ -1348,7 +1444,388 @@ input[type="file"]:hover {
     from {
         opacity: 1;
     }
+
     to {
         opacity: 0;
     }
+}
+
+/* --- Connectivity Tab Styles --- */
+.connectivity-header {
+    display: flex;
+    flex-direction: row;
+    gap: 0;
+    padding: 8px 10px;
+    background: #1e1e1e;
+    border-bottom: 1px solid #333;
+    align-items: center;
+    overflow-x: auto;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.tech-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 15px;
+    border-bottom: none;
+    border-right: 1px solid #333;
+}
+
+.tech-section:last-child {
+    border-right: none;
+}
+
+.tech-master-toggle {
+    min-width: 150px;
+    flex-shrink: 0;
+}
+
+.switch-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.tech-name {
+    font-weight: bold;
+    color: #e0e0e0;
+    margin-left: 10px;
+    font-size: 1.1em;
+}
+
+/* Master Toggle Checkbox Styling */
+.switch-label input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 40px;
+    height: 20px;
+    background: #444;
+    border-radius: 20px;
+    position: relative;
+    outline: none;
+    transition: background 0.3s;
+    cursor: pointer;
+}
+
+.switch-label input[type="checkbox"]::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.3s;
+}
+
+.switch-label input[type="checkbox"]:checked {
+    background: #34a853;
+}
+
+.switch-label input[type="checkbox"]:checked::after {
+    transform: translateX(20px);
+}
+
+/* Gray out filters when disabled */
+.tech-section.disabled .log-level-filters {
+    opacity: 0.3;
+    /* allow clicks to re-enable */
+    filter: grayscale(100%);
+}
+
+/* Connectivity Header Filter Styling */
+.connectivity-header .log-level-filters {
+    flex-wrap: nowrap;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-bottom: 0;
+}
+
+.connectivity-header .filter-icon {
+    color: #9aa0a6;
+    /* Light grey for contrast on dark */
+}
+
+.connectivity-header .filter-icon:hover {
+    color: #e8eaed;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.connectivity-header .filter-icon.active {
+    background: #4285F4;
+    color: #fff;
+    box-shadow: none;
+}
+
+/* Dark Mode Table Styles for BTSnoop, CCC, Stats, and App Versions */
+#btsnoopTab table,
+#statsTab table,
+#cccTab table,
+.stats-table table,
+.ccc-table,
+.highlight-table {
+    background-color: #1e1e1e !important;
+    color: #e8eaed !important;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+#btsnoopTab th,
+#statsTab th,
+#cccTab th,
+.stats-table th,
+.ccc-table th,
+.highlight-table th {
+    background-color: #333333 !important;
+    /* Lighter than bg for distinction */
+    color: #ffffff !important;
+    border: 1px solid #444 !important;
+    padding: 10px;
+    text-align: left;
+    font-weight: 600;
+}
+
+#btsnoopTab td,
+#statsTab td,
+#cccTab td,
+.stats-table td,
+.ccc-table td,
+.highlight-table td {
+    border: 1px solid #3c4043 !important;
+    padding: 8px;
+    color: #e8eaed !important;
+}
+
+#btsnoopTab tr:hover,
+#statsTab tr:hover,
+#cccTab tr:hover,
+.stats-table tr:hover,
+.ccc-table tr:hover,
+.highlight-table tr:hover {
+    background-color: #2c2c2c !important;
+}
+
+/* BTSnoop Virtual View (Div-based) Dark Mode */
+.btsnoop-header-grid {
+    background-color: #333333;
+    border-bottom: 2px solid #444;
+}
+
+.btsnoop-header-cell {
+    color: #ffffff;
+    font-weight: 600;
+    padding: 8px;
+    background-color: #333333;
+    border-right: 1px solid #555;
+    position: relative;
+}
+
+.btsnoop-filter-cell {
+    background-color: #333333 !important;
+    border-right: 1px solid #555;
+    border-bottom: 1px solid #444;
+}
+
+.btsnoop-filter-cell input {
+    background-color: #2a2a2a;
+    color: #fff;
+    border: 1px solid #555;
+}
+
+.btsnoop-row {
+    background-color: #1e1e1e;
+    border-bottom: 1px solid #333;
+}
+
+.btsnoop-row:hover {
+    background-color: #2c2c2c;
+    /* Hover effect */
+}
+
+/* Override inline styles for cells if needed, though inline usually wins. 
+   We rely on the JS using a color that works or us resetting it here if possible, 
+   but since JS sets style.color, we might need !important if the JS color is bad.
+   The JS uses #e0e0e0 which is good for dark mode. */
+.btsnoop-cell {
+    border-right: 1px solid #333;
+    padding: 4px 8px;
+}
+
+/* Ensure filter buttons in btsnoop and stats behave like connectivity ones */
+#btsnoopTab .filter-icon,
+#statsTab .filter-icon,
+#cccTab .filter-icon {
+    /* Base style similar to connectivity inactive */
+    background: transparent;
+    color: #9aa0a6;
+    border: 1px solid #3c4043;
+    /* Add border for visibility on dark */
+    margin: 0;
+    /* consistent */
+}
+
+#btsnoopTab .filter-icon:hover,
+#statsTab .filter-icon:hover,
+#cccTab .filter-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e8eaed;
+}
+
+#btsnoopTab .filter-icon.active,
+#statsTab .filter-icon.active,
+#cccTab .filter-icon.active {
+    background: #4285F4;
+    color: #fff;
+    border-color: #4285F4;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* CSS Fixes for File Input and Search Alignment */
+
+/* Fix file input button background */
+input[type="file"]::file-selector-button {
+    background-color: #3c4043;
+    color: #e8eaed;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 0.3rem 0.8rem;
+    margin-right: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+input[type="file"]::file-selector-button:hover {
+    background-color: #4a4e51;
+}
+
+/* Fix App Package Search Input Alignment */
+.dashboard-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* Ensure items are vertically centered */
+    height: 40px;
+    /* Enforce a consistent height for the header row */
+}
+
+.dashboard-card .card-header h3 {
+    margin: 0;
+    line-height: 40px;
+    /* Align text vertically */
+}
+
+.dashboard-card .card-header .search-section {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.dashboard-card .card-header .search-input {
+    height: 32px;
+    /* Match standard button height or fit within 40px header */
+    padding: 0 10px;
+    box-sizing: border-box;
+    vertical-align: middle;
+    /* Ensure alignment */
+}
+
+/* Dark Mode fixes for filter rows in Highlight Tables and BTSnoop */
+
+/* Ensure filter row background is dark and text is light */
+.filter-row th {
+    background-color: #333333 !important;
+    /* Match header background */
+    border: 1px solid #444 !important;
+    padding: 5px !important;
+}
+
+.filter-row input {
+    background-color: #2a2a2a;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 4px 8px;
+    width: 90%;
+    /* Prevent overflow */
+    box-sizing: border-box;
+    /* Include padding in width */
+}
+
+.filter-row input:focus {
+    border-color: #4285F4;
+    outline: none;
+}
+
+/* Fix overlap in 'Device & Setting Events' table specifically */
+#deviceEventsTable th {
+    /* Ensure minimal width for columns with filters to prevent squeezing/overlap */
+    min-width: 100px;
+}
+
+/* Specific fix for Date/Time columns which might be too narrow for the filter input */
+#deviceEventsTable th:nth-child(1),
+#deviceEventsTable th:nth-child(2) {
+    min-width: 110px;
+    /* Slightly larger than 90px to fit 'Filter...' placeholder */
+}
+
+/* General table responsiveness to prevent overlap */
+.ccc-table,
+.highlight-table {
+    table-layout: fixed;
+    /* Respect column widths */
+}
+
+/* Ensure inputs don't overflow cells */
+.ccc-table input,
+.highlight-table input {
+    width: 100%;
+    min-width: 0;
+    /* Allow shrinking if needed, but width 100% usually fills cell */
+}
+
+/* Column Resize Handle Styles */
+.resize-handle-col {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 5px;
+    height: 100%;
+    cursor: col-resize;
+    user-select: none;
+    z-index: 10;
+    background: transparent;
+    transition: background 0.2s;
+}
+
+.resize-handle-col:hover {
+    background: rgba(66, 133, 244, 0.3);
+}
+
+/* Ensure table headers support resize handles */
+.ccc-table th,
+.highlight-table th,
+#btsnoopTab th,
+#statsTab th {
+    position: relative;
+}
+
+/* Improve table cell text handling during resize */
+.ccc-table td,
+.highlight-table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Allow wrapping for specific columns if needed */
+.ccc-table td:last-child,
+.highlight-table td:last-child {
+    white-space: normal;
+    word-break: break-word;
 }
