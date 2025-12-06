@@ -392,23 +392,38 @@ input[type="file"]:hover {
 }
 
 .filter-icon {
-    display: inline-block;
-    margin-right: 0.5rem;
-    padding: 0.3rem 0.7rem;
-    border-radius: 5px;
-    background: #fff;
-    border: 1px solid #dadce0;
-    color: #3c4043;
-    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: transparent;
+    border: none;
+    color: #5f6368;
+    font-size: 0.9rem;
+    font-weight: 500;
     cursor: pointer;
-    margin-bottom: 0.5rem;
     transition: all 0.2s;
+    height: 32px;
+    box-sizing: border-box;
+    user-select: none;
 }
 
 .filter-icon.active {
-    background: #4285F4;
-    color: #fff;
-    border-color: #4285F4;
+    background: #fff;
+    color: #1a73e8;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.log-level-filters {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    align-items: center;
+    margin-bottom: 1rem;
+    background: #f1f3f4;
+    border-radius: 8px;
+    padding: 2px;
 }
 
 .filter-action-btn {
@@ -543,29 +558,37 @@ input[type="file"]:hover {
 }
 
 .logic-toggle {
-    display: flex;
-    border: 1px solid #dadce0;
-    border-radius: 6px;
-    overflow: hidden;
+    display: inline-flex;
+    background: #f1f3f4;
+    border-radius: 8px;
+    padding: 2px;
 }
 
 .logic-btn {
-    padding: 0.3rem 0.8rem;
-    background: #fff;
-    min-width: 50px;
-    /* Ensure both buttons have the same minimum width */
+    padding: 4px 12px;
+    background: transparent;
+    min-width: auto;
     text-align: center;
-    /* Center the text inside the button */
     border: none;
     cursor: pointer;
-    font-size: 0.95rem;
-    transition: background 0.2s;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #5f6368;
+    transition: all 0.2s;
+    user-select: none;
+    border-radius: 6px;
+}
+
+.logic-btn+.logic-btn {
+    border-left: none;
 }
 
 .logic-btn.active {
-    background: #4285F4;
-    color: #fff;
+    background: #fff;
+    color: #1a73e8;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
+
 
 /* Progress Bar */
 .progress-bar-container.fixed-bottom-right {
@@ -825,6 +848,10 @@ input[type="file"]:hover {
     /* Make this card wider on larger screens */
 }
 
+.dashboard-card.full-width-card {
+    grid-column: 1 / -1;
+}
+
 @media (max-width: 900px) {
     .dashboard-card.large-card {
         grid-column: span 1;
@@ -1058,6 +1085,7 @@ input[type="file"]:hover {
 .resize-handle-col:hover {
     background-color: #4285f4;
 }
+
 /* BTSnoop Header Horizontal Scroll */
 #btsnoopHeader {
     overflow-x: auto;
@@ -1087,11 +1115,13 @@ input[type="file"]:hover {
 
 /* Alternating row backgrounds for BTSnoop */
 .btsnoop-row.even-row .btsnoop-cell {
-    background-color: #2C2C2C; /* Darker gray */
+    background-color: #2C2C2C;
+    /* Darker gray */
 }
 
 .btsnoop-row.odd-row .btsnoop-cell {
-    background-color: #333333; /* Lighter gray */
+    background-color: #333333;
+    /* Lighter gray */
 }
 
 /* Hover and selection override alternating colors */
@@ -1102,4 +1132,103 @@ input[type="file"]:hover {
 .btsnoop-row.selected .btsnoop-cell {
     background-color: #2c3e50 !important;
     color: #fff;
+}
+
+.stat-item {
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* CCC Table - Styled to match BTSnoop design */
+.ccc-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+    table-layout: fixed;
+    /* Enforce column widths */
+}
+
+.ccc-table th,
+.ccc-table td {
+    padding: 8px 12px;
+    border: 1px solid #333;
+    text-align: left;
+    overflow-wrap: break-word;
+    /* Ensure long text wraps */
+    word-wrap: break-word;
+}
+
+.ccc-table thead th {
+    background-color: #f2f2f2;
+    color: #3c4043;
+    font-weight: bold;
+    text-align: left;
+    padding: 8px 5px;
+    border-bottom: 1px solid #ccc;
+    border-right: 1px solid #e0e0e0;
+}
+
+.ccc-table tbody td {
+    background-color: #2C2C2C;
+    color: #e0e0e0;
+    padding: 4px 5px;
+    border-bottom: 1px solid #333;
+    border-right: 1px solid #444;
+    vertical-align: top;
+}
+
+.ccc-table tbody tr:nth-child(odd) td {
+    background-color: #333333;
+}
+
+.ccc-table tbody tr:hover td {
+    background-color: #444;
+}
+
+/* CCC Parameter Styling */
+.ccc-pair {
+    display: inline-block;
+    background-color: #3a3a3a;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin-right: 6px;
+    margin-bottom: 2px;
+    max-width: 100%;
+    vertical-align: top;
+}
+
+.ccc-param {
+    color: #a0c0ff;
+    /* Light blue for keys */
+    font-weight: 500;
+    margin-right: 4px;
+}
+
+.ccc-value {
+    color: #e0e0e0;
+    /* Off-white for values */
+    font-weight: 400;
+    word-break: break-all;
+    white-space: normal;
+}
+
+/* Nested TLV Styles */
+.tlv-block {
+    display: block;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+.tlv-indent {
+    display: block;
+    margin-left: 12px;
+    padding-left: 8px;
+    border-left: 2px solid #555;
+    margin-top: 2px;
 }

@@ -931,6 +931,8 @@ document.addEventListener('DOMContentLoaded', () => {
             '    \n' +
             '    const batteryRegex = /level: (\\\\d+).*scale: (\\\\d+)/;\n' +
             '    const batteryDataPoints = [];\n' +
+            '    const cccMessages = [];\n' +
+            '    const cccRegex = /(?:Sending|Received):\\s*\\[([0-9a-fA-F]+)\\]/;\n' +
             '    const versionRegex = new RegExp(\'Package\\\\s+\\\\[([^\\]]+)\\\\].*?versionName=([^\\\\s\\\\n,]+)\');\n' +
             '    const appVersions = new Map();\n' +
             '    // Regex for multi-line dumpsys package format\n' +
@@ -1075,6 +1077,16 @@ document.addEventListener('DOMContentLoaded', () => {
             '            const level = parseInt(batteryMatch[1]);\n' +
             '            batteryDataPoints.push({ ts: lineDateObj, level: level });\n' +
             '        }\n' +
+            '        const cccMatch = lineText.match(cccRegex);\n' +
+            '        if (cccMatch && parsedLine) {\n' +
+            '            const hex = cccMatch[1];\n' +
+            '            if (hex.length >= 4) {\n' +
+            '                const type = parseInt(hex.substring(0, 2), 16);\n' +
+            '                const subtype = parseInt(hex.substring(2, 4), 16);\n' +
+            '                const payload = hex.substring(4);\n' +
+            '                cccMessages.push({ timestamp: parsedLine.timestamp, direction: lineText.includes("Sending") ? "Sending" : "Received", type, subtype, payload, fullHex: hex });\n' +
+            '            }\n' +
+            '        }\n' +
             '\n' +
             '\n' +
             '        if (parsedLine) { // Ensure parsedLine is not null\n' +
@@ -1112,7 +1124,7 @@ document.addEventListener('DOMContentLoaded', () => {
             '        self.postMessage({ status: \'debug\', logs: workerDebugLogs, filePath: path });\n' +
             '    }\n' +
             '    // Send a final success message with summary data, but without the huge parsedLines array\n' +
-            '    self.postMessage({ status: \'success\', tags: Array.from(tagSet), minTimestamp, maxTimestamp, filePath: path, stats, highlights: { ...highlights, accounts: Array.from(highlights.accounts) }, appVersions: Array.from(appVersions), batteryDataPoints });\n' +
+            '    self.postMessage({ status: \'success\', tags: Array.from(tagSet), minTimestamp, maxTimestamp, filePath: path, stats, highlights: { ...highlights, accounts: Array.from(highlights.accounts) }, appVersions: Array.from(appVersions), batteryDataPoints, cccMessages });\n' +
             '};';
         const blob = new Blob([workerScriptText], { type: 'application/javascript' });
         const workerScriptURL = URL.createObjectURL(blob);
@@ -1201,6 +1213,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const finalBleKeys = new Map();
         const consolidatedAppVersions = new Map();
         let consolidatedBatteryDataPoints = [];
+        const finalCccMessages = [];
 
         let resultIndex = 0;
         for (const result of allResults) {
@@ -1275,6 +1288,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         consolidatedBatteryDataPoints.push(point);
                     }
                 }
+                // Consolidate CCC messages from worker
+                if (result.cccMessages) {
+                    finalCccMessages.push(...result.cccMessages);
+                }
             }
         }
         allAppVersions = Array.from(consolidatedAppVersions).sort((a, b) => a[0].localeCompare(b[0]));
@@ -1304,6 +1321,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTemperaturePlot(dashboardStats.temperatureDataPoints);
         renderCpuPlot(dashboardStats.cpuDataPoints);
         renderBatteryPlot(consolidatedBatteryDataPoints);
+        renderCccStats(finalCccMessages);
 
         // The initial render is now handled by a direct call to applyFilters,
         // which is the correct way to populate the log view for the first time.
@@ -1327,13 +1345,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 applyFilters();
                 break;
             case 'ble':
-                if (!bleScrollListenerAttached) setupBleTab(); else renderBleVirtualLogs();
+                if (!bleScrollListenerAttached) setupBleTab(); else applyBleFilters();
                 break;
             case 'nfc':
-                if (!nfcScrollListenerAttached) setupNfcTab(); else renderNfcVirtualLogs();
+                if (!nfcScrollListenerAttached) setupNfcTab(); else applyNfcFilters();
                 break;
             case 'dck':
-                if (!dckScrollListenerAttached) setupDckTab(); else renderDckVirtualLogs();
+                if (!dckScrollListenerAttached) setupDckTab(); else applyDckFilters();
                 break;
             case 'kernel':
                 processForKernel(); // This function already includes filtering
@@ -1797,7 +1815,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 lineContent = `
                     <div class="log-line-content">
                         <span class="log-meta">${line.timestamp || (line.date + ' ' + line.time)}</span>
-                        <span class="log-pid-tid" style="color: ${pidColor};">${line.pid || ''}${line.tid ? '-' + line.tid : ''}</span>
+                        <span class="log-pid-tid" style="color: ${pidColor};">${line.pid || ''}${line.tid ? '-' + line.tid : ''}${line.uid ? ' ' + line.uid : ''}</span>
                         ${levelHtml}
                         <span class="log-tag" title="${escapeHtml(line.tag || '')}">${tagText}</span>
                         <span class="log-message" title="${escapeHtml(line.message || line.originalText)}">${messageText}</span>
@@ -2042,29 +2060,748 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Statistics Rendering (data is now pre-calculated by the worker) ---
     function renderStats(stats) {
         if (!stats) return;
+        const total = stats.total || 0;
+        const errorRate = total > 0 ? ((stats.E / total) * 100).toFixed(2) : 0;
 
-        logCounts.innerHTML = `<p>Total Lines: <span class="stat-value">${stats.total.toLocaleString()}</span></p>`;
+        let html = `
+            <div class="stat-item"><strong>Total Lines:</strong> ${total.toLocaleString()}</div>
+            <div class="stat-item"><strong>Error Rate:</strong> ${errorRate}%</div>
+            <div class="stat-item"><span class="log-level-E">Errors:</span> ${stats.E.toLocaleString()}</div>
+            <div class="stat-item"><span class="log-level-W">Warnings:</span> ${stats.W.toLocaleString()}</div>
+            <div class="stat-item"><span class="log-level-I">Info:</span> ${stats.I.toLocaleString()}</div>
+            <div class="stat-item"><span class="log-level-D">Debug:</span> ${stats.D.toLocaleString()}</div>
+            <div class="stat-item"><span class="log-level-V">Verbose:</span> ${stats.V.toLocaleString()}</div>
+        `;
+        document.getElementById('logCounts').innerHTML = html;
 
-        const totalLogs = stats.total > 0 ? stats.total : 1; // Avoid division by zero
-        const createBar = (level, count) => {
-            const percentage = (count / totalLogs) * 100;
-            return `
-                <div class="dist-bar-container">
-                    <div class="dist-label">${level} (${percentage.toFixed(1)}%)</div>
-                    <div class="dist-bar-wrapper">
-                        <div class="dist-bar log-line-${level[0]}" style="width: ${percentage}%;">${count.toLocaleString()}</div>
+        // Error distribution chart
+        const errorDistData = [
+            { label: 'Errors', value: stats.E, color: '#D32F2F' },
+            { label: 'Warnings', value: stats.W, color: '#FBC02D' },
+            { label: 'Info', value: stats.I, color: '#388E3C' },
+            { label: 'Debug', value: stats.D, color: '#1976D2' },
+            { label: 'Verbose', value: stats.V, color: '#9E9E9E' }
+        ];
+
+        // Simple bar chart for error distribution
+        const maxVal = Math.max(...errorDistData.map(d => d.value));
+
+        if (maxVal === 0) {
+            document.getElementById('errorDistribution').innerHTML = '<p style="text-align: center; color: #666;">No log data available</p>';
+        } else {
+            let distHtml = '<div style="margin-top: 1rem; display: flex; height: 100px; align-items: flex-end; gap: 5px; width: 100%;">';
+            errorDistData.forEach(d => {
+                const height = (d.value / maxVal) * 100;
+                distHtml += `
+                    <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+                        <div style="width: 80%; background-color: ${d.color}; height: ${height}%; min-height: 1px; border-radius: 2px 2px 0 0;" title="${d.label}: ${d.value.toLocaleString()}"></div>
+                        <span style="font-size: 0.7rem; margin-top: 4px; color: #555;">${d.label[0]}</span>
                     </div>
-                </div>
-            `;
+                `;
+            });
+            distHtml += '</div>';
+            document.getElementById('errorDistribution').innerHTML = distHtml;
+        }
+    }
+
+    function renderCccStats(messages) {
+        const container = document.getElementById('cccStatsContainer');
+        if (!container) return;
+
+        if (!messages || messages.length === 0) {
+            container.innerHTML = '<p style="padding: 1rem; color: #666;">No Digital Car Key (CCC) messages found.</p>';
+            return;
+        }
+
+        const CCC_CONSTANTS = {
+            MESSAGE_TYPES: {
+                0x00: "Framework",
+                0x01: "SE",
+                0x02: "UWB Ranging Service",
+                0x03: "DK Event Notification",
+                0x04: "Vehicle OEM App",
+                0x05: "Supplementary Service",
+                0x06: "Head Unit Pairing"
+            },
+            UWB_RANGING_MSGS: {
+                0x01: "Ranging_Capability_RQ",
+                0x02: "Ranging_Capability_RS",
+                0x03: "Ranging_Session_RQ",
+                0x04: "Ranging_Session_RS",
+                0x05: "Ranging_Session_Setup_RQ",
+                0x06: "Ranging_Session_Setup_RS",
+                0x07: "Ranging_Suspend_RQ",
+                0x08: "Ranging_Suspend_RS",
+                0x09: "Ranging_Recovery_RQ",
+                0x0A: "Ranging_Recovery_RS",
+                0x0B: "Configurable_Ranging_Recovery_RQ",
+                0x0C: "Configurable_Ranging_Recovery_RS"
+            },
+            DK_EVENT_CATEGORIES: {
+                0x01: "Command Complete",
+                0x02: "Ranging Session Status Changed",
+                0x03: "Device Ranging Intent",
+                0x04: "Vehicle Status Change",
+                0x05: "RKE Request",
+                0x11: "DK Event Notification"
+            },
+            SUPPLEMENTARY_MSGS: {
+                0x0D: "Time_Sync"
+            },
+            FRAMEWORK_MSGS: {
+                0x04: "OP_CONTROL_FLOW",
+                0x18: "Proprietary / Unknown"
+            },
+            SE_MSGS: {
+                0x0B: "DK_APDU_RQ",
+                0x0C: "DK_APDU_RS"
+            }
         };
 
-        errorDistribution.innerHTML = `
-            ${createBar('Error', stats.E || 0)}
-            ${createBar('Warn', stats.W || 0)}
-            ${createBar('Info', stats.I || 0)}
-            ${createBar('Debug', stats.D || 0)}
-            ${createBar('Verbose', stats.V || 0)}
-        `;
+        const CONTROL_FLOW_P1_MAP = {
+            '00': 'Finished with Failure',
+            '01': 'Finished with Success',
+            '10': 'Continue',
+            '11': 'End',
+            '12': 'Abort',
+            '40': 'Application Specific'
+        };
+
+        const CONTROL_FLOW_P2_MAP = {
+            '00': 'Success / No Info',
+            '01': 'Public Key Not Found / No Matching SPAKE2+',
+            '02': 'Public Key Expired / Cert Chain Received',
+            '03': 'Public Key Not Trusted / User Confirm',
+            '04': 'Invalid Signature',
+            '05': 'Invalid Channel',
+            '06': 'Invalid Data Format',
+            '07': 'Invalid Data Content',
+            '08': 'Preconditions Not Fulfilled',
+            '0B': 'Cert Verify Failed',
+            '0F': 'Time Extension',
+            '11': 'Key Creation/Verification Success',
+            '7F': 'Data/Format Error',
+            'A0': 'Key deleted / Not known',
+            'B0': 'Doors/Trunk not closed',
+            'B1': 'Vehicle not in parking state'
+        };
+
+        const formatParam = (key, value) => `<span class="ccc-pair"><span class="ccc-param">${key}:</span><span class="ccc-value">${value}</span></span>`;
+
+        const COMMON_TAGS = {
+            '30': 'Sequence',
+            'A0': 'Status_Object',
+            '83': 'Status'
+        };
+
+        const APDU_TAGS = {
+            ...COMMON_TAGS,
+            '86': 'Endpoint_ePK',
+            '87': 'Vehicle_ePK',
+            '4D': 'Vehicle_Identifier',
+            '4C': 'Transaction_Identifier',
+            '9E': 'Signature',
+            '5C': 'Protocol_Version',
+            '4E': 'Key_Slot',
+            '57': 'Counter_Value',
+            '4A': 'Confidential_Mailbox',
+            '4B': 'Private_Mailbox',
+            '93': 'Usage'
+        };
+
+        const RKE_TAGS = {
+            ...COMMON_TAGS,
+            '7F70': 'Request_RKE_Action',
+            '7F72': 'Function_Status_Response',
+            '7F73': 'Subscribe_Vehicle_Function',
+            '7F74': 'Get_Function_Status',
+            '7F76': 'Continue_RKE_Action',
+            '7F77': 'Stop_RKE_Action',
+            '80': 'Function_ID',
+            '81': 'Action_ID',
+            '84': 'From_Function_ID',
+            '85': 'To_Function_ID',
+            '86': 'Full_Update_Flag', // Context specific: in RKE it's a flag
+            '88': 'Arbitrary_Data'
+        };
+
+        const FUNCTION_IDS = {
+            '0001': 'Central_Locking',
+            '0010': 'Driving_Readiness'
+        };
+
+        const APDU_COMMANDS = {
+            '00A4': 'SELECT',
+            '8080': 'AUTH0',
+            '8081': 'AUTH1',
+            '803C': 'CONTROL_FLOW',
+            '8071': 'CREATE_RANGING_KEY',
+            '8072': 'TERMINATE_RANGING_SESSION',
+            '8073': 'EXCHANGE_RANGING_DATA'
+        };
+
+        const RKE_STATUS_MAP = {
+            '0001': { '00': 'Unlocked', '01': 'Locked', '02': 'Selective Unlocked', '03': 'Locked Safe' },
+            '0002': { '00': 'Closed', '01': 'Open', '02': 'Intermediate' }, // Window
+            '0010': { '00': 'Not Ready', '01': 'Ready', '02': 'Engine Running', '03': 'Engine Cranking' },
+            '0012': { '00': 'Off', '01': 'On' },
+            'default': { '00': 'Ok/Inactive', '01': 'Fail/Active' }
+        };
+
+        const UWB_TAGS = {
+            // Placeholder for UWB specific tags
+        };
+
+        // Simple BER-TLV Parser with Context and Formatting
+        const parseTLV = (hex, tagMap = COMMON_TAGS) => {
+            let result = "";
+            let i = 0;
+            let maxIter = 100;
+            let currentFunctionId = null; // Track Function ID in current context
+
+            while (i < hex.length && maxIter-- > 0) {
+                // Skip padding/invalid tags
+                let nextByte = hex.substring(i, i + 2).toUpperCase();
+                if (nextByte === '00' || nextByte === 'FF') {
+                    i += 2;
+                    continue;
+                }
+
+                // Parse Tag
+                let tag = nextByte;
+                if (!/^[0-9A-F]{2}$/.test(tag)) break;
+
+                i += 2;
+                if ((parseInt(tag, 16) & 0x1F) === 0x1F) {
+                    tag += hex.substring(i, i + 2).toUpperCase();
+                    i += 2;
+                }
+
+                // Parse Length
+                if (i + 2 > hex.length) break;
+                let lenHex = hex.substring(i, i + 2);
+                let len = parseInt(lenHex, 16);
+                i += 2;
+
+                if (len > 127) {
+                    if (len === 0x81) {
+                        if (i + 2 > hex.length) break;
+                        len = parseInt(hex.substring(i, i + 2), 16);
+                        i += 2;
+                    } else if (len === 0x82) {
+                        if (i + 4 > hex.length) break;
+                        len = parseInt(hex.substring(i, i + 4), 16);
+                        i += 4;
+                    }
+                }
+
+                if (i + (len * 2) > hex.length) {
+                    result += `<div class="tlv-block">${formatParam(`Tag_${tag}`, '[Truncated]')}</div>`;
+                    break;
+                }
+
+                let val = hex.substring(i, i + (len * 2));
+                i += (len * 2);
+
+                const tagName = tagMap[tag] || `Tag_${tag}`;
+
+                if (tag.startsWith('7F') || tag === '30' || tag === 'A0') {
+                    // Container: Render as block with indentation
+                    const nested = parseTLV(val, tagMap);
+                    result += `<div class="tlv-block"><span class="ccc-param">${tagName}:</span><div class="tlv-indent">${nested}</div></div>`;
+                } else {
+                    // Leaf: Render as block param-value pair
+                    let displayVal = val;
+
+                    if (tagMap === RKE_TAGS) {
+                        // Capture Function ID
+                        if (tag === '80') {
+                            currentFunctionId = val;
+                            if (FUNCTION_IDS[val]) {
+                                displayVal = `${val} (${FUNCTION_IDS[val]})`;
+                            }
+                        }
+                        // Interpret Status based on Function ID
+                        if (tag === '83') {
+                            const map = RKE_STATUS_MAP[currentFunctionId] || RKE_STATUS_MAP['default'];
+                            const statusText = map[val] || map['default'];
+                            if (statusText) {
+                                displayVal = `${val} (${statusText})`;
+                            }
+                        }
+                        // True flag
+                        if (tag === '86' && len === 0) {
+                            displayVal = "True";
+                        }
+                    }
+
+                    result += `<div class="tlv-block">${formatParam(tagName, displayVal)}</div>`;
+                }
+            }
+            return result;
+        };
+
+        // Helper to decode payload based on message type
+        const decodePayload = (type, subtype, payload) => {
+            let innerMsg = "-";
+            let params = "";
+
+            if (!payload) return { innerMsg, params: "" };
+
+            // Framework Decoding
+            if (type === 0x00) {
+                if (subtype === 0x04) {
+                    innerMsg = "Data PDU";
+                    params = formatParam('Data', payload.match(/.{1,2}/g).join(' '));
+                    return { innerMsg, params };
+                }
+                if (subtype === 0x18) {
+                    innerMsg = "Encrypted PDU";
+                    let info = "";
+                    if (payload.includes('a0')) info = formatParam('Info', '[Contains TLV Data]') + " ";
+                    params = info + formatParam('Data', payload.match(/.{1,2}/g).join(' '));
+                    return { innerMsg, params };
+                }
+            }
+
+            // SE (Secure Element) Decoding
+            if (type === 0x01) {
+                // DK_APDU_RQ (0x0B)
+                if (subtype === 0x0B) {
+                    if (payload.length >= 4) {
+                        let apdu = payload.substring(4);
+                        const cla = apdu.substring(0, 2).toUpperCase();
+                        const ins = apdu.substring(2, 4).toUpperCase();
+                        const claIns = cla + ins;
+
+                        // Check for C9 (Exchange) CLA first as it overrides specific command mapping
+                        if (cla === 'C9') {
+                            innerMsg = "EXCHANGE_APDU"; // Generic name for C9 class
+                            // Treat the whole body (minus header) as data/TLV?
+                            // Usually C9 indicates secure/exchange context. 
+                            // We will assume standard APDU structure: CLA INS P1 P2 Lc Data
+                            if (apdu.length >= 10) {
+                                const dataStart = 10;
+                                const data = apdu.substring(dataStart);
+                                params = parseTLV(data, APDU_TAGS);
+                            } else {
+                                params = formatParam('Data', apdu.match(/.{1,2}/g).join(' '));
+                            }
+                        } else if (APDU_COMMANDS[claIns]) {
+                            const cmdName = APDU_COMMANDS[claIns];
+                            const p1 = apdu.substring(4, 6);
+                            const p2 = apdu.substring(6, 8);
+                            const dataStart = 10;
+                            const data = apdu.substring(dataStart); // Rest of APDU
+
+                            innerMsg = cmdName;
+                            let p1Text = p1;
+                            let p2Text = p2;
+
+                            if (cmdName === 'SELECT') {
+                                if (p1 === '04' && data.length > 0) {
+                                    if (data.toLowerCase().includes('a000000809434343444b417631')) {
+                                        params = formatParam('Applet', 'Digital Key') + formatParam('AID', data);
+                                    } else {
+                                        params = formatParam('AID', data);
+                                    }
+                                } else {
+                                    params = formatParam('Data', data);
+                                }
+                                // Return immediately for SELECT to avoid adding P1/P2 or parsing TLV
+                                return { innerMsg, params };
+
+                            } else if (cmdName === 'CONTROL_FLOW') {
+                                p1Text = CONTROL_FLOW_P1_MAP[p1] || p1;
+                                p2Text = CONTROL_FLOW_P2_MAP[p2] || p2;
+                            } else if (cmdName === 'AUTH0' || cmdName === 'AUTH1') {
+                                // For AUTH, we might want to decode body too. 
+                                // Standard flow will pick it up below.
+                            }
+
+                            // Generic Parameter formatting
+                            const commonParams = formatParam('P1', `${p1Text} (0x${p1})`) +
+                                formatParam('P2', `${p2Text} (0x${p2})`);
+
+                            if (!params) params = "";
+                            params = commonParams + params;
+
+                            if (data.length > 0) {
+                                const tlv = parseTLV(data, APDU_TAGS);
+                                if (tlv) {
+                                    params += formatParam('Data (TLV)', tlv);
+                                } else {
+                                    params += formatParam('Data', data.match(/.{1,2}/g).join(' '));
+                                }
+                            }
+                        } else if (apdu.startsWith('8080')) {
+                            // Fallback legacy check
+                            innerMsg = "AUTH0";
+                            params = parseTLV(apdu.substring(10), APDU_TAGS);
+                        } else {
+                            innerMsg = "APDU";
+                            if (claIns === '8071') {
+                                innerMsg = "CREATE_RANGING_KEY";
+                                const data = apdu.substring(10);
+                                params = parseTLV(data, APDU_TAGS);
+                            } else if (claIns === '8072') {
+                                innerMsg = "TERMINATE_RANGING_SESSION";
+                                const data = apdu.substring(10);
+                                params = parseTLV(data, APDU_TAGS);
+                            } else if (claIns === '8073') {
+                                innerMsg = "EXCHANGE_RANGING_DATA";
+                                const data = apdu.substring(10);
+                                params = parseTLV(data, APDU_TAGS);
+                            } else {
+                                params = formatParam('Data', apdu.match(/.{1,2}/g).join(' '));
+                            }
+                        }
+                        return { innerMsg, params };
+                    }
+                }
+                // DK_APDU_RS (0x0C)
+                if (subtype === 0x0C) {
+                    if (payload.length >= 4) {
+                        const apdu = payload.substring(4);
+                        if (apdu.length >= 4) {
+                            const sw = apdu.substring(apdu.length - 4);
+                            const data = apdu.substring(0, apdu.length - 4);
+                            let statusText = sw;
+                            if (sw === '9000') statusText = 'Success (9000)';
+
+                            innerMsg = "Response"; // Cannot infer request type context-free
+
+                            const swHtml = formatParam('SW', statusText);
+                            let tlvHtml = "";
+
+                            if (data.length > 0) {
+                                const tlv = parseTLV(data, APDU_TAGS);
+                                if (tlv && !tlv.includes('[Truncated') && !data.startsWith('04')) {
+                                    tlvHtml = formatParam('Data', tlv);
+                                } else {
+                                    tlvHtml = formatParam('Data', data.match(/.{1,2}/g).join(' '));
+                                }
+                            }
+                            return { innerMsg, params: tlvHtml + swHtml };
+                        }
+                    }
+                }
+            }
+
+            // UWB Ranging Service Decoding
+            if (type === 0x02) {
+                innerMsg = "-";
+
+                // Ranging_Session_RQ (0x03)
+                if (subtype === 0x03) {
+                    if (payload.length >= 24) { // Length(2) + 10 bytes = 12 bytes total (24 hex chars)
+                        const len = parseInt(payload.substring(0, 4), 16);
+                        params = formatParam('Length', '0x' + payload.substring(0, 4)) +
+                            formatParam('Protocol', '0x' + payload.substring(4, 8)) +
+                            formatParam('ConfigID', '0x' + payload.substring(8, 12)) +
+                            formatParam('SessionID', '0x' + payload.substring(12, 20)) +
+                            formatParam('PulseShape', '0x' + payload.substring(20, 22)) +
+                            formatParam('Channel', '0x' + payload.substring(22, 24));
+
+                        if (payload.length > 24) {
+                            params += formatParam('Data (Remaining)', payload.substring(24).match(/.{1,2}/g).join(' '));
+                        }
+                    } else {
+                        // Fallback if short, might be legacy or error
+                        params = formatParam('Data', payload.match(/.{1,2}/g).join(' '));
+                    }
+                }
+                // Ranging_Session_RS (0x04)
+                if (subtype === 0x04) {
+                    if (payload.length >= 4) {
+                        const len = parseInt(payload.substring(0, 4), 16);
+                        params = formatParam('Length', '0x' + payload.substring(0, 4));
+
+                        const content = payload.substring(4);
+                        // Data: RAN_Multiplier (1B) + Slot_BitMask (1B) + SYNC_Code_Index_BitMask (4B) + Selected_UWB_Channel (1B) + Hopping_Config_Bitmask (1B)
+                        if (content.length >= 16) { // 8 bytes minimum
+                            const ranMult = parseInt(content.substring(0, 2), 16);
+                            const slotMask = content.substring(2, 4);
+                            const syncMask = content.substring(4, 12);
+
+                            // Corrected Swapped Fields
+                            const channelHex = content.substring(12, 14);
+                            const hoppingHex = content.substring(14, 16);
+
+                            const channelVal = parseInt(channelHex, 16);
+                            let channelText = `Channel ${channelVal}`;
+                            if (channelVal === 5) channelText = "Channel 5";
+                            if (channelVal === 9) channelText = "Channel 9";
+
+                            params += formatParam('RAN_Multiplier', ranMult) +
+                                formatParam('Slot_BitMask', '0x' + slotMask) +
+                                formatParam('SYNC_Code_Index_BitMask', '0x' + syncMask) +
+                                formatParam('Selected_UWB_Channel', `${channelText} (0x${channelHex})`) +
+                                formatParam('Hopping_Config_Bitmask', `0x${hoppingHex}`);
+
+                            if (content.length > 16) {
+                                params += formatParam('Data (Remaining)', content.substring(16).match(/.{1,2}/g).join(' '));
+                            }
+                        } else {
+                            // Fallback to TLV or raw if short
+                            const tlv = parseTLV(content, UWB_TAGS);
+                            if (tlv) params += tlv;
+                            else params += formatParam('Data', content.match(/.{1,2}/g)?.join(' ') || '');
+                        }
+                    }
+                }
+                // Ranging_Session_Setup_RQ (0x05)
+                if (subtype === 0x05) {
+                    if (payload.length >= 4) {
+                        const len = parseInt(payload.substring(0, 4), 16);
+                        params = formatParam('Length', '0x' + payload.substring(0, 4));
+                        const content = payload.substring(4);
+
+                        // User Specified Parameters:
+                        // 1. Session_RAN_Multiplier (1B)
+                        // 2. Number_Chaps_per_Slot (1B)
+                        // 3. Number_Responders_Nodes (1B)
+                        // 4. Number_Slots_per_Round (1B)
+                        // 5. SYNC_Code_Index (4B)
+                        // 6. Selected_Hopping_Config_Bitmask (1B)
+                        if (content.length >= 18) { // 9 bytes minimum
+                            params += formatParam('Session_RAN_Multiplier', parseInt(content.substring(0, 2), 16)) +
+                                formatParam('Number_Chaps_per_Slot', parseInt(content.substring(2, 4), 16)) +
+                                formatParam('Number_Responders_Nodes', parseInt(content.substring(4, 6), 16)) +
+                                formatParam('Number_Slots_per_Round', parseInt(content.substring(6, 8), 16)) +
+                                formatParam('SYNC_Code_Index', parseInt(content.substring(8, 16), 16)) +
+                                formatParam('Selected_Hopping_Config_Bitmask', '0x' + content.substring(16, 18));
+
+                            if (content.length > 18) {
+                                params += formatParam('Data (Remaining)', content.substring(18).match(/.{1,2}/g).join(' '));
+                            }
+                        } else {
+                            params += formatParam('Data', content.match(/.{1,2}/g)?.join(' ') || '');
+                        }
+                    }
+                }
+                // Ranging_Session_Setup_RS (0x06)
+                if (subtype === 0x06) {
+                    if (payload.length >= 4) {
+                        const len = parseInt(payload.substring(0, 4), 16);
+                        params = formatParam('Length', '0x' + payload.substring(0, 4));
+                        const content = payload.substring(4);
+
+                        if (content.length >= 34) {
+                            params += formatParam('STS_Index0', '0x' + content.substring(0, 8)) +
+                                formatParam('UWB_Time0', '0x' + content.substring(8, 24)) +
+                                formatParam('HOP_Key', '0x' + content.substring(24, 32)) +
+                                formatParam('SYNC_Index', parseInt(content.substring(32, 34), 16));
+
+                            if (content.length > 34) {
+                                params += formatParam('Data (Remaining)', content.substring(34).match(/.{1,2}/g).join(' '));
+                            }
+                        } else {
+                            params += formatParam('Data', content.match(/.{1,2}/g)?.join(' ') || '');
+                        }
+                    }
+                }
+                // Ranging_Suspend_RQ (0x07)
+                if (subtype === 0x07) {
+                    if (payload.startsWith('0004') && payload.length >= 12) {
+                        params = formatParam('UWB Session ID', '0x' + payload.substring(4, 12));
+                        if (payload.length > 12) {
+                            params += formatParam('Data (Remaining)', payload.substring(12).match(/.{1,2}/g).join(' '));
+                        }
+                    }
+                }
+                // Ranging_Suspend_RS (0x08)
+                if (subtype === 0x08) {
+                    const status = payload.length >= 2 ? payload.substring(payload.length - 2) : payload;
+                    const statusText = status === '00' ? 'Accepted' : status === '01' ? 'Delayed' : 'Unknown (0x' + status + ')';
+                    params = formatParam('Suspend Response', statusText);
+                }
+                // Ranging_Recovery_RQ (0x09)
+                if (subtype === 0x09) {
+                    if (payload.startsWith('0004') && payload.length >= 12) {
+                        params = formatParam('UWB Session ID', '0x' + payload.substring(4, 12));
+                        if (payload.length > 12) {
+                            params += formatParam('Data (Remaining)', payload.substring(12).match(/.{1,2}/g).join(' '));
+                        }
+                    }
+                }
+                // Ranging_Recovery_RS (0x0A)
+                if (subtype === 0x0A) {
+                    if (payload.length >= 24) {
+                        params = formatParam('STS_Index0', '0x' + payload.substring(0, 8)) +
+                            formatParam('UWB_Time0', '0x' + payload.substring(8, 24));
+
+                        if (payload.length > 24) {
+                            params += formatParam('Data (Remaining)', payload.substring(24).match(/.{1,2}/g).join(' '));
+                        }
+                    }
+                }
+
+                // If we decoded specific params, return them.
+                if (params && params !== "") return { innerMsg, params };
+            }
+
+            // DK Event Notification Decoding
+            if (type === 0x03) {
+                if (subtype === 0x11) {
+                    if (payload.length > 4) {
+                        const actualPayload = payload.substring(4);
+                        const category = actualPayload.substring(0, 2);
+                        const data = actualPayload.substring(2);
+
+                        const CATEGORIES = {
+                            '01': 'Command Complete',
+                            '02': 'Ranging Session Status',
+                            '03': 'Device Ranging Intent',
+                            '04': 'Vehicle Status',
+                            '05': 'RKE Request',
+                            '06': 'RKE Acknowledge'
+                        };
+
+                        innerMsg = CATEGORIES[category] || `Category_0x${category}`;
+
+                        // Default
+                        params = formatParam('Data', data);
+
+                        // Category 01: Command Complete
+                        if (category === '01') {
+                            const code = data.length >= 2 ? data.substring(0, 2) : '';
+                            let codeDesc = 'Unknown';
+                            if (code === '80') codeDesc = 'General Error';
+                            if (code === '00') codeDesc = 'Deselect_SE';
+                            params = formatParam('Status', codeDesc) + formatParam('Code', '0x' + code);
+                        }
+
+                        // Category 02: Ranging Session Status
+                        if (category === '02') {
+                            const code = data.length >= 2 ? data.substring(0, 2) : '';
+                            const statusMap = {
+                                '00': 'URSK Refresh',
+                                '01': 'URSK Not Found',
+                                '02': 'Not Required',
+                                '03': 'Secure Ranging Failed',
+                                '04': 'Terminated',
+                                '06': 'Recovery Failed', // Typo fix
+                                '07': 'Suspended'
+                            };
+                            params = formatParam('Status', statusMap[code] || '0x' + code);
+                        }
+
+                        // Category 03: Device Ranging Intent
+                        if (category === '03') {
+                            const code = data.length >= 2 ? data.substring(0, 2) : '';
+                            const levelMap = {
+                                '00': 'Low Confidence',
+                                '01': 'Medium Confidence',
+                                '02': 'High Confidence'
+                            };
+                            params = formatParam('Level', levelMap[code] || '0x' + code);
+                        }
+
+                        // Category 04: Vehicle Status & 05: RKE Request
+                        if (category === '04' || category === '05') {
+                            params = parseTLV(data, RKE_TAGS);
+                        }
+
+                        // Default logic fallback using TLV check
+                        const upperData = data.toUpperCase();
+                        if ((category !== '04' && category !== '05') && (upperData.startsWith('7F') || upperData.startsWith('30'))) {
+                            params = parseTLV(data, RKE_TAGS);
+                        }
+                        return { innerMsg, params };
+                    }
+                }
+                if (subtype === 0x03) return { innerMsg: "Legacy Intent", params: formatParam('Data', payload) };
+            }
+
+            if (type === 0x05) {
+                // Supplementary
+                if (subtype === 0x0D) {
+                    innerMsg = "Time_Sync";
+                    if (payload.length >= 46) {
+                        const eventCount = BigInt('0x' + payload.substring(0, 16));
+                        const uwbTime = BigInt('0x' + payload.substring(16, 32));
+                        // ... decodes ...
+                        const uncertainty = parseInt(payload.substring(32, 34), 16);
+                        const skewAvail = parseInt(payload.substring(34, 36), 16);
+                        const ppm = parseInt(payload.substring(36, 40), 16);
+                        const success = parseInt(payload.substring(40, 42), 16);
+
+                        params = formatParam('EventCount', eventCount) +
+                            formatParam('UWB Time', uwbTime) +
+                            formatParam('Uncertainty', '0x' + uncertainty.toString(16)) +
+                            formatParam('Skew', skewAvail) +
+                            formatParam('PPM', ppm) +
+                            formatParam('Success', success);
+                        return { innerMsg, params };
+                    }
+                }
+            }
+
+            return { innerMsg, params: formatParam('Payload', payload.match(/.{1,2}/g).join(' ')) };
+        };
+
+        // Sort by timestamp
+        messages.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+        let html = `
+        <div style="overflow-x: auto; max-height: 600px; overflow-y: auto;">
+            <table class="ccc-table" style="width: 100%; min-width: 1000px;">
+                <thead>
+                    <tr>
+                        <th style="width: 140px;">Time</th>
+                        <th style="width: 60px;">Dir</th>
+                        <th style="width: 15%;">Message Category</th>
+                        <th style="width: 18%;">Message Type</th>
+                        <th style="width: 12%;">Message</th>
+                        <th>Parameters</th>
+                        <th style="width: 14%;">Raw Data</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+        messages.forEach(msg => {
+            const categoryName = CCC_CONSTANTS.MESSAGE_TYPES[msg.type] || `Unknown (0x${msg.type.toString(16).padStart(2, '0').toUpperCase()})`;
+            let typeName = `Unknown`;
+
+            if (msg.type === 0x02) {
+                typeName = CCC_CONSTANTS.UWB_RANGING_MSGS[msg.subtype] || typeName;
+            } else if (msg.type === 0x03) {
+                typeName = CCC_CONSTANTS.DK_EVENT_CATEGORIES[msg.subtype] || typeName;
+            } else if (msg.type === 0x01 && CCC_CONSTANTS.SE_MSGS && CCC_CONSTANTS.SE_MSGS[msg.subtype]) {
+                typeName = CCC_CONSTANTS.SE_MSGS[msg.subtype];
+            } else if (msg.type === 0x05) {
+                typeName = CCC_CONSTANTS.SUPPLEMENTARY_MSGS[msg.subtype] || typeName;
+            } else if (msg.type === 0x00 && CCC_CONSTANTS.FRAMEWORK_MSGS && CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype]) {
+                typeName = CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype];
+            }
+
+            const subtypeHex = `0x${msg.subtype.toString(16).padStart(2, '0').toUpperCase()}`;
+
+            let displayType = typeName;
+            if (typeName === 'Unknown') {
+                displayType = subtypeHex;
+            } else {
+                displayType = `${typeName} <span style="font-size: 0.85em; color: #888;">(${subtypeHex})</span>`;
+            }
+
+            const decoded = decodePayload(msg.type, msg.subtype, msg.payload);
+            const innerMessage = decoded.innerMsg || "-";
+            const params = decoded.params || "";
+
+            html += `<tr>
+                <td>${msg.timestamp}</td>
+                <td><span class="badge ${msg.direction === 'Sending' ? 'badge-out' : 'badge-in'}">${msg.direction}</span></td>
+                <td>${categoryName}</td>
+                <td>${displayType}</td>
+                <td>${innerMessage}</td>
+                <td style="overflow-wrap: anywhere; word-break: break-all;">${params}</td>
+                <td style="color: #999;">${msg.fullHex}</td>
+            </tr>`;
+        });
+
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
     }
 
     // --- Highlights Processing ---
@@ -2571,7 +3308,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             const timestampMs = Number(timestampMicro - BTSNOOP_EPOCH_DELTA) / 1000;
                             const date = new Date(timestampMs);
-                            const timestampStr = \`\${date.getHours().toString().padStart(2, '0')}:\${date.getMinutes().toString().padStart(2, '0')}:\${date.getSeconds().toString().padStart(2, '0')}.\${date.getMilliseconds().toString().padStart(3, '0')}\`;
+                            const timestampStr = \`\${(date.getMonth()+1).toString().padStart(2, '0')}-\${date.getDate().toString().padStart(2, '0')} \${date.getHours().toString().padStart(2, '0')}:\${date.getMinutes().toString().padStart(2, '0')}:\${date.getSeconds().toString().padStart(2, '0')}.\${date.getMilliseconds().toString().padStart(3, '0')}\`;
 
                             offset += 24;
                             if (offset + includedLength > finalBuffer.byteLength) break;
@@ -2939,17 +3676,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- End Scroll Restoration ---
 
         TimeTracker.stop('BTSnoop Filtering');
-        renderBtsnoopVirtualLogs(); // Render the filtered results.
-
-        // Apply scroll AFTER rendering to ensure DOM is ready
-        requestAnimationFrame(() => {
-            console.log('[BTSnoop Scroll] Applying scroll to:', newScrollTop, 'for packet:', selectedBtsnoopPacket?.number);
-            btsnoopLogContainer.scrollTop = newScrollTop;
-            // Force a second render to ensure selection is visible
-            if (selectedBtsnoopPacket) {
-                setTimeout(() => renderBtsnoopVirtualLogs(), 50);
-            }
-        });
+        renderBtsnoopVirtualLogs(); // Render the filtered results - scroll will happen inside
     }
 
     function createBtsnoopFilterHeader() {
@@ -3107,12 +3834,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             }
         }
-        
+
         // Ensure we always render at least some rows
         if (endIndex <= startIndex) {
             endIndex = Math.min(filteredBtsnoopPackets.length, startIndex + 50);
         }
 
+        // Scroll to selected packet if needed
+        if (selectedBtsnoopPacket) {
+            const selectedIndex = filteredBtsnoopPackets.findIndex(p => p.number === selectedBtsnoopPacket.number);
+            if (selectedIndex !== -1 && rowPositions[selectedIndex] !== undefined) {
+                const selectedPosition = rowPositions[selectedIndex];
+                const selectedHeight = rowHeights[selectedIndex] || 20;
+                const centerOffset = Math.floor(containerHeight / 2) - (selectedHeight / 2);
+                const targetScroll = Math.max(0, selectedPosition - centerOffset);
+                // Only scroll if selected packet is not in view
+                if (selectedPosition < scrollTop || selectedPosition > scrollTop + containerHeight) {
+                    console.log('[BTSnoop Scroll] Scrolling to selected packet', selectedBtsnoopPacket.number, 'at position', selectedPosition);
+                    container.scrollTop = targetScroll;
+                }
+            }
+        }
         console.log('[BTSnoop Debug] 5. Rendering rows', startIndex, 'to', endIndex, 'of', filteredBtsnoopPackets.length, 'scrollTop:', scrollTop, 'viewportBottom:', scrollTop + containerHeight);
 
         // Recycle or create DOM elements for the rows
@@ -3350,6 +4092,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Re-render the currently visible lines to show/hide the highlight.
                 // This is much faster than a full applyFilters() call.
                 handleMainLogScroll();
+            }
+        } else {
+            // Clear BTSnoop selection if clicking outside BTSnoop cells
+            if (selectedBtsnoopPacket && !target.closest('.btsnoop-copy-cell') && !target.closest('.btsnoop-header-cell')) {
+                console.log('[BTSnoop] Clearing selection - clicked outside');
+                selectedBtsnoopPacket = null;
+                renderBtsnoopVirtualLogs();
             }
         }
     }
