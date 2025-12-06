@@ -157,6 +157,35 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedBtsnoopPacket = null; // Track the user-selected BTSnoop packet
     let currentBtsnoopGridTemplate = null; // Store the current grid column layout
 
+    // --- OPTIMIZATION Phase 1: Filter State Tracking & Caching ---
+    let filterStateHash = null;
+    let cachedFilteredResults = {
+        logs: null,
+        ble: null,
+        nfc: null,
+        dck: null,
+        kernel: null,
+        btsnoop: null
+    };
+
+    // --- OPTIMIZATION Phase 1: CCC Stats Memoization ---
+    let cccStatsRenderedHTML = null;
+    let cccStatsDataHash = null;
+
+    // --- OPTIMIZATION Phase 1: Debounced Save Timer ---
+    let saveDebounceTimer = null;
+
+    // --- OPTIMIZATION Phase 2: Lazy Loading State ---
+    let tabsLoaded = {
+        logs: true,      // Main logs always loaded
+        ble: false,      // Load on first visit
+        nfc: false,      // Load on first visit
+        dck: false,      // Load on first visit
+        kernel: false,   // Load on first visit
+        btsnoop: false,  // Load on first visit
+        stats: false     // Load on first visit
+    };
+
     // --- Virtual Scroll State ---
     const LINE_HEIGHT = 20; // Estimated height of a single log line in pixels
     const BUFFER_LINES = 50; // Number of lines to render above/below the viewport
@@ -193,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Pass the correct elements for the main log view
                 renderVirtualLogs(logContainer, logSizer, logViewport, filteredLogLines);
                 mainScrollThrottleTimer = null;
-            }, 50); // Throttle scroll rendering to every 50ms
+            }, 100); // OPTIMIZATION: Increased from 50ms to 100ms for better performance
         }
     }
 
@@ -433,6 +462,150 @@ document.addEventListener('DOMContentLoaded', () => {
         document.head.appendChild(style);
     }
     injectLogLevelStyles();
+
+    // =================================================================================
+    // --- OPTIMIZATION: Helper Functions ---
+    // =================================================================================
+
+    /**
+     * Compute a hash of the current filter state to detect changes
+     * Only re-filter when this hash changes
+     */
+    function computeFilterStateHash() {
+        return JSON.stringify({
+            keywords: filterKeywords.map(kw => ({ text: kw.text, active: kw.active })),
+            levels: Array.from(activeLogLevels).sort(),
+            isAnd: isAndLogic,
+            liveSearch: liveSearchQuery,
+            timeRange: {
+                start: startTimeInput?.value || '',
+                end: endTimeInput?.value || ''
+            }
+        });
+    }
+
+    /**
+     * Check if filtering is needed for a specific tab
+     * Returns true if filter state changed or cache is empty
+     */
+    function needsRefiltering(tabId) {
+        const currentHash = computeFilterStateHash();
+
+        if (currentHash !== filterStateHash) {
+            filterStateHash = currentHash;
+            Object.keys(cachedFilteredResults).forEach(key => {
+                cachedFilteredResults[key] = null;
+            });
+            return true;
+        }
+
+        return cachedFilteredResults[tabId] === null;
+    }
+
+    /**
+     * Store filtered results in cache for a specific tab
+     */
+    function cacheFilteredResults(tabId, results) {
+        cachedFilteredResults[tabId] = results;
+    }
+
+    /**
+     * Debounced save to IndexedDB - prevents blocking UI during saves
+     */
+    async function debouncedSave(key, value) {
+        clearTimeout(saveDebounceTimer);
+        saveDebounceTimer = setTimeout(async () => {
+            try {
+                await saveData(key, value);
+                console.log(`[Perf] Saved ${key} to IndexedDB (non-blocking)`);
+            } catch (error) {
+                console.error(`[Perf] Failed to save ${key}:`, error);
+            }
+        }, 2000);
+    }
+
+    /**
+     * OPTIMIZATION Phase 2: Lazy load tab data on first visit
+     */
+    async function lazyLoadTab(tabId) {
+        if (tabsLoaded[tabId] || tabId === 'logs') {
+            return;
+        }
+
+        console.log(`[Perf Phase2] Lazy loading ${tabId} tab...`);
+        const startTime = performance.now();
+
+        try {
+            switch (tabId) {
+                case 'ble':
+                    bleLogLines = originalLogLines.filter(line => {
+                        if (line.isMeta) return true;
+                        if (!line.tag) return false;
+                        const tagLower = line.tag.toLowerCase();
+                        return (
+                            tagLower.includes('bluetoothgatt') ||
+                            tagLower.includes('bluetoothadapter') ||
+                            tagLower.includes('bt_') ||
+                            tagLower.includes('bluetooth')
+                        );
+                    });
+                    console.log(`[Perf Phase2] Extracted ${bleLogLines.length} BLE log lines`);
+                    break;
+
+                case 'nfc':
+                    nfcLogLines = originalLogLines.filter(line => {
+                        if (line.isMeta) return true;
+                        if (!line.tag) return false;
+                        const tagLower = line.tag.toLowerCase();
+                        return tagLower.includes('nfc');
+                    });
+                    console.log(`[Perf Phase2] Extracted ${nfcLogLines.length} NFC log lines`);
+                    break;
+
+                case 'dck':
+                    dckLogLines = originalLogLines.filter(line => {
+                        if (line.isMeta) return true;
+                        if (!line.tag) return false;
+                        const tagLower = line.tag.toLowerCase();
+                        return (
+                            tagLower.includes('digitalkey') ||
+                            tagLower.includes('carkey') ||
+                            tagLower.includes('dck') ||
+                            tagLower.includes('digital_key') ||
+                            tagLower.includes('car_key')
+                        );
+                    });
+                    console.log(`[Perf Phase2] Extracted ${dckLogLines.length} DCK log lines`);
+                    break;
+
+                case 'kernel':
+                    await processForKernel();
+                    console.log(`[Perf Phase2] Processed ${kernelLogLines.length} kernel log lines`);
+                    break;
+
+                case 'btsnoop':
+                    if (!isBtsnoopProcessed && fileTasks.length > 0) {
+                        await processForBtsnoop();
+                    }
+                    console.log(`[Perf Phase2] Processed ${btsnoopPackets.length} BTSnoop packets`);
+                    break;
+
+                case 'stats':
+                    console.log(`[Perf Phase2] Stats tab ready`);
+                    break;
+            }
+
+            tabsLoaded[tabId] = true;
+
+            const duration = performance.now() - startTime;
+            console.log(`[Perf Phase2] ${tabId} tab loaded in ${duration.toFixed(2)}ms`);
+
+        } catch (error) {
+            console.error(`[Perf Phase2] Failed to lazy load ${tabId} tab:`, error);
+            tabsLoaded[tabId] = true;
+        }
+    }
+
     // =================================================================================
     // --- File Processing ---
     // =================================================================================
@@ -494,6 +667,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 initializeTimeFilterFromLines();
                 await renderUI(true); // Use fast initial render and wait for it to complete
+
+                // Auto-collapse left panel to maximize log viewing space
+                if (leftPanel && panelToggleBtn && !leftPanel.classList.contains('collapsed')) {
+                    leftPanel.classList.add('collapsed');
+                    panelToggleBtn.innerHTML = '&raquo;';
+                    console.log('[UI] Auto-collapsed left panel after restoring logs');
+                }
+
                 return true; // Explicitly return true on success
             }
         } catch (error) {
@@ -735,6 +916,17 @@ document.addEventListener('DOMContentLoaded', () => {
         filteredLogLines = [];
         logViewport.innerHTML = '';
         logSizer.style.height = '0px';
+
+        // OPTIMIZATION Phase 2: Reset lazy loading flags
+        tabsLoaded = {
+            logs: true,
+            ble: false,
+            nfc: false,
+            dck: false,
+            kernel: false,
+            btsnoop: false,
+            stats: false
+        };
 
         if (clearStorage && db) { // Also clear the persisted data from IndexedDB
             await clearData();
@@ -1302,9 +1494,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- Persist Data ---
         TimeTracker.start('Persisting & UI Render');
-        // Persist data asynchronously, don't wait for it.
-        saveData('logData', originalLogLines);
-        saveData('fileName', currentZipFileName);
+        // OPTIMIZATION: Use debounced save to prevent blocking UI
+        debouncedSave('logData', originalLogLines);
+        debouncedSave('fileName', currentZipFileName);
 
         // --- Finalize UI ---
         minLogDate = consolidatedMinTimestamp ? logcatToDate(consolidatedMinTimestamp) : null;
@@ -1330,52 +1522,77 @@ document.addEventListener('DOMContentLoaded', () => {
         // which is the correct way to populate the log view for the first time.
         applyFilters(true);
 
+        // Auto-collapse left panel to maximize log viewing space
+        if (leftPanel && panelToggleBtn && !leftPanel.classList.contains('collapsed')) {
+            leftPanel.classList.add('collapsed');
+            panelToggleBtn.innerHTML = '&raquo;';
+            console.log('[UI] Auto-collapsed left panel after file loading');
+        }
+
         // Reset the processing flag now that everything is complete
         progressText.textContent = 'Complete!';
         isProcessing = false;
     }
 
     /**
-     * NEW: Master refresh function. Detects the active tab and calls its
-     * specific filtering and rendering function. This is now the central
-     * point for all UI updates triggered by filter changes.
+     * OPTIMIZATION: Master refresh function with intelligent caching and lazy loading.
+     * Only re-filters when filter state actually changes.
+     * Lazy loads tab data on first visit.
      */
     async function refreshActiveTab() {
         const activeTabId = document.querySelector('.tab-btn.active')?.dataset.tab;
 
+        // OPTIMIZATION Phase 2: Lazy load tab data on first visit
+        await lazyLoadTab(activeTabId);
+
+        // OPTIMIZATION Phase 1: Check if filtering is needed
+        const shouldRefilter = needsRefiltering(activeTabId);
+
+        if (!shouldRefilter) {
+            console.log(`[Perf] Using cached results for ${activeTabId} tab - no filtering needed`);
+            return;
+        }
+
+        console.log(`[Perf] Filter state changed - re-filtering ${activeTabId} tab`);
+
         switch (activeTabId) {
             case 'logs':
                 applyFilters();
+                cacheFilteredResults('logs', filteredLogLines);
                 break;
             case 'ble':
                 if (!bleScrollListenerAttached) setupBleTab(); else applyBleFilters();
+                cacheFilteredResults('ble', filteredBleLogLines);
                 break;
             case 'nfc':
                 if (!nfcScrollListenerAttached) setupNfcTab(); else applyNfcFilters();
+                cacheFilteredResults('nfc', filteredNfcLogLines);
                 break;
             case 'dck':
                 if (!dckScrollListenerAttached) setupDckTab(); else applyDckFilters();
+                cacheFilteredResults('dck', filteredDckLogLines);
                 break;
             case 'kernel':
-                processForKernel(); // This function already includes filtering
+                processForKernel();
+                cacheFilteredResults('kernel', filteredKernelLogLines);
                 break;
             case 'btsnoop':
-                // OPTIMIZATION: Parse btsnoop logs just-in-time on the first visit to the tab.
-                // On subsequent visits, the data is already in memory and renders instantly.
-                // FIX: Use the new isBtsnoopProcessed flag to prevent re-parsing.
                 if (!isBtsnoopProcessed && fileTasks.length > 0) {
-                    await processForBtsnoop(); // This happens only once.
+                    await processForBtsnoop();
                 }
-                // Now that data is guaranteed to be parsed, set up and render.
                 setupBtsnoopTab();
+                cacheFilteredResults('btsnoop', btsnoopPackets);
                 break;
-            // 'stats' tab has its own update mechanisms and doesn't need a call here.
+            case 'stats':
+                cacheFilteredResults('stats', null);
+                break;
         }
     }
 
     /**
      * A generic filtering function that applies the main filters (keyword, level, time)
      * to a given set of log lines. This is the new core of the filtering system.
+     * OPTIMIZATION: Only shows file headers if they have matching log lines
      * @param {Array} linesToFilter The array of log line objects to filter.
      * @returns {Array} A new array containing only the lines that pass the filters.
      */
@@ -1386,24 +1603,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const startTime = startTimeInput.value ? new Date(startTimeInput.value) : null;
         const endTime = endTimeInput.value ? new Date(endTimeInput.value) : null;
 
-        // If collapseState is not provided (e.g., when called from specialized tabs),
-        // create a local state object. Otherwise, use the one passed in for chunked processing.
         const state = collapseState || { isInside: false };
-
         const results = [];
+        let currentHeader = null;
+        let headerHasMatches = false;
 
         for (const line of linesToFilter) {
-            // Always include file headers in the results, and update the collapsed state.
             if (line.isMeta) {
+                // Save previous header if it had matches
+                if (currentHeader && headerHasMatches) {
+                    results.push(currentHeader);
+                }
+
+                // Store new header, don't add yet
+                currentHeader = line;
+                headerHasMatches = false;
                 state.isInside = collapsedFileHeaders.has(line.originalText);
-                results.push(line); // Always include headers
                 continue;
             }
 
-            // If we are inside a collapsed section, skip this log line.
             if (state.isInside) continue;
 
-            // Now, apply all other filters to the visible lines.
+            // Apply filters
             if (keywordRegexes) {
                 const matches = isAndLogic
                     ? keywordRegexes.every(regex => regex.test(line.originalText))
@@ -1420,8 +1641,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (line.level && !activeLogLevels.has(line.level)) continue;
 
-            results.push(line); // Line passes all filters
+            // Line passed all filters - mark header as having matches
+            if (!headerHasMatches && currentHeader) {
+                results.push(currentHeader);
+                headerHasMatches = true;
+            }
+
+            results.push(line);
         }
+
         return results;
     }
     // --- Clear & Reset Logic ---
@@ -2003,7 +2231,7 @@ document.addEventListener('DOMContentLoaded', () => {
             debounceTimer = setTimeout(() => {
                 liveSearchQuery = searchInput.value;
                 refreshActiveTab(); // Re-filter only after user stops typing
-            }, 300); // 300ms delay
+            }, 500); // OPTIMIZATION: Increased from 300ms to 500ms for better performance
 
             // Autocomplete can still be instant
             const query = searchInput.value.toLowerCase(); // Use the immediate value for suggestions
@@ -4293,6 +4521,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Application Initialization ---
     async function initializeApp() {
+        const skeletonLoader = document.getElementById('skeletonLoader');
+
         try {
             await openDb(); // Ensure the database is open before any other operations.
 
@@ -4308,13 +4538,44 @@ document.addEventListener('DOMContentLoaded', () => {
             injectLogLevelStyles();
 
             await checkForPersistedFilters();
+
+            // OPTIMIZATION Phase 2: Check if we have persisted data
+            const persistedFileName = await loadData('fileName');
+            const hasPersistedData = persistedFileName && persistedFileName.value;
+
+            if (hasPersistedData) {
+                // Show skeleton while loading persisted data
+                if (skeletonLoader) {
+                    skeletonLoader.style.display = 'flex';
+                    console.log('[Perf Phase2] Showing skeleton loader - loading persisted data...');
+                }
+            } else {
+                if (skeletonLoader) skeletonLoader.style.display = 'none';
+            }
+
+            // Load persisted data in background
             const sessionRestored = await checkForPersistedLogs();
+
             if (!sessionRestored) {
                 await applyFilters();
             }
 
+            // Hide skeleton with fade out
+            if (skeletonLoader && skeletonLoader.style.display !== 'none') {
+                console.log('[Perf Phase2] Data loaded - hiding skeleton');
+                skeletonLoader.classList.add('fade-out');
+                setTimeout(() => {
+                    skeletonLoader.style.display = 'none';
+                    skeletonLoader.classList.remove('fade-out');
+                }, 300);
+            }
+
         } catch (error) {
             console.error("Fatal Error during app initialization:", error);
+            // Hide skeleton on error
+            if (skeletonLoader) {
+                skeletonLoader.style.display = 'none';
+            }
             alert("Could not initialize the application. Please try clearing your browser cache and reloading.");
         }
     }
