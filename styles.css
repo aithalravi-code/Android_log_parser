@@ -1193,7 +1193,6 @@ input[type="file"]:hover {
 /* CCC Parameter Styling */
 .ccc-pair {
     display: inline-block;
-    background-color: #3a3a3a;
     border: 1px solid #555;
     border-radius: 4px;
     padding: 2px 6px;

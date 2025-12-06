@@ -176,62 +176,74 @@
                     <button id="exportBleBtn" class="export-btn">Export Filtered Logs</button>
                 </section>
                 <section id="statsTab" class="tab-content" style="overflow-y: auto; padding: 1rem;">
-                    <div class="dashboard-grid">
-                        <div class="dashboard-card full-width-card" id="cccStatsCard">
-                            <h3>Digital Car Key (CCC) Analysis</h3>
-                            <div id="cccStatsContainer"></div>
+                    <!-- Section 1: CCC Analysis -->
+                    <div class="dashboard-card full-width-card" id="cccStatsCard" style="margin-bottom: 1.5rem;">
+                        <h3>Digital Car Key (CCC) Analysis</h3>
+                        <div id="cccStatsContainer"></div>
+                        <button id="exportCccBtn" class="export-btn" style="margin-top: 1rem;">Export to Excel</button>
+                    </div>
+
+                    <!-- Section 2: BLE & System Highlights -->
+                    <div class="dashboard-card full-width-card" id="highlightsCard" style="margin-bottom: 1.5rem;">
+                        <h3>BLE & System Highlights</h3>
+                        <div class="highlight-section">
+                            <h4>Accounts Found</h4>
+                            <ul id="accountsList" class="highlight-list"></ul>
                         </div>
-                        <div class="dashboard-card large-card" id="highlightsCard">
-                            <h3>BLE & System Highlights</h3>
-                            <div class="highlight-section">
-                                <h4>Accounts Found</h4>
-                                <ul id="accountsList" class="highlight-list"></ul>
-                            </div>
-                            <div class="highlight-section">
-                                <h4>Device & Setting Events</h4>
-                                <table id="deviceEventsTable" class="highlight-table">
+                        <div class="highlight-section">
+                            <h4>Device & Setting Events</h4>
+                            <div style="overflow-x: auto;">
+                                <table id="deviceEventsTable" class="ccc-table">
                                     <thead>
                                         <tr>
-                                            <th>Time</th>
-                                            <th>Event</th>
-                                            <th>Details</th>
+                                            <th style="width: 90px;">Date</th>
+                                            <th style="width: 90px;">Time</th>
+                                            <th style="width: 200px;">Event</th>
+                                            <th style="width: 150px;">Current Value</th>
+                                            <th style="width: 150px;">Previous Value</th>
+                                            <th style="min-width: 400px;">Original Log Line</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
                                 </table>
                             </div>
-                            <div class="highlight-section">
-                                <h4>BLE Security Keys</h4>
-                                <table id="bleKeysTable" class="highlight-table">
+                        </div>
+                        <div class="highlight-section">
+                            <h4>BLE Security Keys</h4>
+                            <div style="overflow-x: auto;">
+                                <table id="bleKeysTable" class="ccc-table">
                                     <thead>
                                         <tr>
-                                            <th>Peer Address</th>
-                                            <th>Key Type</th>
+                                            <th style="width: 200px;">Peer Address</th>
+                                            <th style="width: 150px;">Key Type</th>
                                             <th>Key Value</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
                                 </table>
                             </div>
-                            <div class="highlight-section">
-                                <h4>BTSnoop Connection Events</h4>
-                                <div class="scrollable-table-container">
-                                    <table id="btsnoopConnectionEventsTable" class="highlight-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Packet No.</th>
-                                                <th>Timestamp</th>
-                                                <th>Connection Handle</th>
-                                                <th>Peer Address</th>
-                                                <th>Raw Packet</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                        </tbody>
-                                    </table>
-                                </div>
+                        </div>
+                        <div class="highlight-section">
+                            <h4>BTSnoop Connection Events</h4>
+                            <div style="overflow-x: auto;">
+                                <table id="btsnoopConnectionEventsTable" class="ccc-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 100px;">Packet No.</th>
+                                            <th style="width: 140px;">Timestamp</th>
+                                            <th style="width: 150px;">Connection Handle</th>
+                                            <th style="width: 200px;">Peer Address</th>
+                                            <th>Raw Packet</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Section 3: Other Statistics -->
+                    <div class="dashboard-grid">
                         <div class="dashboard-card" id="logSummaryCard">
                             <h3>Log Summary</h3>
                             <div id="logCounts"></div>
