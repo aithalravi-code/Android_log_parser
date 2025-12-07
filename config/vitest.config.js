@@ -1,6 +1,12 @@
 import { defineConfig } from 'vitest/config';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const projectRoot = path.resolve(__dirname, '..');
 
 export default defineConfig({
+    root: projectRoot,
     test: {
         // Test environment
         environment: 'jsdom',
@@ -15,9 +21,10 @@ export default defineConfig({
             exclude: [
                 'node_modules/',
                 'tests/',
-                '*.config.js',
-                'jszip.min.js',
-                'table-resize.js'
+                'config/',
+                '**/*.config.js',
+                'src/jszip.min.js',
+                'src/table-resize.js'
             ],
             thresholds: {
                 lines: 70,
@@ -28,8 +35,8 @@ export default defineConfig({
         },
 
         // Test file patterns
-        include: ['../tests/unit/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}', '../tests/integration/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-        exclude: ['node_modules', 'dist', '.git', '.cache', '../tests/e2e/**', '../tests/performance/**'],
+        include: ['tests/unit/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+        exclude: ['node_modules', 'dist', '.git', '.cache', 'tests/e2e/**', 'tests/performance/**', 'tests/integration/**'],
 
         // Test timeout
         testTimeout: 10000,
@@ -38,8 +45,8 @@ export default defineConfig({
         // Reporter configuration
         reporters: ['verbose', 'json', 'html'],
         outputFile: {
-            json: '../results/test-results/unit-results.json',
-            html: '../results/test-results/unit-results.html'
+            json: 'results/test-results/unit-results.json',
+            html: 'results/test-results/unit-results.html'
         },
 
         // Mock configuration
@@ -55,13 +62,13 @@ export default defineConfig({
         watch: false,
 
         // Setup files
-        setupFiles: ['../tests/setup.js']
+        setupFiles: ['tests/setup.js']
     },
 
     // Resolve configuration
     resolve: {
         alias: {
-            '@': '/home/rk/Documents/Android_log_parser (copy)'
+            '@': projectRoot
         }
     }
 });
