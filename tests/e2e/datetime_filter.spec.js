@@ -93,8 +93,21 @@ test.describe('DateTime Filter', () => {
 
         // Update inputs to target the specific log line (Wider range)
         const targetYear = new Date().getFullYear();
-        await startTimeInput.fill(`${targetYear}-01-01T00:00`);
+
+        // RE-ENABLED: Broadcast 6196 Check
+        console.log('Testing Broadcast 6196 log line filter: 09-24 09:37:31.974');
+        await startTimeInput.fill(`${targetYear}-09-24T09:30`);
         await startTimeInput.dispatchEvent('change');
+        await endTimeInput.fill(`${targetYear}-09-24T09:40`);
+        await endTimeInput.dispatchEvent('change');
+
+        // Wait for filter to apply
+        await page.waitForTimeout(2000);
+
+        const broadcastLine = page.locator('.log-line', { hasText: 'Broadcast 6196' });
+        await expect(broadcastLine).toBeVisible();
+        await expect(broadcastLine).toContainText('09-24 09:37:31.974');
+
         // --- Additional Check 2 Requested by User (A11YSettingsProvider) ---
         console.log('Testing A11YSettingsProvider log line filter: 06-07 17:00:22.555');
         await startTimeInput.fill(`${targetYear}-06-07T16:00`);

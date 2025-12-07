@@ -1482,7 +1482,7 @@ document.addEventListener('DOMContentLoaded', () => {
             '                const pid = match.groups.pid || match.groups.pid2;\n' +
             '                const [month, day] = logcatDate.split(\'-\').map(Number);\n' + // This was line 209\n' +
             '                const [hours, minutes, seconds, milliseconds] = logcatTime.split(/[:.]/).map(Number);\n' +
-            '                lineDateObj = new Date(fileYear, month - 1, day, hours, minutes, seconds, milliseconds || 0);\n' +
+            '                lineDateObj = new Date(Date.UTC(fileYear, month - 1, day, hours, minutes, seconds, milliseconds || 0));\n' +
             '\n' +
             '                const fullTimestamp = logcatDate + \' \' + logcatTime;\n' +
             '                if (!minTimestamp || fullTimestamp < minTimestamp) minTimestamp = fullTimestamp;\n' +
@@ -1512,7 +1512,7 @@ document.addEventListener('DOMContentLoaded', () => {
             '                const { customFullDate, customTime, customMessage } = match.groups;\n' +
             '                const [year, month, day] = customFullDate.split(\'-\').map(Number);\n' +
             '                const [hours, minutes, seconds] = customTime.split(\':\').map(Number);\n' +
-            '                lineDateObj = new Date(year, month - 1, day, hours, minutes, seconds, 0);\n' +
+            '                lineDateObj = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds, 0));\n' +
             '\n' +
             '                const mmdd = customFullDate.substring(5);\n' +
             '                const timeWithMs = customTime + \'.000\';\n' +
@@ -1527,7 +1527,7 @@ document.addEventListener('DOMContentLoaded', () => {
             '                const { weaverDate, weaverTime, weaverPid, weaverTag, weaverMessage } = match.groups;\n' +
             '                const [month, day] = weaverDate.split(\'-\').map(Number);\n' +
             '                const [hours, minutes, seconds, milliseconds] = weaverTime.split(/[.:]/).map(Number);\n' +
-            '                lineDateObj = new Date(fileYear, month - 1, day, hours, minutes, seconds, Math.floor(milliseconds / 1000)); // Convert microseconds to ms\n' +
+            '                lineDateObj = new Date(Date.UTC(fileYear, month - 1, day, hours, minutes, seconds, Math.floor(milliseconds / 1000))); // Convert microseconds to ms\n' +
             '\n' +
             '                const fullTimestamp = weaverDate + \' \' + weaverTime.slice(0, 12); // Trim to ms for consistency\n' +
             '                if (!minTimestamp || fullTimestamp < minTimestamp) minTimestamp = fullTimestamp;\n' +
@@ -1543,7 +1543,7 @@ document.addEventListener('DOMContentLoaded', () => {
             '                const [hours, minutes, seconds, milliseconds] = simpleTime.split(/[.:]/).map(Number);\n' +
             '                \n' +
             '                // Note: simpleTime might have 3 digits for ms\n' +
-            '                lineDateObj = new Date(fileYear, month - 1, day, hours, minutes, seconds, milliseconds || 0);\n' +
+            '                lineDateObj = new Date(Date.UTC(fileYear, month - 1, day, hours, minutes, seconds, milliseconds || 0));\n' +
             '\n' +
             '                // Standardize timestamp format to use dot for consistency in display/filtering\n' +
             '                const stdTime = `${String(hours).padStart(2, \'0\')}:${String(minutes).padStart(2, \'0\')}:${String(seconds).padStart(2, \'0\')}.${String(milliseconds || 0).padStart(3, \'0\')}`;\n' +
@@ -1984,8 +1984,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeKeywords = filterKeywords.filter(kw => kw.active).map(kw => kw.text);
         const keywordRegexes = activeKeywords.length > 0 ? activeKeywords.map(wildcardToRegex) : null;
         const liveSearchRegex = liveSearchQuery ? wildcardToRegex(liveSearchQuery) : null;
-        const startTime = startTimeInput.value ? new Date(startTimeInput.value) : null;
-        const endTime = endTimeInput.value ? new Date(endTimeInput.value) : null;
+        // FIX: Parse inputs as UTC to match worker's UTC-based timestamps, avoiding timezone offset issues.
+        const startTime = startTimeInput.value ? new Date(startTimeInput.value + ':00Z') : null;
+        const endTime = endTimeInput.value ? new Date(endTimeInput.value + ':00Z') : null;
+
+        // Filter initialization
+
 
         const state = collapseState || { isInside: false };
         const results = [];
@@ -2020,9 +2024,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (liveSearchRegex && !liveSearchRegex.test(line.originalText)) continue;
 
+
+
+
             if (isTimeFilterActive && (startTime || endTime)) {
                 if (line.dateObj) {
-                    if ((startTime && line.dateObj < startTime) || (endTime && line.dateObj > endTime)) continue;
+                    if ((startTime && line.dateObj < startTime) || (endTime && line.dateObj > endTime)) {
+                        continue;
+                    }
                 }
             }
 
@@ -2408,8 +2417,8 @@ document.addEventListener('DOMContentLoaded', () => {
             input.addEventListener('change', async () => {
                 isUpdatingFromInput = true;
                 isTimeFilterActive = true;
-                const startVal = startTimeInput.value ? new Date(startTimeInput.value).getTime() : minTime;
-                const endVal = endTimeInput.value ? new Date(endTimeInput.value).getTime() : maxTime;
+                const startVal = startTimeInput.value ? new Date(startTimeInput.value + ':00Z').getTime() : minTime;
+                const endVal = endTimeInput.value ? new Date(endTimeInput.value + ':00Z').getTime() : maxTime;
                 timeRangeSlider.noUiSlider.set([startVal, endVal]);
                 isUpdatingFromInput = false;
                 await refreshActiveTab(); // Apply filters after input change
@@ -2713,11 +2722,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // --- Event Listeners for Time Filters ---
     if (startTimeInput) {
-        startTimeInput.addEventListener('change', () => timeRangeSlider.noUiSlider.set([new Date(startTimeInput.value).getTime(), null]));
+        startTimeInput.addEventListener('change', () => timeRangeSlider.noUiSlider.set([new Date(startTimeInput.value + ':00Z').getTime(), null]));
     }
 
     if (endTimeInput) {
-        endTimeInput.addEventListener('change', () => timeRangeSlider.noUiSlider.set([null, new Date(endTimeInput.value).getTime()]));
+        endTimeInput.addEventListener('change', () => timeRangeSlider.noUiSlider.set([null, new Date(endTimeInput.value + ':00Z').getTime()]));
         logLevelToggleBtn.addEventListener('click', () => {
             if (logLevelToggleBtn.textContent === 'None') {
                 // Deselect all
@@ -4214,7 +4223,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // NFC Logic
         if (activeTechs.nfc) {
             const nfcKeywords = {
-                framework: /NfcManager|NfcService|TagDispatcher|NfcTag/i,
+                framework: /NfcManager|NfcService|TagDispatcher|NfcTag|P2pLinkManager/i,
                 hce: /HostEmulationManager|ApduServiceInfo/i,
                 p2p: /P2pLinkManager/i,
                 hal: /NxpNci|NxpExtns|libnfc|libnfc-nci/i
@@ -4423,11 +4432,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 return reject('BTSnoop UI elements not found');
             }
 
-            // Check if worker code has changed and invalidate cache
-            const workerVersion = '2025-12-07-20:53';
+            // Check if worker code has changed    // Versioning for worker cache invalidation
+            const btsnoopWorkerVersion = '2025-12-07-21:50'; // Updated for Address Resolution & UTC Fix
             const storedVersion = localStorage.getItem('btsnoopWorkerVersion');
-            if (storedVersion !== workerVersion) {
-                console.log('[BTSnoop] Worker code changed (v' + workerVersion + '), clearing ALL cache...');
+            if (storedVersion !== btsnoopWorkerVersion) {
+                console.log('[BTSnoop] Worker code changed (v' + btsnoopWorkerVersion + '), clearing ALL cache...');
                 // Clear IndexedDB btsnoopStore
                 if (db) {
                     const tx = db.transaction([BTSNOOP_STORE_NAME], 'readwrite');
