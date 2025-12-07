@@ -28,8 +28,8 @@ export default defineConfig({
         },
 
         // Test file patterns
-        include: ['tests/unit/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}', 'tests/integration/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-        exclude: ['node_modules', 'dist', '.git', '.cache', 'tests/e2e/**', 'tests/performance/**'],
+        include: ['../tests/unit/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}', '../tests/integration/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+        exclude: ['node_modules', 'dist', '.git', '.cache', '../tests/e2e/**', '../tests/performance/**'],
 
         // Test timeout
         testTimeout: 10000,
@@ -38,8 +38,8 @@ export default defineConfig({
         // Reporter configuration
         reporters: ['verbose', 'json', 'html'],
         outputFile: {
-            json: './test-results/unit-results.json',
-            html: './test-results/unit-results.html'
+            json: '../results/test-results/unit-results.json',
+            html: '../results/test-results/unit-results.html'
         },
 
         // Mock configuration
@@ -55,7 +55,7 @@ export default defineConfig({
         watch: false,
 
         // Setup files
-        setupFiles: ['./tests/setup.js']
+        setupFiles: ['../tests/setup.js']
     },
 
     // Resolve configuration

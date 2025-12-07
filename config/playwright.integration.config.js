@@ -5,7 +5,7 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
     // Test directory for integration tests
-    testDir: './tests/integration',
+    testDir: '../tests/integration',
 
     // Test file pattern
     testMatch: '**/*.spec.js',
@@ -28,14 +28,14 @@ export default defineConfig({
     // Reporter configuration
     reporter: [
         ['list'],
-        ['html', { outputFolder: 'playwright-report-integration', open: 'never' }],
-        ['json', { outputFile: 'test-results/integration-results.json' }]
+        ['html', { outputFolder: '../results/playwright-report-integration', open: 'never' }],
+        ['json', { outputFile: '../results/test-results/integration-results.json' }]
     ],
 
     // Shared settings
     use: {
         // Base URL - using HTTP server
-        baseURL: 'http://localhost:8080',
+        baseURL: 'http://localhost:8080/src/',
 
         // Collect trace
         trace: 'on-first-retry',
@@ -73,5 +73,5 @@ export default defineConfig({
     ],
 
     // Output folder
-    outputDir: 'test-results/integration-artifacts'
+    outputDir: '../results/test-results/integration-artifacts'
 });

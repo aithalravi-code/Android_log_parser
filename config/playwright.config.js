@@ -6,7 +6,7 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
     // Test directory
-    testDir: './tests/e2e',
+    testDir: '../tests/e2e',
 
     // Test file pattern
     testMatch: '**/*.spec.js',
@@ -34,16 +34,16 @@ export default defineConfig({
     // Reporter configuration
     reporter: [
         ['list'],
-        ['html', { outputFolder: 'playwright-report', open: 'never' }],
-        ['json', { outputFile: 'test-results/e2e-results.json' }],
-        ['junit', { outputFile: 'test-results/e2e-results.xml' }],
-        ['allure-playwright', { outputFolder: 'allure-results' }]
+        ['html', { outputFolder: '../results/playwright-report', open: 'never' }],
+        ['json', { outputFile: '../results/test-results/e2e-results.json' }],
+        ['junit', { outputFile: '../results/test-results/e2e-results.xml' }],
+        ['allure-playwright', { outputFolder: '../results/allure-results' }]
     ],
 
     // Shared settings for all projects
     use: {
         // Base URL for navigation
-        baseURL: 'file:///home/rk/Documents/Android_log_parser (copy)/index.html',
+        baseURL: 'file:///home/rk/Documents/Android_log_parser (copy)/src/index.html',
 
         // Collect trace when retrying the failed test
         trace: 'on-first-retry',
@@ -114,7 +114,7 @@ export default defineConfig({
     ],
 
     // Output folder for test artifacts
-    outputDir: 'test-results/artifacts',
+    outputDir: '../results/test-results/artifacts',
 
     // Global setup/teardown
     // globalSetup: './tests/global-setup.js',

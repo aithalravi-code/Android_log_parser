@@ -1,1 +1,0 @@
-Fix BTSnoop processing on file load

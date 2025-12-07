@@ -134,7 +134,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (liveSearchRegex && !liveSearchRegex.test(line.originalText)) continue;
             if (checkTime && line.dateObj) {
                 const d = new Date(line.dateObj);
-                if ((startTimeResult && d < startTimeResult) || (endTimeResult && d > endTimeResult)) continue;
+                if (isNaN(d.getTime())) {
+                     // console.log('Invalid Date for line:', line.originalText);
+                     // continue; 
+                }
+                if ((startTimeResult && d < startTimeResult) || (endTimeResult && d > endTimeResult)) {
+                     // console.log('Skipping line time:', line.timestamp, 'Start:', startTimeResult.toISOString(), 'End:', endTimeResult.toISOString(), 'LogDate:', d.toISOString());
+                    continue;
+                }
             }
             if (line.level && !logLevelsSet.has(line.level)) continue;
 
@@ -717,13 +724,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         return tagLower.includes('nfc') || tagLower.includes('nci');
                     });
                     // Filter DCK (Digital Key only)
-                    dckLogLines = originalLogLines.filter(line => {
-                        if (line.isMeta) return true;
-                        if (!line.tag) return false;
-                        const tagLower = line.tag.toLowerCase();
-                        return tagLower.includes('dk') || tagLower.includes('digital_key') ||
-                            tagLower.includes('car_key');
-                    });
+                    // Filter DCK (Digital Key only)
+                    // FIX: Rely on the worker's regex (isDck flag) which covers 'Dck', 'DigitalCarKey', etc.
+                    dckLogLines = originalLogLines.filter(line => line.isMeta || line.isDck);
 
                     // Filter UWB & Nearby
                     uwbLogLines = originalLogLines.filter(line => {
@@ -1386,7 +1389,7 @@ document.addEventListener('DOMContentLoaded', () => {
             '        \'^\\\\s*(?:\' + // Allow optional leading whitespace\n' +
             '            \'(?<logcatDate>\\\\d{2}-\\\\d{2})\\\\s(?<logcatTime>\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{3,})\' + // MM-DD HH:mm:ss.SSS\n' +
             '            \'\\\\s+\' + // PID/TID/UID Separator\n' +
-            '            \'(?:(?:\\\\s*(?<pid>[\\\\w-]+)\\\\s+(?<tid>\\\\d+)\\\\s+(?:(?<uid>[\\\\w-]+)\\\\s+)?)(?<level>[A-Z])\\\\s+(?<tag>[^\\\\s:]+?)(?::\\\\s|\\\\s+)|(?<level2>[A-Z])\\\\/(?<tag2>[^\\\\(\\\\s]+)(?:\\\\(\\\\s*(?<pid2>\\\\d+)\\\\))?:\\\\s)\' + // Handle alphanumeric PID/UID\n' +
+            '            \'(?:(?:\\\\s*(?<pid>[\\\\w-]+)\\\\s+(?<tid>\\\\d+)\\\\s+(?:(?<uid>[\\\\w-]+)\\\\s+)?)(?<level>[A-Z])\\\\s+(?<tag>[^\\\\s]+?)(?::\\\\s|\\\\s+)|(?<level2>[A-Z])\\\\/(?<tag2>[^\\\\(\\\\s]+)(?:\\\\(\\\\s*(?<pid2>\\\\d+)\\\\))?:\\\\s)\' + // Handle alphanumeric PID/UID\n' +
             '            \'(?<message>(?!.*Date: \\\\d{4}).+)\' + // Standard logcat message, negative lookahead to prevent matching custom format, changed .* to .+\n' +
             '        \'|\' +\n' +
             '            \'Date:\\\\s(?<customFullDate>\\\\d{4}-\\\\d{2}-\\\\d{2})\\\\s(?<customTime>\\\\d{2}:\\\\d{2}:\\\\d{2})\' + // Date: YYYY-MM-DD HH:mm:ss\n' +
@@ -1394,6 +1397,9 @@ document.addEventListener('DOMContentLoaded', () => {
             '        \'|\' +\n' +
             '            \'\\\\[(?<weaverDate>\\\\d{2}-\\\\d{2})\\\\s(?<weaverTime>\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d+)\\\\]\' + // Weaver log format [MM-DD HH:mm:ss.SSSSSS]\n' +
             '            \'\\\\[(?<weaverPid>\\\\d+)\\\\]\\\\[(?<weaverTag>[^\\\\]]+)\\\\]\\\\s*(?<weaverMessage>.*)\' + // Weaver PID, Tag, and Message\n' +
+            '        \'|\' +\n' +
+            '            \'(?<simpleDate>\\\\d{2}-\\\\d{2})\\\\s(?<simpleTime>\\\\d{2}:\\\\d{2}:\\\\d{2}[:.]\\\\d{3,})\\\\s+\' + // Simple format: MM-DD HH:mm:ss:SSS (colon or dot)\n' +
+            '            \'(?<simpleTag>[^:]+?)\\\\s*:\\\\s+(?<simpleMessage>.+)\' + // Tag : Message (Level implied/missing)\n' +
             '        \')\',\n' +
             '        \'m\' // Use \'m\' (multiline) for ^, but NOT \'g\' (global) with exec() in a loop\n' +
             '    );\n' +
@@ -1528,6 +1534,35 @@ document.addEventListener('DOMContentLoaded', () => {
             '                if (!maxTimestamp || fullTimestamp > maxTimestamp) maxTimestamp = fullTimestamp;\n' +
             '\n' +
             '                parsedLine = { isMeta: false, dateObj: lineDateObj, date: weaverDate, time: weaverTime, timestamp: fullTimestamp, level: \'D\', pid: weaverPid, tag: weaverTag.trim(), message: weaverMessage.trim(), originalText: lineText };\n' +
+            '                stats.D++;\n' +
+            '            }\n' +
+            '            else if (match.groups.simpleDate) { // NEW: Simple Tag Log format\n' +
+            '                const { simpleDate, simpleTime, simpleTag, simpleMessage } = match.groups;\n' +
+            '                const [month, day] = simpleDate.split(\'-\').map(Number);\n' +
+            '                // Handle both colon and dot separators for milliseconds\n' +
+            '                const [hours, minutes, seconds, milliseconds] = simpleTime.split(/[.:]/).map(Number);\n' +
+            '                \n' +
+            '                // Note: simpleTime might have 3 digits for ms\n' +
+            '                lineDateObj = new Date(fileYear, month - 1, day, hours, minutes, seconds, milliseconds || 0);\n' +
+            '\n' +
+            '                // Standardize timestamp format to use dot for consistency in display/filtering\n' +
+            '                const stdTime = `${String(hours).padStart(2, \'0\')}:${String(minutes).padStart(2, \'0\')}:${String(seconds).padStart(2, \'0\')}.${String(milliseconds || 0).padStart(3, \'0\')}`;\n' +
+            '                const fullTimestamp = simpleDate + \' \' + stdTime;\n' +
+            '\n' +
+            '                if (!minTimestamp || fullTimestamp < minTimestamp) minTimestamp = fullTimestamp;\n' +
+            '                if (!maxTimestamp || fullTimestamp > maxTimestamp) maxTimestamp = fullTimestamp;\n' +
+            '\n' +
+            '                parsedLine = {\n' +
+            '                    isMeta: false,\n' +
+            '                    dateObj: lineDateObj,\n' +
+            '                    date: simpleDate,\n' +
+            '                    time: stdTime,\n' +
+            '                    timestamp: fullTimestamp,\n' +
+            '                    level: \'D\', // Default to Debug as level is missing\n' +
+            '                    tag: simpleTag.trim(),\n' +
+            '                    message: simpleMessage.trim(),\n' +
+            '                    originalText: lineText\n' +
+            '                };\n' +
             '                stats.D++;\n' +
             '            }\n' +
             '        } else { // Unmatched line logic\n' +
@@ -4389,7 +4424,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Check if worker code has changed and invalidate cache
-            const workerVersion = '2025-12-07-00:09';
+            const workerVersion = '2025-12-07-20:53';
             const storedVersion = localStorage.getItem('btsnoopWorkerVersion');
             if (storedVersion !== workerVersion) {
                 console.log('[BTSnoop] Worker code changed (v' + workerVersion + '), clearing ALL cache...');
@@ -4452,7 +4487,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // --- Main Worker Logic ---
                 self.onmessage = async (event) => {
-                    const { fileBuffers, localBtAddress } = event.data; // Receive local address
+                    let { fileBuffers, localBtAddress } = event.data; // Receive local address
                     if (!fileBuffers || fileBuffers.length === 0) {
                         self.postMessage({ type: 'error', message: 'No file buffers received.' });
                         return;
@@ -4492,6 +4527,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             const direction = (flags & 1) === 0 ? 'Host -> Controller' : 'Controller -> Host';
 
                             const interpretation = interpretHciPacket(packetData, connectionMap, packetNumber, direction, timestampStr, localBtAddress);
+
+                            // FIX: If local address was found in this packet, update logic for future packets
+                            if (interpretation.foundLocalAddress) {
+                                localBtAddress = interpretation.foundLocalAddress;
+                                self.postMessage({ type: 'localAddressFound', address: localBtAddress });
+                            }
 
                             const packet = { ...interpretation, number: packetNumber, timestamp: timestampStr, direction };
                             packets.push(packet);
@@ -4611,7 +4652,23 @@ document.addEventListener('DOMContentLoaded', () => {
                             const eventCode = data[1];
                             const eventLength = data[2];
                             let summary = \`\${HCI_EVENTS[eventCode] || 'Unknown Event'}, Len: \${eventLength}\`;
-                            if (eventCode === 0x0E && data.length >= 7) { const cmdOpcode = (data[5] << 8) | data[4]; summary += \` (for \${HCI_COMMANDS[cmdOpcode] || '0x' + cmdOpcode.toString(16)})\`; }
+                            let foundLocalAddress = null;
+
+                            if (eventCode === 0x0E && data.length >= 7) { 
+                                const cmdOpcode = (data[5] << 8) | data[4]; 
+                                summary += \` (for \${HCI_COMMANDS[cmdOpcode] || '0x' + cmdOpcode.toString(16)})\`; 
+                                
+                                // FIX: Detect Read BD_ADDR Complete
+                                if (cmdOpcode === 0x1009 && data.length >= 13) { // 6 header + 1 status + 6 addr = 13 bytes
+                                    const status = data[6];
+                                    if (status === 0x00) {
+                                        const addrSlice = data.slice(7, 13);
+                                        foundLocalAddress = Array.from(addrSlice).reverse().map(b => b.toString(16).padStart(2, '0')).join(':').toUpperCase();
+                                        summary += \` [Read BD_ADDR: \${foundLocalAddress}]\`;
+                                        destination = foundLocalAddress; // Self-correct destination for this packet
+                                    }
+                                }
+                            }
                             else if (eventCode === 0x3E && data.length >= 4) {
                                 const subEventCode = data[3];
                                 summary += \` > \${LE_META_EVENTS[subEventCode] || 'Unknown Sub-event'}\`;
@@ -4628,7 +4685,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     self.postMessage({ type: 'connectionEvent', event: { packetNum: packetNum, timestamp: timestampStr, handle: \`0x\${connectionHandle.toString(16).padStart(4, '0')}\`, address: peerAddress, rawData: hexData } });
                                 }
                             }
-                            return { type: 'HCI Evt', summary, tags, source, destination, data: hexData };
+                            return { type: 'HCI Evt', summary, tags, source, destination, data: hexData, foundLocalAddress };
                         default:
                             source = 'Unknown';
                             destination = 'Unknown';
@@ -4655,6 +4712,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (type === 'connectionEvent') {
                         // The worker sends the complete event object with the correct timestamp. Simply push it.
                         btsnoopConnectionEvents.push(event.data.event);
+                    } else if (type === 'localAddressFound') {
+                        // Update the global localBtAddress
+                        localBtAddress = event.data.address;
+                        console.log(`[BTSnoop] Found Local BT Address: ${localBtAddress}`);
+                        // Update highlights immediately so it is reflected in the UI
+                        if (storedHighlights) {
+                            storedHighlights.localBtAddress = localBtAddress;
+                        } else {
+                            storedHighlights = { localBtAddress: localBtAddress };
+                        }
                     } else if (type === 'complete') {
                         btsnoopConnectionMap = new Map(Object.entries(connectionMap));
                         progressDiv.textContent = `Parsed ${totalPacketsStored.toLocaleString()} packets. finalizing...`;

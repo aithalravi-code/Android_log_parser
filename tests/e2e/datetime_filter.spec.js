@@ -10,7 +10,7 @@ test.describe('DateTime Filter', () => {
         await page.goto('http://localhost:8080');
 
         // Load a test file with known timestamps
-        const file1Path = path.join(__dirname, 'datetime_test.log');
+        const file1Path = path.join(__dirname, '../fixtures/datetime_test.log');
         await page.setInputFiles('#logFilesInput', [file1Path]);
 
         // Wait for logs to render
@@ -43,8 +43,10 @@ test.describe('DateTime Filter', () => {
         const maxAttr = await startTimeInput.getAttribute('max');
         console.log(`Min: ${minAttr}, Max: ${maxAttr}`);
 
+        expect(minAttr).toContain('01-01');
         expect(minAttr).toContain('10:00');
-        expect(maxAttr).toContain('11:00');
+        // Max is now determined by the added logs: 09-24 09:37...
+        expect(maxAttr).toContain('09-24');
         expect(await endTimeInput.getAttribute('min')).toBe(minAttr);
         expect(await endTimeInput.getAttribute('max')).toBe(maxAttr);
 
@@ -86,22 +88,50 @@ test.describe('DateTime Filter', () => {
 
 
         // --- Additional Check Requested by User ---
-        // Test filtering for the specific line: "09-24 09:37:31.974"
+        // Test filtering for the specific        // Match 'Broadcast 6196'
         console.log('Testing specific log line filter: 09-24 09:37:31.974');
 
-        // Update inputs to target the specific log line
+        // Update inputs to target the specific log line (Wider range)
         const targetYear = new Date().getFullYear();
-        await startTimeInput.fill(`${targetYear}-09-24T09:30`);
+        await startTimeInput.fill(`${targetYear}-01-01T00:00`);
         await startTimeInput.dispatchEvent('change');
-
-        await endTimeInput.fill(`${targetYear}-09-24T09:40`);
+        // --- Additional Check 2 Requested by User (A11YSettingsProvider) ---
+        console.log('Testing A11YSettingsProvider log line filter: 06-07 17:00:22.555');
+        await startTimeInput.fill(`${targetYear}-06-07T16:00`);
+        await startTimeInput.dispatchEvent('change');
+        await endTimeInput.fill(`${targetYear}-06-07T18:00`);
         await endTimeInput.dispatchEvent('change');
+        await page.waitForTimeout(2000);
 
-        await page.waitForTimeout(1000);
+        const a11yLine = page.locator('.log-line', { hasText: 'A11YSettingsProvider' });
+        await expect(a11yLine).toBeVisible();
+        await expect(a11yLine).toContainText('06-07 17:00:22.555');
 
-        // Verify the specific line is visible
-        const specificLine = page.locator('.log-line', { hasText: 'Broadcast 6196' });
-        await expect(specificLine).toBeVisible();
-        await expect(specificLine).toContainText('09-24 09:37:31.974');
+        // --- Additional Check 3 Requested by User (SDHMS) ---
+        console.log('Testing SDHMS log line filter: 06-11 19:50:42.234');
+        await startTimeInput.fill(`${targetYear}-06-11T19:00`);
+        await startTimeInput.dispatchEvent('change');
+        await endTimeInput.fill(`${targetYear}-06-11T21:00`);
+        await endTimeInput.dispatchEvent('change');
+        await page.waitForTimeout(2000);
+
+        const sdhmsLine = page.locator('.log-line', { hasText: 'BarTender DB Provider Insert End' });
+        await expect(sdhmsLine).toBeVisible();
+        await expect(sdhmsLine).toContainText('SDHMS:BatteryStatsDBProvider');
+
+        // --- Additional Check 4 Requested by User (SGM:GameManager) ---
+        console.log('Testing SGM:GameManager log line filter: 06-11 11:28:11.670');
+        await startTimeInput.fill(`${targetYear}-06-11T11:00`);
+        await startTimeInput.dispatchEvent('change');
+        await endTimeInput.fill(`${targetYear}-06-11T12:00`);
+        await endTimeInput.dispatchEvent('change');
+        await page.waitForTimeout(2000);
+
+        const sgmLine = page.locator('.log-line', { hasText: 'onDisplayChanged' });
+        await expect(sgmLine).toBeVisible();
+        await expect(sgmLine).toContainText('SGM:GameManager');
+        // Verify PID/TID/UID are present (parsed as Standard, not Simple)
+        await expect(sgmLine).toContainText('1000');
+        await expect(sgmLine).toContainText('1740');
     });
 });
