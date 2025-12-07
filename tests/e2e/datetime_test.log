@@ -1,3 +1,4 @@
 01-01 10:00:00.000  1000  1000 D TestTag : Log line 1
 01-01 10:30:00.000  1000  1000 D TestTag : Log line 2
 01-01 11:00:00.000  1000  1000 D TestTag : Log line 3
+09-24 09:37:31.974 D BroadcastDispatcherLog: Broadcast 6196 (android.intent.action.TIME_TICK) dispatched to com.android.systemui.broadcast.BroadcastDispatcher$broadcastFlow$1$receiver$1@aee9dca

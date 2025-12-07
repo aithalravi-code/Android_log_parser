@@ -82,9 +82,26 @@ test.describe('DateTime Filter', () => {
         await expect(filterTriggered).toBe(true);
 
         // Check if logs are empty (if 2025 is in future relative to logs)
-        const logLines = page.locator('.log-line');
-        // It might be 0 lines found
-        // Or if the logs are from 2025, maybe not.
-        // But the key is that the filter triggered.
+        // const logLines = page.locator('.log-line');
+
+
+        // --- Additional Check Requested by User ---
+        // Test filtering for the specific line: "09-24 09:37:31.974"
+        console.log('Testing specific log line filter: 09-24 09:37:31.974');
+
+        // Update inputs to target the specific log line
+        const targetYear = new Date().getFullYear();
+        await startTimeInput.fill(`${targetYear}-09-24T09:30`);
+        await startTimeInput.dispatchEvent('change');
+
+        await endTimeInput.fill(`${targetYear}-09-24T09:40`);
+        await endTimeInput.dispatchEvent('change');
+
+        await page.waitForTimeout(1000);
+
+        // Verify the specific line is visible
+        const specificLine = page.locator('.log-line', { hasText: 'Broadcast 6196' });
+        await expect(specificLine).toBeVisible();
+        await expect(specificLine).toContainText('09-24 09:37:31.974');
     });
 });

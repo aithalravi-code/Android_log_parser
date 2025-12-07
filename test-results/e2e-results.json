@@ -138,7 +138,7 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3683,
+                      "duration": 4281,
                       "errors": [],
                       "stdout": [
                         {
@@ -146,11 +146,14 @@
                         },
                         {
                           "text": "Min: 2025-01-01T10:00, Max: 2025-01-01T11:00\n"
+                        },
+                        {
+                          "text": "Testing specific log line filter: 09-24 09:37:31.974\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-07T14:14:20.278Z",
+                      "startTime": "2025-12-07T14:19:06.197Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -179,7 +182,7 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 4450,
+                      "duration": 5371,
                       "errors": [],
                       "stdout": [
                         {
@@ -187,11 +190,14 @@
                         },
                         {
                           "text": "Min: 2025-01-01T10:00, Max: 2025-01-01T11:00\n"
+                        },
+                        {
+                          "text": "Testing specific log line filter: 09-24 09:37:31.974\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-07T14:14:20.229Z",
+                      "startTime": "2025-12-07T14:19:06.198Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -220,7 +226,7 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 4258,
+                      "duration": 5147,
                       "errors": [],
                       "stdout": [
                         {
@@ -228,11 +234,14 @@
                         },
                         {
                           "text": "Min: 2025-01-01T10:00, Max: 2025-01-01T11:00\n"
+                        },
+                        {
+                          "text": "Testing specific log line filter: 09-24 09:37:31.974\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-07T14:14:20.295Z",
+                      "startTime": "2025-12-07T14:19:06.234Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -252,8 +261,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-12-07T14:14:18.501Z",
-    "duration": 8597.398000000001,
+    "startTime": "2025-12-07T14:19:04.313Z",
+    "duration": 9488.509,
     "expected": 3,
     "skipped": 0,
     "unexpected": 0,

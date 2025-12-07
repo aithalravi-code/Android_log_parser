@@ -1,27 +1,30 @@
-<testsuites id="" name="" tests="3" failures="0" skipped="0" errors="0" time="8.597398000000002">
-<testsuite name="datetime_filter.spec.js" timestamp="2025-12-07T14:14:18.907Z" hostname="chromium" tests="1" failures="0" skipped="0" time="3.683" errors="0">
-<testcase name="DateTime Filter › should filter logs using date picker inputs" classname="datetime_filter.spec.js" time="3.683">
+<testsuites id="" name="" tests="3" failures="0" skipped="0" errors="0" time="9.488509">
+<testsuite name="datetime_filter.spec.js" timestamp="2025-12-07T14:19:04.749Z" hostname="chromium" tests="1" failures="0" skipped="0" time="4.281" errors="0">
+<testcase name="DateTime Filter › should filter logs using date picker inputs" classname="datetime_filter.spec.js" time="4.281">
 <system-out>
 <![CDATA[Initial Time Range: 2025-01-01T10:00 to 2025-01-01T11:00
 Min: 2025-01-01T10:00, Max: 2025-01-01T11:00
+Testing specific log line filter: 09-24 09:37:31.974
 ]]>
 </system-out>
 </testcase>
 </testsuite>
-<testsuite name="datetime_filter.spec.js" timestamp="2025-12-07T14:14:18.907Z" hostname="firefox" tests="1" failures="0" skipped="0" time="4.45" errors="0">
-<testcase name="DateTime Filter › should filter logs using date picker inputs" classname="datetime_filter.spec.js" time="4.45">
+<testsuite name="datetime_filter.spec.js" timestamp="2025-12-07T14:19:04.749Z" hostname="firefox" tests="1" failures="0" skipped="0" time="5.371" errors="0">
+<testcase name="DateTime Filter › should filter logs using date picker inputs" classname="datetime_filter.spec.js" time="5.371">
 <system-out>
 <![CDATA[Initial Time Range: 2025-01-01T10:00 to 2025-01-01T11:00
 Min: 2025-01-01T10:00, Max: 2025-01-01T11:00
+Testing specific log line filter: 09-24 09:37:31.974
 ]]>
 </system-out>
 </testcase>
 </testsuite>
-<testsuite name="datetime_filter.spec.js" timestamp="2025-12-07T14:14:18.907Z" hostname="webkit" tests="1" failures="0" skipped="0" time="4.258" errors="0">
-<testcase name="DateTime Filter › should filter logs using date picker inputs" classname="datetime_filter.spec.js" time="4.258">
+<testsuite name="datetime_filter.spec.js" timestamp="2025-12-07T14:19:04.749Z" hostname="webkit" tests="1" failures="0" skipped="0" time="5.147" errors="0">
+<testcase name="DateTime Filter › should filter logs using date picker inputs" classname="datetime_filter.spec.js" time="5.147">
 <system-out>
 <![CDATA[Initial Time Range: 2025-01-01T10:00 to 2025-01-01T11:00
 Min: 2025-01-01T10:00, Max: 2025-01-01T11:00
+Testing specific log line filter: 09-24 09:37:31.974
 ]]>
 </system-out>
 </testcase>
