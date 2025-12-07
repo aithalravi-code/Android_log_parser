@@ -37,6 +37,17 @@ test.describe('DateTime Filter', () => {
         expect(startVal).not.toBe('');
         expect(endVal).not.toBe('');
 
+        // Verify min/max attributes are set and match the log range
+        // Based on datetime_test.log: 10:00 to 11:00
+        const minAttr = await startTimeInput.getAttribute('min');
+        const maxAttr = await startTimeInput.getAttribute('max');
+        console.log(`Min: ${minAttr}, Max: ${maxAttr}`);
+
+        expect(minAttr).toContain('10:00');
+        expect(maxAttr).toContain('11:00');
+        expect(await endTimeInput.getAttribute('min')).toBe(minAttr);
+        expect(await endTimeInput.getAttribute('max')).toBe(maxAttr);
+
         // Apply a filter: Set Start Time to a value slightly after the first log
         // We'll increment the minutes of the start time
         // Example format: YYYY-MM-DDTHH:mm

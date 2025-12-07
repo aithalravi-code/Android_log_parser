@@ -138,22 +138,19 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3195,
+                      "duration": 3683,
                       "errors": [],
                       "stdout": [
                         {
                           "text": "Initial Time Range: 2025-01-01T10:00 to 2025-01-01T11:00\n"
                         },
                         {
-                          "text": "[Browser Console] [Perf] Filter state changed - re-filtering logs tab\n"
-                        },
-                        {
-                          "text": "[Browser Console] [Perf] Using cached results for logs tab - no filtering needed\n"
+                          "text": "Min: 2025-01-01T10:00, Max: 2025-01-01T11:00\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-07T14:04:54.509Z",
+                      "startTime": "2025-12-07T14:14:20.278Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -182,22 +179,19 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 4265,
+                      "duration": 4450,
                       "errors": [],
                       "stdout": [
                         {
                           "text": "Initial Time Range: 2025-01-01T10:00 to 2025-01-01T11:00\n"
                         },
                         {
-                          "text": "[Browser Console] [Perf] Filter state changed - re-filtering logs tab\n"
-                        },
-                        {
-                          "text": "[Browser Console] [Perf] Using cached results for logs tab - no filtering needed\n"
+                          "text": "Min: 2025-01-01T10:00, Max: 2025-01-01T11:00\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-07T14:04:54.502Z",
+                      "startTime": "2025-12-07T14:14:20.229Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -226,25 +220,19 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 4487,
+                      "duration": 4258,
                       "errors": [],
                       "stdout": [
                         {
                           "text": "Initial Time Range: 2025-01-01T10:00 to 2025-01-01T11:00\n"
                         },
                         {
-                          "text": "[Browser Console] [Perf] Filter state changed - re-filtering logs tab\n"
-                        },
-                        {
-                          "text": "[Browser Console] [Perf] Using cached results for logs tab - no filtering needed\n"
-                        },
-                        {
-                          "text": "[Browser Console] [Perf] Saved fileName to IndexedDB (non-blocking)\n"
+                          "text": "Min: 2025-01-01T10:00, Max: 2025-01-01T11:00\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-07T14:04:54.497Z",
+                      "startTime": "2025-12-07T14:14:20.295Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -264,8 +252,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-12-07T14:04:52.482Z",
-    "duration": 8498.045999999998,
+    "startTime": "2025-12-07T14:14:18.501Z",
+    "duration": 8597.398000000001,
     "expected": 3,
     "skipped": 0,
     "unexpected": 0,

@@ -1,31 +1,27 @@
-<testsuites id="" name="" tests="3" failures="0" skipped="0" errors="0" time="8.498045999999999">
-<testsuite name="datetime_filter.spec.js" timestamp="2025-12-07T14:04:52.905Z" hostname="chromium" tests="1" failures="0" skipped="0" time="3.195" errors="0">
-<testcase name="DateTime Filter › should filter logs using date picker inputs" classname="datetime_filter.spec.js" time="3.195">
+<testsuites id="" name="" tests="3" failures="0" skipped="0" errors="0" time="8.597398000000002">
+<testsuite name="datetime_filter.spec.js" timestamp="2025-12-07T14:14:18.907Z" hostname="chromium" tests="1" failures="0" skipped="0" time="3.683" errors="0">
+<testcase name="DateTime Filter › should filter logs using date picker inputs" classname="datetime_filter.spec.js" time="3.683">
 <system-out>
 <![CDATA[Initial Time Range: 2025-01-01T10:00 to 2025-01-01T11:00
-[Browser Console] [Perf] Filter state changed - re-filtering logs tab
-[Browser Console] [Perf] Using cached results for logs tab - no filtering needed
+Min: 2025-01-01T10:00, Max: 2025-01-01T11:00
 ]]>
 </system-out>
 </testcase>
 </testsuite>
-<testsuite name="datetime_filter.spec.js" timestamp="2025-12-07T14:04:52.905Z" hostname="firefox" tests="1" failures="0" skipped="0" time="4.265" errors="0">
-<testcase name="DateTime Filter › should filter logs using date picker inputs" classname="datetime_filter.spec.js" time="4.265">
+<testsuite name="datetime_filter.spec.js" timestamp="2025-12-07T14:14:18.907Z" hostname="firefox" tests="1" failures="0" skipped="0" time="4.45" errors="0">
+<testcase name="DateTime Filter › should filter logs using date picker inputs" classname="datetime_filter.spec.js" time="4.45">
 <system-out>
 <![CDATA[Initial Time Range: 2025-01-01T10:00 to 2025-01-01T11:00
-[Browser Console] [Perf] Filter state changed - re-filtering logs tab
-[Browser Console] [Perf] Using cached results for logs tab - no filtering needed
+Min: 2025-01-01T10:00, Max: 2025-01-01T11:00
 ]]>
 </system-out>
 </testcase>
 </testsuite>
-<testsuite name="datetime_filter.spec.js" timestamp="2025-12-07T14:04:52.905Z" hostname="webkit" tests="1" failures="0" skipped="0" time="4.487" errors="0">
-<testcase name="DateTime Filter › should filter logs using date picker inputs" classname="datetime_filter.spec.js" time="4.487">
+<testsuite name="datetime_filter.spec.js" timestamp="2025-12-07T14:14:18.907Z" hostname="webkit" tests="1" failures="0" skipped="0" time="4.258" errors="0">
+<testcase name="DateTime Filter › should filter logs using date picker inputs" classname="datetime_filter.spec.js" time="4.258">
 <system-out>
 <![CDATA[Initial Time Range: 2025-01-01T10:00 to 2025-01-01T11:00
-[Browser Console] [Perf] Filter state changed - re-filtering logs tab
-[Browser Console] [Perf] Using cached results for logs tab - no filtering needed
-[Browser Console] [Perf] Saved fileName to IndexedDB (non-blocking)
+Min: 2025-01-01T10:00, Max: 2025-01-01T11:00
 ]]>
 </system-out>
 </testcase>

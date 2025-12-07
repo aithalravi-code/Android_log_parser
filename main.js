@@ -2330,9 +2330,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const minTime = minLogDate.getTime();
         const maxTime = maxLogDate.getTime();
 
-        // Set input fields
-        startTimeInput.value = logcatToISO(minTimestamp);
-        endTimeInput.value = logcatToISO(maxTimestamp);
+        // Set input fields initial values and constraints
+        const minIso = dateToISO(minLogDate);
+        const maxIso = dateToISO(maxLogDate);
+
+        startTimeInput.min = minIso;
+        startTimeInput.max = maxIso;
+        endTimeInput.min = minIso;
+        endTimeInput.max = maxIso;
+
+        startTimeInput.value = minIso;
+        endTimeInput.value = maxIso;
 
         noUiSlider.create(timeRangeSlider, {
             start: [minTime, maxTime],
