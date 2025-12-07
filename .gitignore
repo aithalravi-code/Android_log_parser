@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Test fixtures (large files)
+tests/fixtures/*.zip
+tests/fixtures/bugreport-*.zip
+tests/fixtures/dumpState_*
+TestFiles/
+
+# Test results and artifacts
+results/test-results/
+results/playwright-report/
+results/playwright-report-integration/
+results/logs/*.log
+results/logs/*.pid
+results/*.txt
+test-results/
+playwright-report/
+coverage/
+allure-results/
+allure-report/
+
+# Temporary test files
+test_*.txt
+*_test_output.txt
+*_debug*.txt
+
+# Build outputs
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.local
+
+# Cache
+.cache/
+.eslintcache
+
+# Misc
+*.pid
+server.pid
