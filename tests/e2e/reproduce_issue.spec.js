@@ -13,7 +13,7 @@ test.describe('BTSnoop Scroll Restoration Reproduction', () => {
         });
 
         // Go to the app
-        await page.goto('http://localhost:8080');
+        await page.goto('index.html');
         await page.waitForLoadState('networkidle');
     });
 

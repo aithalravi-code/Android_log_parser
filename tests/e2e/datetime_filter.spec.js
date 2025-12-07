@@ -7,7 +7,7 @@ const __dirname = path.dirname(__filename);
 
 test.describe('DateTime Filter', () => {
     test('should filter logs using date picker inputs', async ({ page }) => {
-        await page.goto('http://localhost:8080');
+        await page.goto('index.html');
 
         // Load a test file with known timestamps
         const file1Path = path.join(__dirname, '../fixtures/datetime_test.log');

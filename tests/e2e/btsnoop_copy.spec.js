@@ -5,7 +5,7 @@ import fs from 'fs';
 test.describe('BTSnoop Layout & Interaction', () => {
     test.beforeEach(async ({ page }) => {
         // Go to the app
-        await page.goto('http://localhost:8080');
+        await page.goto('index.html');
         await page.waitForLoadState('networkidle');
     });
 

@@ -7,7 +7,7 @@ const __dirname = path.dirname(__filename);
 
 test.describe('File Collapsing', () => {
     test('should collapse and expand file sections when clicking headers', async ({ page }) => {
-        await page.goto('http://localhost:8080');
+        await page.goto('index.html');
 
         // create a data transfer object with multiple files
         const file1Path = path.join(__dirname, '../../test-data/file1.txt');

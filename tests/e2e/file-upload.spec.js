@@ -7,7 +7,7 @@
  * For full E2E testing with file uploads:
  * 1. Install http-server: npm install -g http-server
  * 2. Run server: http-server -p 8080
- * 3. Update playwright.config.js baseURL to http://localhost:8080
+ * 3. Update playwright.config.js baseURL to index.html
  * 4. Then run: npm run test:e2e
  */
 

@@ -4,7 +4,7 @@ import fs from 'fs';
 
 test.describe('BTSnoop Reload Behavior', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('http://localhost:8080');
+        await page.goto('index.html');
         await page.waitForLoadState('networkidle');
 
         // Console logging for debugging

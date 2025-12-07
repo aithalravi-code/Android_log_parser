@@ -43,7 +43,7 @@ export default defineConfig({
     // Shared settings for all projects
     use: {
         // Base URL for navigation
-        baseURL: 'file:///home/rk/Documents/Android_log_parser (copy)/src/index.html',
+        baseURL: 'file:///home/rk/Documents/Android_log_parser (copy)/src/',
 
         // Collect trace when retrying the failed test
         trace: 'on-first-retry',
