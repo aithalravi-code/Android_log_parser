@@ -1,0 +1,865 @@
+<testsuites id="" name="" tests="54" failures="6" skipped="0" errors="0" time="73.504514">
+<testsuite name="btsnoop_copy.spec.js" timestamp="2025-12-07T13:53:15.742Z" hostname="chromium" tests="1" failures="0" skipped="0" time="7.704" errors="0">
+<testcase name="BTSnoop Layout &amp; Interaction › BTSnoop Copy Action should copy entire row" classname="btsnoop_copy.spec.js" time="7.704">
+<system-out>
+<![CDATA[Uploading file...
+[Browser Log] [Worker] Syncing data...
+[Browser Log] Table "deviceEventsTable" is now resizable
+[Browser Log] Table "bleKeysTable" is now resizable
+[Browser Log] Table "btsnoopConnectionEventsTable" is now resizable
+[Browser Log] Table "cccStatsTable" is now resizable
+[Browser Log] [Perf] Filter state changed - re-filtering logs tab
+[Browser Log] [Worker] Data loaded: 0 lines
+[Browser Log] [UI] Auto-collapsed left panel after file loading
+[Browser Log] [Click Debug] Target: BUTTON Classes: tab-btn active ParentTable: undefined
+[Browser Log] [Perf Phase2] Lazy loading btsnoop tab...
+[Browser Log] [BTSnoop Debug] processForBtsnoop called
+[Browser Log] [BTSnoop] Worker code changed (v2025-12-07-00:09), clearing ALL cache...
+[Browser Log] [BTSnoop] All cache cleared (including logStore), will force re-process
+[Browser Log] [Perf] Resolving btsnoop handles in memory...
+[Browser Log] [Perf] Resolved handles for 0 packets in 5.80ms
+[Browser Log] Table "deviceEventsTable" is now resizable
+[Browser Log] Table "bleKeysTable" is now resizable
+[Browser Log] Table "btsnoopConnectionEventsTable" is now resizable
+[Browser Log] [BTSnoop Debug] 1. setupBtsnoopTab called.
+[Browser Log] [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
+[Browser Log] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Log] [BTSnoop Debug] 6. Created 66 visible rows
+[Browser Log] [BTSnoop Debug] 7. Viewport now has 66 children
+[Browser Log] [Perf Phase2] BTSnoop tab loaded. Total packets: 42074
+[Browser Log] [Perf Phase2] btsnoop tab loaded in 1374.40ms
+[Browser Log] [Perf] Filter state changed - re-filtering btsnoop tab
+[Browser Log] [BTSnoop Debug] 1. setupBtsnoopTab called.
+[Browser Log] [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
+[Browser Log] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Log] [BTSnoop Debug] 6. Created 66 visible rows
+[Browser Log] [BTSnoop Debug] 7. Viewport now has 66 children
+[Browser Log] [Perf] Saved fileName to IndexedDB (non-blocking)
+Cell Text: "09-23 16:23:40.088" (Length: 18)
+[Browser Log] [Click Debug] Target: DIV Classes: btsnoop-cell btsnoop-copy-cell ParentTable: undefined
+[Browser Log] [Copy] Aggregated BTSnoop Row: 264 chars
+[Browser Log] Copy failed: NotAllowedError: Failed to execute 'writeText' on 'Clipboard': Write permission denied.
+Copied Length: 264
+]]>
+</system-out>
+</testcase>
+</testsuite>
+<testsuite name="btsnoop_load_bug.spec.js" timestamp="2025-12-07T13:53:15.742Z" hostname="chromium" tests="1" failures="1" skipped="0" time="32.807" errors="0">
+<testcase name="BTSnoop Reload Behavior › Should reload BTSnoop logs when uploading ZIP while already on BTSnoop tab" classname="btsnoop_load_bug.spec.js" time="32.807">
+<failure message="btsnoop_load_bug.spec.js:16:5 Should reload BTSnoop logs when uploading ZIP while already on BTSnoop tab" type="FAILURE">
+<![CDATA[  [chromium] › btsnoop_load_bug.spec.js:16:5 › BTSnoop Reload Behavior › Should reload BTSnoop logs when uploading ZIP while already on BTSnoop tab 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: expect(locator).toBeHidden() failed
+
+    Locator:  locator('#progressBar').first()
+    Expected: hidden
+    Received: visible
+
+    Call log:
+      - Expect "toBeHidden" with timeout 60000ms
+      - waiting for locator('#progressBar').first()
+        20 × locator resolved to <div id="progressBar" class="progress-bar"></div>
+           - unexpected value "visible"
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/btsnoop_load_bug.spec.js:77:60)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/artifacts/btsnoop_load_bug-BTSnoop-R-0d455-hile-already-on-BTSnoop-tab-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/artifacts/btsnoop_load_bug-BTSnoop-R-0d455-hile-already-on-BTSnoop-tab-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/artifacts/btsnoop_load_bug-BTSnoop-R-0d455-hile-already-on-BTSnoop-tab-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[Step 1: Uploading initial log file...
+[Browser] [Worker] Syncing data...
+[Browser] Table "deviceEventsTable" is now resizable
+[Browser] Table "bleKeysTable" is now resizable
+[Browser] Table "btsnoopConnectionEventsTable" is now resizable
+[Browser] Table "cccStatsTable" is now resizable
+[Browser] [Perf] Filter state changed - re-filtering logs tab
+[Browser] [Worker] Data loaded: 0 lines
+[Browser] [UI] Auto-collapsed left panel after file loading
+Switching to BTSnoop tab...
+[Browser] [Click Debug] Target: BUTTON Classes: tab-btn active ParentTable: undefined
+[Browser] [Perf Phase2] Lazy loading btsnoop tab...
+[Browser] [BTSnoop Debug] processForBtsnoop called
+[Browser] [BTSnoop] Worker code changed (v2025-12-07-00:09), clearing ALL cache...
+[Browser] [BTSnoop] All cache cleared (including logStore), will force re-process
+[Browser] [Perf] Saved fileName to IndexedDB (non-blocking)
+[Browser] [Perf] Resolving btsnoop handles in memory...
+[Browser] [Perf] Resolved handles for 0 packets in 10.30ms
+[Browser] Table "deviceEventsTable" is now resizable
+[Browser] Table "bleKeysTable" is now resizable
+[Browser] Table "btsnoopConnectionEventsTable" is now resizable
+[Browser] [BTSnoop Debug] 1. setupBtsnoopTab called.
+[Browser] [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
+[Browser] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser] [BTSnoop Debug] 6. Created 66 visible rows
+[Browser] [BTSnoop Debug] 7. Viewport now has 66 children
+[Browser] [Perf Phase2] BTSnoop tab loaded. Total packets: 42074
+[Browser] [Perf Phase2] btsnoop tab loaded in 1560.90ms
+[Browser] [Perf] Filter state changed - re-filtering btsnoop tab
+[Browser] [BTSnoop Debug] 1. setupBtsnoopTab called.
+[Browser] [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
+[Browser] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser] [BTSnoop Debug] 6. Created 66 visible rows
+[Browser] [BTSnoop Debug] 7. Viewport now has 66 children
+Initial rows: 66
+Step 2: Uploading ZIP file while valid BTSnoop tab is active...
+No ZIP modal appeared (or auto-processed).
+[Browser] [Worker] Syncing data...
+[Browser] Table "deviceEventsTable" is now resizable
+[Browser] Table "bleKeysTable" is now resizable
+[Browser] Table "btsnoopConnectionEventsTable" is now resizable
+[Browser] [Perf Phase2] Lazy loading btsnoop tab...
+[Browser] [BTSnoop Debug] processForBtsnoop called
+[Browser] [Perf] Saved fileName to IndexedDB (non-blocking)
+[Browser] [Perf] Resolving btsnoop handles in memory...
+[Browser] [Perf] Resolved handles for 0 packets in 38.30ms
+[Browser] [Worker] Data loaded: 1104976 lines
+[Browser] Table "deviceEventsTable" is now resizable
+[Browser] Table "bleKeysTable" is now resizable
+[Browser] Table "btsnoopConnectionEventsTable" is now resizable
+[Browser] [BTSnoop Debug] 1. setupBtsnoopTab called.
+[Browser] [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
+[Browser] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser] [BTSnoop Debug] 6. Created 66 visible rows
+[Browser] [BTSnoop Debug] 7. Viewport now has 66 children
+[Browser] [Perf Phase2] BTSnoop tab loaded. Total packets: 107609
+[Browser] [Perf Phase2] btsnoop tab loaded in 3561.80ms
+[Browser] [Perf] Filter state changed - re-filtering btsnoop tab
+[Browser] [BTSnoop Debug] 1. setupBtsnoopTab called.
+[Browser] [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
+[Browser] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser] [BTSnoop Debug] 6. Created 66 visible rows
+[Browser] [BTSnoop Debug] 7. Viewport now has 66 children
+
+[[ATTACHMENT|artifacts/btsnoop_load_bug-BTSnoop-R-0d455-hile-already-on-BTSnoop-tab-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|artifacts/btsnoop_load_bug-BTSnoop-R-0d455-hile-already-on-BTSnoop-tab-chromium/video.webm]]
+
+[[ATTACHMENT|artifacts/btsnoop_load_bug-BTSnoop-R-0d455-hile-already-on-BTSnoop-tab-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+<testsuite name="btsnoop_scroll.spec.js" timestamp="2025-12-07T13:53:15.742Z" hostname="chromium" tests="1" failures="1" skipped="0" time="14.575" errors="0">
+<testcase name="BTSnoop Scroll Restoration on Filter Clear" classname="btsnoop_scroll.spec.js" time="14.575">
+<failure message="btsnoop_scroll.spec.js:3:1 BTSnoop Scroll Restoration on Filter Clear" type="FAILURE">
+<![CDATA[  [chromium] › btsnoop_scroll.spec.js:3:1 › BTSnoop Scroll Restoration on Filter Clear ─────────────
+
+    TimeoutError: locator.waitFor: Timeout 10000ms exceeded.
+    Call log:
+      - waiting for locator('input[data-column="2"]') to be visible
+        24 × locator resolved to hidden <input type="text" data-column="2" id="btsnoop-filter-col-2" name="btsnoop-filter-col-2" placeholder="Filter Source..."/>
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/btsnoop_scroll.spec.js:37:23)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-chromium/video.webm]]
+
+[[ATTACHMENT|artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+<testsuite name="file_collapse.spec.js" timestamp="2025-12-07T13:53:15.742Z" hostname="chromium" tests="1" failures="0" skipped="0" time="3.778" errors="0">
+<testcase name="File Collapsing › should collapse and expand file sections when clicking headers" classname="file_collapse.spec.js" time="3.778">
+</testcase>
+</testsuite>
+<testsuite name="file-upload.spec.js" timestamp="2025-12-07T13:53:15.742Z" hostname="chromium" tests="13" failures="0" skipped="0" time="19.75" errors="0">
+<testcase name="UI Elements › should display initial UI correctly" classname="file-upload.spec.js" time="1.497">
+</testcase>
+<testcase name="UI Elements › should have all required UI elements" classname="file-upload.spec.js" time="2.616">
+</testcase>
+<testcase name="UI Elements › should load page within 3 seconds" classname="file-upload.spec.js" time="1.521">
+<system-out>
+<![CDATA[✅ Page loaded in 344ms
+]]>
+</system-out>
+</testcase>
+<testcase name="Tab Navigation › should switch between tabs" classname="file-upload.spec.js" time="1.9">
+</testcase>
+<testcase name="Tab Navigation › should have connectivity tab" classname="file-upload.spec.js" time="1.356">
+</testcase>
+<testcase name="Tab Navigation › should have stats tab" classname="file-upload.spec.js" time="1.392">
+</testcase>
+<testcase name="Filter Controls › should have log level filter buttons" classname="file-upload.spec.js" time="1.218">
+</testcase>
+<testcase name="Filter Controls › should have AND/OR logic toggle" classname="file-upload.spec.js" time="1.298">
+</testcase>
+<testcase name="Filter Controls › should toggle between AND/OR logic" classname="file-upload.spec.js" time="2.106">
+</testcase>
+<testcase name="Filter Controls › should have search input" classname="file-upload.spec.js" time="1.297">
+</testcase>
+<testcase name="Performance Tracker › should have performance tracker available in console" classname="file-upload.spec.js" time="1.512">
+<system-out>
+<![CDATA[Performance tracker available: false
+]]>
+</system-out>
+</testcase>
+<testcase name="Accessibility › should be keyboard navigable" classname="file-upload.spec.js" time="1.049">
+</testcase>
+<testcase name="Accessibility › should have proper document title" classname="file-upload.spec.js" time="0.988">
+</testcase>
+</testsuite>
+<testsuite name="reproduce_issue.spec.js" timestamp="2025-12-07T13:53:15.742Z" hostname="chromium" tests="1" failures="0" skipped="0" time="6.45" errors="0">
+<testcase name="BTSnoop Scroll Restoration Reproduction › Reproduce scroll jumping issue when changing filters with selected packet" classname="reproduce_issue.spec.js" time="6.45">
+<system-out>
+<![CDATA[[Browser Console] log: [Init] Cleared old data.
+Uploading file...
+[Browser Console] log: [Worker] Syncing data...
+[Browser Console] log: Table "deviceEventsTable" is now resizable
+[Browser Console] log: Table "bleKeysTable" is now resizable
+[Browser Console] log: Table "btsnoopConnectionEventsTable" is now resizable
+[Browser Console] log: Table "cccStatsTable" is now resizable
+[Browser Console] log: [Perf] Filter state changed - re-filtering logs tab
+[Browser Console] log: [Worker] Data loaded: 0 lines
+[Browser Console] log: [UI] Auto-collapsed left panel after file loading
+[Browser Console] log: [Click Debug] Target: BUTTON Classes: tab-btn active ParentTable: undefined
+[Browser Console] log: [Perf Phase2] Lazy loading btsnoop tab...
+[Browser Console] log: [BTSnoop Debug] processForBtsnoop called
+[Browser Console] log: [BTSnoop] Worker code changed (v2025-12-07-00:09), clearing ALL cache...
+[Browser Console] log: [BTSnoop] All cache cleared (including logStore), will force re-process
+[Browser Console] log: [Perf] Resolving btsnoop handles in memory...
+[Browser Console] log: [Perf] Resolved handles for 0 packets in 7.40ms
+[Browser Console] log: Table "deviceEventsTable" is now resizable
+[Browser Console] log: Table "bleKeysTable" is now resizable
+[Browser Console] log: Table "btsnoopConnectionEventsTable" is now resizable
+[Browser Console] log: [BTSnoop Debug] 1. setupBtsnoopTab called.
+[Browser Console] log: [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
+[Browser Console] log: [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Console] log: [BTSnoop Debug] 6. Created 66 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 66 children
+[Browser Console] log: [Perf Phase2] BTSnoop tab loaded. Total packets: 42074
+[Browser Console] log: [Perf Phase2] btsnoop tab loaded in 1043.50ms
+[Browser Console] log: [Perf] Filter state changed - re-filtering btsnoop tab
+[Browser Console] log: [BTSnoop Debug] 1. setupBtsnoopTab called.
+[Browser Console] log: [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
+[Browser Console] log: [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Console] log: [BTSnoop Debug] 6. Created 66 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 66 children
+[Browser Console] log: [Perf] Saved fileName to IndexedDB (non-blocking)
+[Browser Console] log: [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Console] log: [BTSnoop Debug] 6. Created 66 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 66 children
+[Browser Console] log: [Click Debug] Target: BUTTON Classes: filter-icon ParentTable: undefined
+[Browser Console] log: [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Console] log: [BTSnoop Debug] 6. Created 70 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 70 children
+[Browser Console] log: [Click Debug] Target: BUTTON Classes: filter-icon ParentTable: undefined
+[Browser Console] log: [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Console] log: [BTSnoop Debug] 6. Created 70 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 70 children
+[Browser Console] log: [Click Debug] Target: BUTTON Classes: filter-icon ParentTable: undefined
+Selecting packet number: 31515
+[Browser Console] log: [Click Debug] Target: DIV Classes: btsnoop-cell btsnoop-copy-cell ParentTable: undefined
+[Browser Console] log: [Interaction] Selected BTSnoop Packet: 31515
+[Browser Console] log: [BTSnoop Debug] 6. Created 70 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 70 children
+Enabling CMD filter...
+[Browser Console] log: [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Console] log: [BTSnoop Debug] 6. Created 73 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 73 children
+[Browser Console] log: [Click Debug] Target: BUTTON Classes: filter-icon active ParentTable: undefined
+[Browser Console] log: [BTSnoop Scroll] Scroll applied successfully. Target: 19164.5 Actual: 19165
+[Browser Console] log: [BTSnoop Debug] 6. Created 120 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 120 children
+[Browser Console] log: [BTSnoop Scroll] Centered selected packet in viewport at scroll position 19164.5
+[Browser Console] log: [BTSnoop Debug] 6. Created 120 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 120 children
+---------------------------------------------------
+DEBUG STATE AFTER FILTER:
+Target Packet: 31515
+ScrollTop: 19165
+ScrollHeight: 128220
+Row Top: 0
+Visible Range: 31390 - 31631
+---------------------------------------------------
+Packet 31515 is visible: true
+Debug Info: { scrollTop: [33m19165[39m, rowTop: [33m0[39m }
+]]>
+</system-out>
+</testcase>
+</testsuite>
+<testsuite name="btsnoop_copy.spec.js" timestamp="2025-12-07T13:53:15.742Z" hostname="firefox" tests="1" failures="0" skipped="0" time="10.974" errors="0">
+<testcase name="BTSnoop Layout &amp; Interaction › BTSnoop Copy Action should copy entire row" classname="btsnoop_copy.spec.js" time="10.974">
+<system-out>
+<![CDATA[Uploading file...
+[Browser Log] [Init] Cleared old data.
+[Browser Log] [Worker] Syncing data...
+[Browser Log] Table "deviceEventsTable" is now resizable
+[Browser Log] Table "bleKeysTable" is now resizable
+[Browser Log] Table "btsnoopConnectionEventsTable" is now resizable
+[Browser Log] Table "cccStatsTable" is now resizable
+[Browser Log] [Perf] Filter state changed - re-filtering logs tab
+[Browser Log] [Worker] Data loaded: 0 lines
+[Browser Log] [UI] Auto-collapsed left panel after file loading
+[Browser Log] [Click Debug] Target: BUTTON Classes: tab-btn active ParentTable: undefined
+[Browser Log] [Perf Phase2] Lazy loading btsnoop tab...
+[Browser Log] [BTSnoop Debug] processForBtsnoop called
+[Browser Log] [BTSnoop] Worker code changed (v2025-12-07-00:09), clearing ALL cache...
+[Browser Log] [BTSnoop] All cache cleared (including logStore), will force re-process
+[Browser Log] [Perf] Resolving btsnoop handles in memory...
+[Browser Log] [Perf] Resolved handles for 0 packets in 5.00ms
+[Browser Log] Table "deviceEventsTable" is now resizable
+[Browser Log] Table "bleKeysTable" is now resizable
+[Browser Log] Table "btsnoopConnectionEventsTable" is now resizable
+[Browser Log] [BTSnoop Debug] 1. setupBtsnoopTab called.
+[Browser Log] [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
+[Browser Log] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Log] [BTSnoop Debug] 6. Created 66 visible rows
+[Browser Log] [BTSnoop Debug] 7. Viewport now has 66 children
+[Browser Log] [Perf Phase2] BTSnoop tab loaded. Total packets: 42074
+[Browser Log] [Perf Phase2] btsnoop tab loaded in 2211.00ms
+[Browser Log] [Perf] Filter state changed - re-filtering btsnoop tab
+[Browser Log] [BTSnoop Debug] 1. setupBtsnoopTab called.
+[Browser Log] [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
+[Browser Log] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Log] [BTSnoop Debug] 6. Created 66 visible rows
+[Browser Log] [BTSnoop Debug] 7. Viewport now has 66 children
+[Browser Log] [Perf] Saved fileName to IndexedDB (non-blocking)
+Cell Text: "09-24 01:53:40.088" (Length: 18)
+[Browser Log] [Click Debug] Target: DIV Classes: btsnoop-cell btsnoop-copy-cell ParentTable: undefined
+[Browser Log] [Copy] Aggregated BTSnoop Row: 264 chars
+[Browser Log] [Copy] Copied: 264 chars
+Copied Length: 264
+]]>
+</system-out>
+</testcase>
+</testsuite>
+<testsuite name="btsnoop_load_bug.spec.js" timestamp="2025-12-07T13:53:15.742Z" hostname="firefox" tests="1" failures="1" skipped="0" time="18.165" errors="0">
+<testcase name="BTSnoop Reload Behavior › Should reload BTSnoop logs when uploading ZIP while already on BTSnoop tab" classname="btsnoop_load_bug.spec.js" time="18.165">
+<failure message="btsnoop_load_bug.spec.js:16:5 Should reload BTSnoop logs when uploading ZIP while already on BTSnoop tab" type="FAILURE">
+<![CDATA[  [firefox] › btsnoop_load_bug.spec.js:16:5 › BTSnoop Reload Behavior › Should reload BTSnoop logs when uploading ZIP while already on BTSnoop tab 
+
+    TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.
+    Call log:
+      - waiting for locator('.btsnoop-row') to be visible
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/btsnoop_load_bug.spec.js:49:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/artifacts/btsnoop_load_bug-BTSnoop-R-0d455-hile-already-on-BTSnoop-tab-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/artifacts/btsnoop_load_bug-BTSnoop-R-0d455-hile-already-on-BTSnoop-tab-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/artifacts/btsnoop_load_bug-BTSnoop-R-0d455-hile-already-on-BTSnoop-tab-firefox/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[Step 1: Uploading initial log file...
+[Browser] [Init] Cleared old data.
+Switching to BTSnoop tab...
+[Browser] [Click Debug] Target: BUTTON Classes: tab-btn active ParentTable: undefined
+[Browser] [Perf Phase2] Lazy loading btsnoop tab...
+[Browser] [BTSnoop Debug] processForBtsnoop called
+[Browser] [BTSnoop] Worker code changed (v2025-12-07-00:09), clearing ALL cache...
+[Browser] [BTSnoop] All cache cleared (including logStore), will force re-process
+[Browser] [Perf Phase2] BTSnoop tab loaded. Total packets: 0
+[Browser] [Perf Phase2] btsnoop tab loaded in 94.00ms
+[Browser] [Perf] Filter state changed - re-filtering btsnoop tab
+[Browser] [BTSnoop Debug] 1. setupBtsnoopTab called.
+[Browser] [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
+[Browser] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser] [BTSnoop Debug] 6. Created 0 visible rows
+[Browser] [BTSnoop Debug] 7. Viewport now has 0 children
+
+[[ATTACHMENT|artifacts/btsnoop_load_bug-BTSnoop-R-0d455-hile-already-on-BTSnoop-tab-firefox/test-failed-1.png]]
+
+[[ATTACHMENT|artifacts/btsnoop_load_bug-BTSnoop-R-0d455-hile-already-on-BTSnoop-tab-firefox/video.webm]]
+
+[[ATTACHMENT|artifacts/btsnoop_load_bug-BTSnoop-R-0d455-hile-already-on-BTSnoop-tab-firefox/error-context.md]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+<testsuite name="btsnoop_scroll.spec.js" timestamp="2025-12-07T13:53:15.742Z" hostname="firefox" tests="1" failures="1" skipped="0" time="5.263" errors="0">
+<testcase name="BTSnoop Scroll Restoration on Filter Clear" classname="btsnoop_scroll.spec.js" time="5.263">
+<failure message="btsnoop_scroll.spec.js:3:1 BTSnoop Scroll Restoration on Filter Clear" type="FAILURE">
+<![CDATA[  [firefox] › btsnoop_scroll.spec.js:3:1 › BTSnoop Scroll Restoration on Filter Clear ──────────────
+
+    Error: page.evaluate: can't access property "forEach", buttons is undefined
+    attachLayerFilterListeners@file:///home/rk/Documents/Android_log_parser%20(copy)/main.js:2613:9
+    createBtsnoopFilterHeader@file:///home/rk/Documents/Android_log_parser%20(copy)/main.js:4995:35
+    setupBtsnoopTab@file:///home/rk/Documents/Android_log_parser%20(copy)/main.js:4322:9
+    @debugger eval code line 290 > eval:21:25
+    evaluate@debugger eval code:292:16
+    @debugger eval code:1:44
+
+        at attachLayerFilterListeners@file:///home/rk/Documents/Android_log_parser%20(copy)/main.js:2613:9
+        at createBtsnoopFilterHeader@file:///home/rk/Documents/Android_log_parser%20(copy)/main.js:4995:35
+        at setupBtsnoopTab@file:///home/rk/Documents/Android_log_parser%20(copy)/main.js:4322:9
+        at @debugger eval code line 290 > eval:21:25
+        at evaluate@debugger eval code:292:16
+        at @debugger eval code:1:44
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/btsnoop_scroll.spec.js:9:16)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-firefox/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-firefox/test-failed-1.png]]
+
+[[ATTACHMENT|artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-firefox/video.webm]]
+
+[[ATTACHMENT|artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-firefox/error-context.md]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+<testsuite name="file_collapse.spec.js" timestamp="2025-12-07T13:53:15.742Z" hostname="firefox" tests="1" failures="0" skipped="0" time="8.524" errors="0">
+<testcase name="File Collapsing › should collapse and expand file sections when clicking headers" classname="file_collapse.spec.js" time="8.524">
+</testcase>
+</testsuite>
+<testsuite name="file-upload.spec.js" timestamp="2025-12-07T13:53:15.742Z" hostname="firefox" tests="13" failures="0" skipped="0" time="40.251" errors="0">
+<testcase name="UI Elements › should display initial UI correctly" classname="file-upload.spec.js" time="4.216">
+</testcase>
+<testcase name="UI Elements › should have all required UI elements" classname="file-upload.spec.js" time="4.937">
+</testcase>
+<testcase name="UI Elements › should load page within 3 seconds" classname="file-upload.spec.js" time="2.595">
+<system-out>
+<![CDATA[✅ Page loaded in 632ms
+]]>
+</system-out>
+</testcase>
+<testcase name="Tab Navigation › should switch between tabs" classname="file-upload.spec.js" time="2.358">
+</testcase>
+<testcase name="Tab Navigation › should have connectivity tab" classname="file-upload.spec.js" time="1.43">
+</testcase>
+<testcase name="Tab Navigation › should have stats tab" classname="file-upload.spec.js" time="1.6">
+</testcase>
+<testcase name="Filter Controls › should have log level filter buttons" classname="file-upload.spec.js" time="2.995">
+</testcase>
+<testcase name="Filter Controls › should have AND/OR logic toggle" classname="file-upload.spec.js" time="1.834">
+</testcase>
+<testcase name="Filter Controls › should toggle between AND/OR logic" classname="file-upload.spec.js" time="3.697">
+</testcase>
+<testcase name="Filter Controls › should have search input" classname="file-upload.spec.js" time="2.723">
+</testcase>
+<testcase name="Performance Tracker › should have performance tracker available in console" classname="file-upload.spec.js" time="3.422">
+<system-out>
+<![CDATA[Performance tracker available: false
+]]>
+</system-out>
+</testcase>
+<testcase name="Accessibility › should be keyboard navigable" classname="file-upload.spec.js" time="1.978">
+</testcase>
+<testcase name="Accessibility › should have proper document title" classname="file-upload.spec.js" time="6.466">
+</testcase>
+</testsuite>
+<testsuite name="reproduce_issue.spec.js" timestamp="2025-12-07T13:53:15.742Z" hostname="firefox" tests="1" failures="0" skipped="0" time="6.812" errors="0">
+<testcase name="BTSnoop Scroll Restoration Reproduction › Reproduce scroll jumping issue when changing filters with selected packet" classname="reproduce_issue.spec.js" time="6.812">
+<system-out>
+<![CDATA[[Browser Console] log: [Init] Cleared old data.
+Uploading file...
+[Browser Console] log: [Worker] Syncing data...
+[Browser Console] log: Table "deviceEventsTable" is now resizable
+[Browser Console] log: Table "bleKeysTable" is now resizable
+[Browser Console] log: Table "btsnoopConnectionEventsTable" is now resizable
+[Browser Console] log: Table "cccStatsTable" is now resizable
+[Browser Console] log: [Perf] Filter state changed - re-filtering logs tab
+[Browser Console] log: [Worker] Data loaded: 0 lines
+[Browser Console] log: [UI] Auto-collapsed left panel after file loading
+[Browser Console] log: [Click Debug] Target: BUTTON Classes: tab-btn active ParentTable: undefined
+[Browser Console] log: [Perf Phase2] Lazy loading btsnoop tab...
+[Browser Console] log: [BTSnoop Debug] processForBtsnoop called
+[Browser Console] log: [BTSnoop] Worker code changed (v2025-12-07-00:09), clearing ALL cache...
+[Browser Console] log: [BTSnoop] All cache cleared (including logStore), will force re-process
+[Browser Console] log: [Perf] Resolving btsnoop handles in memory...
+[Browser Console] log: [Perf] Resolved handles for 0 packets in 7.00ms
+[Browser Console] log: Table "deviceEventsTable" is now resizable
+[Browser Console] log: Table "bleKeysTable" is now resizable
+[Browser Console] log: Table "btsnoopConnectionEventsTable" is now resizable
+[Browser Console] log: [BTSnoop Debug] 1. setupBtsnoopTab called.
+[Browser Console] log: [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
+[Browser Console] log: [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Console] log: [BTSnoop Debug] 6. Created 66 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 66 children
+[Browser Console] log: [Perf Phase2] BTSnoop tab loaded. Total packets: 42074
+[Browser Console] log: [Perf Phase2] btsnoop tab loaded in 1094.00ms
+[Browser Console] log: [Perf] Filter state changed - re-filtering btsnoop tab
+[Browser Console] log: [BTSnoop Debug] 1. setupBtsnoopTab called.
+[Browser Console] log: [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
+[Browser Console] log: [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Console] log: [BTSnoop Debug] 6. Created 66 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 66 children
+[Browser Console] log: [Perf] Saved fileName to IndexedDB (non-blocking)
+[Browser Console] log: [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Console] log: [BTSnoop Debug] 6. Created 66 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 66 children
+[Browser Console] log: [Click Debug] Target: BUTTON Classes: filter-icon ParentTable: undefined
+[Browser Console] log: [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Console] log: [BTSnoop Debug] 6. Created 70 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 70 children
+[Browser Console] log: [Click Debug] Target: BUTTON Classes: filter-icon ParentTable: undefined
+[Browser Console] log: [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Console] log: [BTSnoop Debug] 6. Created 70 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 70 children
+[Browser Console] log: [Click Debug] Target: BUTTON Classes: filter-icon ParentTable: undefined
+Selecting packet number: 31515
+[Browser Console] log: [Click Debug] Target: DIV Classes: btsnoop-cell btsnoop-copy-cell ParentTable: undefined
+[Browser Console] log: [Interaction] Selected BTSnoop Packet: 31515
+[Browser Console] log: [BTSnoop Debug] 6. Created 70 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 70 children
+Enabling CMD filter...
+[Browser Console] log: [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Console] log: [BTSnoop Debug] 6. Created 73 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 73 children
+[Browser Console] log: [Click Debug] Target: BUTTON Classes: filter-icon active ParentTable: undefined
+[Browser Console] log: [BTSnoop Scroll] Scroll applied successfully. Target: 19170 Actual: 19170
+[Browser Console] log: [BTSnoop Debug] 6. Created 120 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 120 children
+[Browser Console] log: [BTSnoop Scroll] Centered selected packet in viewport at scroll position 19170
+[Browser Console] log: [BTSnoop Debug] 6. Created 120 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 120 children
+---------------------------------------------------
+DEBUG STATE AFTER FILTER:
+Target Packet: 31515
+ScrollTop: 19170
+ScrollHeight: 128221
+Row Top: 0
+Visible Range: 31390 - 31631
+---------------------------------------------------
+Packet 31515 is visible: true
+Debug Info: { scrollTop: [33m19170[39m, rowTop: [33m0[39m }
+]]>
+</system-out>
+</testcase>
+</testsuite>
+<testsuite name="btsnoop_copy.spec.js" timestamp="2025-12-07T13:53:15.742Z" hostname="webkit" tests="1" failures="0" skipped="0" time="10.504" errors="0">
+<testcase name="BTSnoop Layout &amp; Interaction › BTSnoop Copy Action should copy entire row" classname="btsnoop_copy.spec.js" time="10.504">
+<system-out>
+<![CDATA[Uploading file...
+[Browser Log] [Worker] Syncing data...
+[Browser Log] Table "deviceEventsTable" is now resizable
+[Browser Log] Table "bleKeysTable" is now resizable
+[Browser Log] Table "btsnoopConnectionEventsTable" is now resizable
+[Browser Log] Table "cccStatsTable" is now resizable
+[Browser Log] [Perf] Filter state changed - re-filtering logs tab
+[Browser Log] [Worker] Data loaded: 0 lines
+[Browser Log] [UI] Auto-collapsed left panel after file loading
+[Browser Log] [Click Debug] Target: BUTTON Classes: tab-btn active ParentTable: undefined
+[Browser Log] [Perf Phase2] Lazy loading btsnoop tab...
+[Browser Log] [BTSnoop Debug] processForBtsnoop called
+[Browser Log] [BTSnoop] Worker code changed (v2025-12-07-00:09), clearing ALL cache...
+[Browser Log] [BTSnoop] All cache cleared (including logStore), will force re-process
+[Browser Log] [Perf] Saved fileName to IndexedDB (non-blocking)
+[Browser Log] [Perf] Resolving btsnoop handles in memory...
+[Browser Log] [Perf] Resolved handles for 0 packets in 16.00ms
+[Browser Log] Table "deviceEventsTable" is now resizable
+[Browser Log] Table "bleKeysTable" is now resizable
+[Browser Log] Table "btsnoopConnectionEventsTable" is now resizable
+[Browser Log] [BTSnoop Debug] 1. setupBtsnoopTab called.
+[Browser Log] [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
+[Browser Log] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Log] [BTSnoop Debug] 6. Created 65 visible rows
+[Browser Log] [BTSnoop Debug] 7. Viewport now has 65 children
+[Browser Log] [Perf Phase2] BTSnoop tab loaded. Total packets: 42074
+[Browser Log] [Perf Phase2] btsnoop tab loaded in 3187.00ms
+[Browser Log] [Perf] Filter state changed - re-filtering btsnoop tab
+[Browser Log] [BTSnoop Debug] 1. setupBtsnoopTab called.
+[Browser Log] [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
+[Browser Log] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Log] [BTSnoop Debug] 6. Created 65 visible rows
+[Browser Log] [BTSnoop Debug] 7. Viewport now has 65 children
+Cell Text: "09-23 16:23:40.088" (Length: 18)
+[Browser Log] [Click Debug] Target: DIV Classes: btsnoop-cell btsnoop-copy-cell ParentTable: undefined
+[Browser Log] [Copy] Aggregated BTSnoop Row: 264 chars
+[Browser Log] [Copy] Copied: 264 chars
+Copied Length: 264
+]]>
+</system-out>
+</testcase>
+</testsuite>
+<testsuite name="btsnoop_load_bug.spec.js" timestamp="2025-12-07T13:53:15.742Z" hostname="webkit" tests="1" failures="1" skipped="0" time="31" errors="0">
+<testcase name="BTSnoop Reload Behavior › Should reload BTSnoop logs when uploading ZIP while already on BTSnoop tab" classname="btsnoop_load_bug.spec.js" time="31">
+<failure message="btsnoop_load_bug.spec.js:16:5 Should reload BTSnoop logs when uploading ZIP while already on BTSnoop tab" type="FAILURE">
+<![CDATA[  [webkit] › btsnoop_load_bug.spec.js:16:5 › BTSnoop Reload Behavior › Should reload BTSnoop logs when uploading ZIP while already on BTSnoop tab 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: expect(locator).toBeHidden() failed
+
+    Locator:  locator('#progressBar').first()
+    Expected: hidden
+    Received: visible
+
+    Call log:
+      - Expect "toBeHidden" with timeout 60000ms
+      - waiting for locator('#progressBar').first()
+        17 × locator resolved to <div id="progressBar" class="progress-bar"></div>
+           - unexpected value "visible"
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/btsnoop_load_bug.spec.js:77:60)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/artifacts/btsnoop_load_bug-BTSnoop-R-0d455-hile-already-on-BTSnoop-tab-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/artifacts/btsnoop_load_bug-BTSnoop-R-0d455-hile-already-on-BTSnoop-tab-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/artifacts/btsnoop_load_bug-BTSnoop-R-0d455-hile-already-on-BTSnoop-tab-webkit/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[Step 1: Uploading initial log file...
+[Browser] [Worker] Syncing data...
+[Browser] Table "deviceEventsTable" is now resizable
+[Browser] Table "bleKeysTable" is now resizable
+[Browser] Table "btsnoopConnectionEventsTable" is now resizable
+[Browser] Table "cccStatsTable" is now resizable
+[Browser] [Perf] Filter state changed - re-filtering logs tab
+[Browser] [Worker] Data loaded: 0 lines
+[Browser] [UI] Auto-collapsed left panel after file loading
+Switching to BTSnoop tab...
+[Browser] [Click Debug] Target: BUTTON Classes: tab-btn active ParentTable: undefined
+[Browser] [Perf Phase2] Lazy loading btsnoop tab...
+[Browser] [BTSnoop Debug] processForBtsnoop called
+[Browser] [BTSnoop] Worker code changed (v2025-12-07-00:09), clearing ALL cache...
+[Browser] [BTSnoop] All cache cleared (including logStore), will force re-process
+[Browser] [Perf] Saved fileName to IndexedDB (non-blocking)
+[Browser] [Perf] Resolving btsnoop handles in memory...
+[Browser] [Perf] Resolved handles for 0 packets in 17.00ms
+[Browser] Table "deviceEventsTable" is now resizable
+[Browser] Table "bleKeysTable" is now resizable
+[Browser] Table "btsnoopConnectionEventsTable" is now resizable
+[Browser] [BTSnoop Debug] 1. setupBtsnoopTab called.
+[Browser] [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
+[Browser] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser] [BTSnoop Debug] 6. Created 65 visible rows
+[Browser] [BTSnoop Debug] 7. Viewport now has 65 children
+[Browser] [Perf Phase2] BTSnoop tab loaded. Total packets: 42074
+[Browser] [Perf Phase2] btsnoop tab loaded in 3253.00ms
+[Browser] [Perf] Filter state changed - re-filtering btsnoop tab
+[Browser] [BTSnoop Debug] 1. setupBtsnoopTab called.
+[Browser] [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
+[Browser] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser] [BTSnoop Debug] 6. Created 65 visible rows
+[Browser] [BTSnoop Debug] 7. Viewport now has 65 children
+Initial rows: 65
+Step 2: Uploading ZIP file while valid BTSnoop tab is active...
+No ZIP modal appeared (or auto-processed).
+[Browser] [Worker] Syncing data...
+[Browser] Table "deviceEventsTable" is now resizable
+[Browser] Table "bleKeysTable" is now resizable
+[Browser] Table "btsnoopConnectionEventsTable" is now resizable
+[Browser] [Perf Phase2] Lazy loading btsnoop tab...
+[Browser] [BTSnoop Debug] processForBtsnoop called
+[Browser] [Worker] Data loaded: 1104976 lines
+[Browser] [Perf] Resolving btsnoop handles in memory...
+[Browser] [Perf] Saved fileName to IndexedDB (non-blocking)
+[Browser] [Perf] Resolved handles for 0 packets in 5.00ms
+
+[[ATTACHMENT|artifacts/btsnoop_load_bug-BTSnoop-R-0d455-hile-already-on-BTSnoop-tab-webkit/test-failed-1.png]]
+
+[[ATTACHMENT|artifacts/btsnoop_load_bug-BTSnoop-R-0d455-hile-already-on-BTSnoop-tab-webkit/video.webm]]
+
+[[ATTACHMENT|artifacts/btsnoop_load_bug-BTSnoop-R-0d455-hile-already-on-BTSnoop-tab-webkit/error-context.md]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+<testsuite name="btsnoop_scroll.spec.js" timestamp="2025-12-07T13:53:15.742Z" hostname="webkit" tests="1" failures="1" skipped="0" time="4.566" errors="0">
+<testcase name="BTSnoop Scroll Restoration on Filter Clear" classname="btsnoop_scroll.spec.js" time="4.566">
+<failure message="btsnoop_scroll.spec.js:3:1 BTSnoop Scroll Restoration on Filter Clear" type="FAILURE">
+<![CDATA[  [webkit] › btsnoop_scroll.spec.js:3:1 › BTSnoop Scroll Restoration on Filter Clear ───────────────
+
+    Error: page.evaluate: TypeError: undefined is not an object (evaluating 'buttons.forEach')
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/btsnoop_scroll.spec.js:9:16)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-webkit/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-webkit/test-failed-1.png]]
+
+[[ATTACHMENT|artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-webkit/video.webm]]
+
+[[ATTACHMENT|artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-webkit/error-context.md]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+<testsuite name="file_collapse.spec.js" timestamp="2025-12-07T13:53:15.742Z" hostname="webkit" tests="1" failures="0" skipped="0" time="5.922" errors="0">
+<testcase name="File Collapsing › should collapse and expand file sections when clicking headers" classname="file_collapse.spec.js" time="5.922">
+</testcase>
+</testsuite>
+<testsuite name="file-upload.spec.js" timestamp="2025-12-07T13:53:15.742Z" hostname="webkit" tests="13" failures="0" skipped="0" time="38.078" errors="0">
+<testcase name="UI Elements › should display initial UI correctly" classname="file-upload.spec.js" time="3.936">
+</testcase>
+<testcase name="UI Elements › should have all required UI elements" classname="file-upload.spec.js" time="3.334">
+</testcase>
+<testcase name="UI Elements › should load page within 3 seconds" classname="file-upload.spec.js" time="3.914">
+<system-out>
+<![CDATA[✅ Page loaded in 442ms
+]]>
+</system-out>
+</testcase>
+<testcase name="Tab Navigation › should switch between tabs" classname="file-upload.spec.js" time="2.759">
+</testcase>
+<testcase name="Tab Navigation › should have connectivity tab" classname="file-upload.spec.js" time="2.355">
+</testcase>
+<testcase name="Tab Navigation › should have stats tab" classname="file-upload.spec.js" time="3.014">
+</testcase>
+<testcase name="Filter Controls › should have log level filter buttons" classname="file-upload.spec.js" time="2.898">
+</testcase>
+<testcase name="Filter Controls › should have AND/OR logic toggle" classname="file-upload.spec.js" time="3.217">
+</testcase>
+<testcase name="Filter Controls › should toggle between AND/OR logic" classname="file-upload.spec.js" time="3.373">
+</testcase>
+<testcase name="Filter Controls › should have search input" classname="file-upload.spec.js" time="2.582">
+</testcase>
+<testcase name="Performance Tracker › should have performance tracker available in console" classname="file-upload.spec.js" time="2.242">
+<system-out>
+<![CDATA[Performance tracker available: false
+]]>
+</system-out>
+</testcase>
+<testcase name="Accessibility › should be keyboard navigable" classname="file-upload.spec.js" time="2.346">
+</testcase>
+<testcase name="Accessibility › should have proper document title" classname="file-upload.spec.js" time="2.108">
+</testcase>
+</testsuite>
+<testsuite name="reproduce_issue.spec.js" timestamp="2025-12-07T13:53:15.742Z" hostname="webkit" tests="1" failures="0" skipped="0" time="6.788" errors="0">
+<testcase name="BTSnoop Scroll Restoration Reproduction › Reproduce scroll jumping issue when changing filters with selected packet" classname="reproduce_issue.spec.js" time="6.788">
+<system-out>
+<![CDATA[[Browser Console] log: [Init] Cleared old data.
+Uploading file...
+[Browser Console] log: [Worker] Syncing data...
+[Browser Console] log: Table "deviceEventsTable" is now resizable
+[Browser Console] log: Table "bleKeysTable" is now resizable
+[Browser Console] log: Table "btsnoopConnectionEventsTable" is now resizable
+[Browser Console] log: Table "cccStatsTable" is now resizable
+[Browser Console] log: [Perf] Filter state changed - re-filtering logs tab
+[Browser Console] log: [Worker] Data loaded: 0 lines
+[Browser Console] log: [UI] Auto-collapsed left panel after file loading
+[Browser Console] log: [Click Debug] Target: BUTTON Classes: tab-btn active ParentTable: undefined
+[Browser Console] log: [Perf Phase2] Lazy loading btsnoop tab...
+[Browser Console] log: [BTSnoop Debug] processForBtsnoop called
+[Browser Console] log: [BTSnoop] Worker code changed (v2025-12-07-00:09), clearing ALL cache...
+[Browser Console] log: [BTSnoop] All cache cleared (including logStore), will force re-process
+[Browser Console] log: [Perf] Resolving btsnoop handles in memory...
+[Browser Console] log: [Perf] Resolved handles for 0 packets in 4.00ms
+[Browser Console] log: Table "deviceEventsTable" is now resizable
+[Browser Console] log: Table "bleKeysTable" is now resizable
+[Browser Console] log: Table "btsnoopConnectionEventsTable" is now resizable
+[Browser Console] log: [BTSnoop Debug] 1. setupBtsnoopTab called.
+[Browser Console] log: [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
+[Browser Console] log: [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Console] log: [BTSnoop Debug] 6. Created 65 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 65 children
+[Browser Console] log: [Perf Phase2] BTSnoop tab loaded. Total packets: 42074
+[Browser Console] log: [Perf Phase2] btsnoop tab loaded in 1467.00ms
+[Browser Console] log: [Perf] Filter state changed - re-filtering btsnoop tab
+[Browser Console] log: [BTSnoop Debug] 1. setupBtsnoopTab called.
+[Browser Console] log: [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
+[Browser Console] log: [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Console] log: [BTSnoop Debug] 6. Created 65 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 65 children
+[Browser Console] log: [Perf] Saved fileName to IndexedDB (non-blocking)
+[Browser Console] log: [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Console] log: [BTSnoop Debug] 6. Created 65 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 65 children
+[Browser Console] log: [Click Debug] Target: BUTTON Classes: filter-icon ParentTable: undefined
+[Browser Console] log: [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Console] log: [BTSnoop Debug] 6. Created 69 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 69 children
+[Browser Console] log: [Click Debug] Target: BUTTON Classes: filter-icon ParentTable: undefined
+[Browser Console] log: [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Console] log: [BTSnoop Debug] 6. Created 69 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 69 children
+[Browser Console] log: [Click Debug] Target: BUTTON Classes: filter-icon ParentTable: undefined
+Selecting packet number: 31515
+[Browser Console] log: [Click Debug] Target: DIV Classes: btsnoop-cell btsnoop-copy-cell ParentTable: undefined
+[Browser Console] log: [Interaction] Selected BTSnoop Packet: 31515
+[Browser Console] log: [BTSnoop Debug] 6. Created 69 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 69 children
+Enabling CMD filter...
+[Browser Console] log: [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
+[Browser Console] log: [BTSnoop Debug] 6. Created 72 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 72 children
+[Browser Console] log: [Click Debug] Target: BUTTON Classes: filter-icon active ParentTable: undefined
+[Browser Console] log: [BTSnoop Scroll] Scroll applied successfully. Target: 19175 Actual: 19175
+[Browser Console] log: [BTSnoop Debug] 6. Created 120 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 120 children
+[Browser Console] log: [BTSnoop Scroll] Centered selected packet in viewport at scroll position 19175
+[Browser Console] log: [BTSnoop Debug] 6. Created 120 visible rows
+[Browser Console] log: [BTSnoop Debug] 7. Viewport now has 120 children
+---------------------------------------------------
+DEBUG STATE AFTER FILTER:
+Target Packet: 31515
+ScrollTop: 19175
+ScrollHeight: 128220
+Row Top: 0
+Visible Range: 31390 - 31631
+---------------------------------------------------
+Packet 31515 is visible: true
+Debug Info: { scrollTop: [33m19175[39m, rowTop: [33m0[39m }
+]]>
+</system-out>
+</testcase>
+</testsuite>
+</testsuites>

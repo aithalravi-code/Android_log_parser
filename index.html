@@ -116,11 +116,12 @@
                         </div>
                         <div id="folderInputContainer" class="upload-section" style="display: none;">
                             <label for="zipInput" class="upload-label">Choose a folder containing logs:</label>
-                            <input type="file" id="zipInput" webkitdirectory directory />
+                            <input type="file" id="zipInput" name="zipInput" webkitdirectory directory />
                         </div>
                         <div id="fileInputContainer" class="upload-section">
                             <label for="logFilesInput" class="upload-label">Choose ZIP or individual log files:</label>
-                            <input type="file" id="logFilesInput" accept=".zip,.txt,.log" multiple />
+                            <input type="file" id="logFilesInput" name="logFilesInput" accept=".zip,.txt,.log"
+                                multiple />
                         </div>
                     </div>
                     <div class="reset-section">
@@ -171,10 +172,10 @@
             <div class="main-content">
                 <nav class="tab-nav">
                     <button class="tab-btn active" data-tab="logs">Logs</button>
-                    <button class="tab-btn" data-tab="connectivity">Connectivity</button>
+                    <button class="tab-btn" data-tab="connectivity">CCC_Focus</button>
+                    <button class="tab-btn" data-tab="ccc">CCC BLE Decoded packets</button>
                     <button class="tab-btn" data-tab="btsnoop">BTSnoop <span id="btsnoopIndicator" class="indicator"
                             style="display: none;">●</span></button>
-                    <button class="tab-btn" data-tab="ccc">CCC Analysis</button>
                     <button class="tab-btn" data-tab="stats">Stats</button>
                 </nav>
                 <section id="logsTab" class="tab-content active">
@@ -188,11 +189,41 @@
                 <!-- NEW: Unified Connectivity Tab (BLE, NFC, DCK) -->
                 <section id="connectivityTab" class="tab-content">
                     <div class="connectivity-header">
+                        <!-- DCK Controls (Default Checked) -->
+                        <div class="tech-section">
+                            <div class="tech-master-toggle">
+                                <label class="switch-label">
+                                    <input type="checkbox" id="masterToggleDck" name="masterToggleDck" checked>
+                                    <span class="tech-name">DCK</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Wallet Controls (Default Checked) -->
+                        <div class="tech-section">
+                            <div class="tech-master-toggle">
+                                <label class="switch-label">
+                                    <input type="checkbox" id="masterToggleWallet" name="masterToggleWallet" checked>
+                                    <span class="tech-name">Wallet</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- UWB Controls (Default Checked) -->
+                        <div class="tech-section">
+                            <div class="tech-master-toggle">
+                                <label class="switch-label">
+                                    <input type="checkbox" id="masterToggleUwb" name="masterToggleUwb" checked>
+                                    <span class="tech-name">UWB / Nearby</span>
+                                </label>
+                            </div>
+                        </div>
+
                         <!-- Bluetooth Controls -->
                         <div class="tech-section">
                             <div class="tech-master-toggle">
                                 <label class="switch-label">
-                                    <input type="checkbox" id="masterToggleBle">
+                                    <input type="checkbox" id="masterToggleBle" name="masterToggleBle">
                                     <span class="tech-name">Bluetooth</span>
                                 </label>
                             </div>
@@ -208,7 +239,7 @@
                         <div class="tech-section">
                             <div class="tech-master-toggle">
                                 <label class="switch-label">
-                                    <input type="checkbox" id="masterToggleNfc">
+                                    <input type="checkbox" id="masterToggleNfc" name="masterToggleNfc">
                                     <span class="tech-name">NFC</span>
                                 </label>
                             </div>
@@ -217,26 +248,6 @@
                                 <button class="filter-icon active" data-nfc-filter="hce">Card Emulation</button>
                                 <button class="filter-icon active" data-nfc-filter="p2p">P2P</button>
                                 <button class="filter-icon active" data-nfc-filter="hal">HAL/Native</button>
-                            </div>
-                        </div>
-
-                        <!-- DCK Controls (Default Checked) -->
-                        <div class="tech-section">
-                            <div class="tech-master-toggle">
-                                <label class="switch-label">
-                                    <input type="checkbox" id="masterToggleDck" checked>
-                                    <span class="tech-name">DCK</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- UWB Controls (Default Checked) -->
-                        <div class="tech-section">
-                            <div class="tech-master-toggle">
-                                <label class="switch-label">
-                                    <input type="checkbox" id="masterToggleUwb" checked>
-                                    <span class="tech-name">UWB / Nearby</span>
-                                </label>
                             </div>
                         </div>
                     </div>
@@ -248,6 +259,18 @@
 
                     <div class="connectivity-actions">
                         <button id="exportConnectivityBtn" class="export-btn">Export to Excel</button>
+                    </div>
+                </section>
+
+                <!-- NEW: Dedicated CCC Analysis Tab -->
+                <section id="cccTab" class="tab-content" style="overflow-y: auto; padding: 1rem;">
+                    <div class="dashboard-card full-width-card" id="cccStatsCard" style="margin-bottom: 1.5rem;">
+                        <div class="card-header"
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="margin: 0;">Digital Car Key (CCC) Analysis</h3>
+                            <button id="exportCccBtn" class="header-export-btn">Export to Excel</button>
+                        </div>
+                        <div id="cccStatsContainer"></div>
                     </div>
                 </section>
 
@@ -278,18 +301,6 @@
                     </div>
                 </section>
 
-                <!-- NEW: Dedicated CCC Analysis Tab -->
-                <section id="cccTab" class="tab-content" style="overflow-y: auto; padding: 1rem;">
-                    <div class="dashboard-card full-width-card" id="cccStatsCard" style="margin-bottom: 1.5rem;">
-                        <div class="card-header"
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                            <h3 style="margin: 0;">Digital Car Key (CCC) Analysis</h3>
-                            <button id="exportCccBtn" class="header-export-btn">Export to Excel</button>
-                        </div>
-                        <div id="cccStatsContainer"></div>
-                    </div>
-                </section>
-
                 <section id="statsTab" class="tab-content" style="overflow-y: auto; padding: 1rem;">
                     <div class="tab-header-row" style="margin-bottom: 1rem;">
                         <h2 style="margin: 0; font-size: 1.5rem; color: #e8eaed;">System Statistics</h2>
@@ -314,9 +325,12 @@
                                             <th>Key Value</th>
                                         </tr>
                                         <tr class="filter-row">
-                                            <th><input type="text" placeholder="Filter..." data-col="0"></th>
-                                            <th><input type="text" placeholder="Filter..." data-col="1"></th>
-                                            <th><input type="text" placeholder="Filter..." data-col="2"></th>
+                                            <th><input type="text" placeholder="Filter..." data-col="0"
+                                                    name="bleKeysFilter0"></th>
+                                            <th><input type="text" placeholder="Filter..." data-col="1"
+                                                    name="bleKeysFilter1"></th>
+                                            <th><input type="text" placeholder="Filter..." data-col="2"
+                                                    name="bleKeysFilter2"></th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -336,11 +350,16 @@
                                             <th>Raw Packet</th>
                                         </tr>
                                         <tr class="filter-row">
-                                            <th><input type="text" placeholder="Filter..." data-col="0"></th>
-                                            <th><input type="text" placeholder="Filter..." data-col="1"></th>
-                                            <th><input type="text" placeholder="Filter..." data-col="2"></th>
-                                            <th><input type="text" placeholder="Filter..." data-col="3"></th>
-                                            <th><input type="text" placeholder="Filter..." data-col="4"></th>
+                                            <th><input type="text" placeholder="Filter..." data-col="0"
+                                                    name="btsnoopConnFilter0"></th>
+                                            <th><input type="text" placeholder="Filter..." data-col="1"
+                                                    name="btsnoopConnFilter1"></th>
+                                            <th><input type="text" placeholder="Filter..." data-col="2"
+                                                    name="btsnoopConnFilter2"></th>
+                                            <th><input type="text" placeholder="Filter..." data-col="3"
+                                                    name="btsnoopConnFilter3"></th>
+                                            <th><input type="text" placeholder="Filter..." data-col="4"
+                                                    name="btsnoopConnFilter4"></th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -364,12 +383,18 @@
                                         <th style="min-width: 400px;">Original Log Line</th>
                                     </tr>
                                     <tr class="filter-row">
-                                        <th><input type="text" placeholder="Filter..." data-col="0"></th>
-                                        <th><input type="text" placeholder="Filter..." data-col="1"></th>
-                                        <th><input type="text" placeholder="Filter..." data-col="2"></th>
-                                        <th><input type="text" placeholder="Filter..." data-col="3"></th>
-                                        <th><input type="text" placeholder="Filter..." data-col="4"></th>
-                                        <th><input type="text" placeholder="Filter..." data-col="5"></th>
+                                        <th><input type="text" placeholder="Filter..." data-col="0"
+                                                name="deviceEventsFilter0"></th>
+                                        <th><input type="text" placeholder="Filter..." data-col="1"
+                                                name="deviceEventsFilter1"></th>
+                                        <th><input type="text" placeholder="Filter..." data-col="2"
+                                                name="deviceEventsFilter2"></th>
+                                        <th><input type="text" placeholder="Filter..." data-col="3"
+                                                name="deviceEventsFilter3"></th>
+                                        <th><input type="text" placeholder="Filter..." data-col="4"
+                                                name="deviceEventsFilter4"></th>
+                                        <th><input type="text" placeholder="Filter..." data-col="5"
+                                                name="deviceEventsFilter5"></th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -405,7 +430,7 @@
                                 <h3 style="margin: 0;">App Package Versions</h3>
                                 <div class="search-section" style="padding: 0;">
                                     <label for="appSearchInput" style="display: none;">Search:</label>
-                                    <input type="text" id="appSearchInput" class="search-input"
+                                    <input type="text" id="appSearchInput" name="appSearchInput" class="search-input"
                                         placeholder="Search packages..." autocomplete="off">
                                 </div>
                             </div>

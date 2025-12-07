@@ -420,9 +420,11 @@ input[type="file"]:hover {
     justify-content: center;
     padding: 4px 12px;
     border-radius: 6px;
-    background: transparent;
-    border: none;
-    color: #5f6368;
+    background: #2a2a2a;
+    /* Dark button background */
+    border: 1px solid #555;
+    /* Default border */
+    color: #e8eaed;
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
@@ -464,6 +466,8 @@ input[type="file"]:hover {
     background: #4285F4;
     color: #fff;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    border-color: #4285F4;
+    /* Ensure border matches background when active */
 }
 
 .log-level-filters {
@@ -475,15 +479,7 @@ input[type="file"]:hover {
     /* Removed background/padding for cleaner look */
 }
 
-.filter-action-btn {
-    margin-left: 0.5rem;
-    padding: 0.3rem 0.7rem;
-    border: 1px solid #ced4da;
-    background: #f8f9fa;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: 500;
-}
+/* Redundant .filter-action-btn block removed */
 
 .btsnoop-filters {
     /* Add some space between the main filters and the top of the tab */
@@ -502,11 +498,7 @@ input[type="file"]:hover {
     box-sizing: border-box;
 }
 
-.filter-icon.active {
-    background: #4285F4;
-    color: #fff;
-    border-color: #4285F4;
-}
+
 
 .filter-action-btn {
     margin-left: 0.5rem;
@@ -1828,6 +1820,10 @@ input[type="file"]::file-selector-button:hover {
     display: flex;
     align-items: center;
     height: 100%;
+    border: none;
+    /* FIX: Remove the generic search-section border */
+    padding: 0;
+    /* FIX: Remove generic padding */
 }
 
 .dashboard-card .card-header .search-input {

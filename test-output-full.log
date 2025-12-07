@@ -1,0 +1,291 @@
+
+Running 18 tests using 1 worker
+
+📦 Testing with file: bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57.zip (16.21 MB)
+✅ File loaded in 8675ms (threshold: 30000ms)
+📊 Rendered 76 log lines
+📄 Current file: File: bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57.zip
+  ✓   1 [chromium] › tests/integration/performance.spec.js:53:5 › File Loading Performance › should load small ZIP file (17MB) within threshold (9.4s)
+📦 Testing with file: dumpState_G996BXXSBGXDH_202406120637.zip (30.89 MB)
+✅ File loaded in 13957ms (threshold: 60000ms)
+📊 Rendered 76 log lines
+  ✓   2 [chromium] › tests/integration/performance.spec.js:89:5 › File Loading Performance › should load medium ZIP file (31MB) within threshold (15.1s)
+📦 Testing with file: dumpState_S918BXXS8DYG5_202509231248.zip (29.20 MB)
+✅ File loaded in 14013ms (threshold: 90000ms)
+📊 Rendered 76 log lines
+  ✓   3 [chromium] › tests/integration/performance.spec.js:115:5 › File Loading Performance › should load large ZIP file (30MB) within threshold (14.7s)
+🎨 Initial render shows 76 log lines
+  ✓   4 [chromium] › tests/integration/performance.spec.js:156:5 › Rendering Performance › should render initial view quickly after file load (8.4s)
+📜 Scroll operations completed in 436ms
+  ✓   5 [chromium] › tests/integration/performance.spec.js:170:5 › Rendering Performance › should scroll smoothly through large log files (8.6s)
+  ✘   6 [chromium] › tests/integration/performance.spec.js:219:5 › Quick Smoke Tests › should filter by log level (38.3s)
+🔄 Tab switch: 625ms
+  ✓   7 [chromium] › tests/integration/performance.spec.js:240:5 › Quick Smoke Tests › should switch tabs quickly (10.2s)
+🔎 Keyword search: 1059ms
+  ✓   8 [chromium] › tests/integration/performance.spec.js:257:5 › Quick Smoke Tests › should search by keyword (10.0s)
+📍 Scroll position before tab switch: 1000px
+📍 Scroll position after tab switch: 1000px
+📏 Scroll difference: 0px
+  ✓   9 [chromium] › tests/integration/performance.spec.js:290:5 › Scroll Restoration › should restore scroll position when switching back to Logs tab (10.1s)
+📍 Scroll position before filter: 11050260px
+  ✘  10 [chromium] › tests/integration/performance.spec.js:328:5 › Scroll Restoration › should maintain scroll position after filtering (39.2s)
+↕️  10 direction changes: 710ms
+  ✓  11 [chromium] › tests/integration/performance.spec.js:359:5 › Scroll Restoration › should handle rapid scroll changes smoothly (10.1s)
+💾 Initial memory: 10.85 MB
+💾 After load memory: 408.95 MB
+📈 Memory increase: 398.10 MB
+💾 After clear memory: 409.14 MB
+📉 Memory released: -0.19 MB
+  ✘  12 [chromium] › tests/integration/performance.spec.js:395:5 › Memory Usage › should not leak memory during file operations (13.1s)
+💾 Initial: 10.85 MB
+💾 After file load: 408.97 MB
+  ✘  13 [chromium] › tests/integration/performance.spec.js:455:5 › Memory Usage › should track memory usage during multiple operations (38.9s)
+📤 Export completed in 1699ms
+📄 Downloaded file: bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57_filtered_logs.txt
+  ✘  14 [chromium] › tests/integration/performance.spec.js:537:5 › Export Performance › should export logs to Excel quickly (11.3s)
+📊 Filtered to 76 lines
+📤 Exported filtered logs: bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57_filtered_logs.txt
+  ✘  15 [chromium] › tests/integration/performance.spec.js:571:5 › Export Performance › should export filtered logs correctly (10.4s)
+📤 Exported connectivity logs: bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57_connectivity_logs.txt
+  ✘  16 [chromium] › tests/integration/performance.spec.js:597:5 › Export Performance › should export connectivity logs (10.8s)
+📏 Total scroll height: 22100520px
+📏 Viewport height: 514px
+📏 Max scroll: 22100006px
+⚡ Instant scroll (top→bottom): 116ms
+⚡ Instant scroll (bottom→top): 142ms
+🔄 10 rapid scrolls: 729ms (avg: 72.90ms per scroll)
+  ✓  17 [chromium] › tests/integration/performance.spec.js:639:5 › Scroll Speed Benchmarks › should measure scroll speed with large dataset (10.3s)
+📜 Scroll with filter: 218ms
+  ✓  18 [chromium] › tests/integration/performance.spec.js:688:5 › Scroll Speed Benchmarks › should maintain smooth scrolling during filtering (9.9s)
+
+
+  1) [chromium] › tests/integration/performance.spec.js:219:5 › Quick Smoke Tests › should filter by log level 
+
+    TimeoutError: page.click: Timeout 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('[data-level="E"]')[22m
+    [2m    - locator resolved to <button data-level="E" class="filter-icon active">Error</button>[22m
+    [2m  - attempting click action[22m
+    [2m    2 × waiting for element to be visible, enabled and stable[22m
+    [2m      - element is visible, enabled and stable[22m
+    [2m      - scrolling into view if needed[22m
+    [2m      - done scrolling[22m
+    [2m      - element is outside of the viewport[22m
+    [2m    - retrying click action[22m
+    [2m    - waiting 20ms[22m
+    [2m    2 × waiting for element to be visible, enabled and stable[22m
+    [2m      - element is visible, enabled and stable[22m
+    [2m      - scrolling into view if needed[22m
+    [2m      - done scrolling[22m
+    [2m      - element is outside of the viewport[22m
+    [2m    - retrying click action[22m
+    [2m      - waiting 100ms[22m
+    [2m    58 × waiting for element to be visible, enabled and stable[22m
+    [2m       - element is visible, enabled and stable[22m
+    [2m       - scrolling into view if needed[22m
+    [2m       - done scrolling[22m
+    [2m       - element is outside of the viewport[22m
+    [2m     - retrying click action[22m
+    [2m       - waiting 500ms[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/integration/performance.spec.js:231:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/integration-artifacts/performance-Quick-Smoke-Tests-should-filter-by-log-level-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/integration-artifacts/performance-Quick-Smoke-Tests-should-filter-by-log-level-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/integration-artifacts/performance-Quick-Smoke-Tests-should-filter-by-log-level-chromium/error-context.md
+
+  2) [chromium] › tests/integration/performance.spec.js:328:5 › Scroll Restoration › should maintain scroll position after filtering 
+
+    TimeoutError: page.click: Timeout 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('[data-level="E"]')[22m
+    [2m    - locator resolved to <button data-level="E" class="filter-icon active">Error</button>[22m
+    [2m  - attempting click action[22m
+    [2m    2 × waiting for element to be visible, enabled and stable[22m
+    [2m      - element is visible, enabled and stable[22m
+    [2m      - scrolling into view if needed[22m
+    [2m      - done scrolling[22m
+    [2m      - element is outside of the viewport[22m
+    [2m    - retrying click action[22m
+    [2m    - waiting 20ms[22m
+    [2m    2 × waiting for element to be visible, enabled and stable[22m
+    [2m      - element is visible, enabled and stable[22m
+    [2m      - scrolling into view if needed[22m
+    [2m      - done scrolling[22m
+    [2m      - element is outside of the viewport[22m
+    [2m    - retrying click action[22m
+    [2m      - waiting 100ms[22m
+    [2m    58 × waiting for element to be visible, enabled and stable[22m
+    [2m       - element is visible, enabled and stable[22m
+    [2m       - scrolling into view if needed[22m
+    [2m       - done scrolling[22m
+    [2m       - element is outside of the viewport[22m
+    [2m     - retrying click action[22m
+    [2m       - waiting 500ms[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/integration/performance.spec.js:345:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/integration-artifacts/performance-Scroll-Restora-0c3fe-ll-position-after-filtering-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/integration-artifacts/performance-Scroll-Restora-0c3fe-ll-position-after-filtering-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/integration-artifacts/performance-Scroll-Restora-0c3fe-ll-position-after-filtering-chromium/error-context.md
+
+  3) [chromium] › tests/integration/performance.spec.js:395:5 › Memory Usage › should not leak memory during file operations 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThan[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: > [32m0[39m
+    Received:   [31m-195154[39m
+        at /home/rk/Documents/Android_log_parser (copy)/tests/integration/performance.spec.js:452:32)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/integration-artifacts/performance-Memory-Usage-s-54264-mory-during-file-operations-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/integration-artifacts/performance-Memory-Usage-s-54264-mory-during-file-operations-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/integration-artifacts/performance-Memory-Usage-s-54264-mory-during-file-operations-chromium/error-context.md
+
+  4) [chromium] › tests/integration/performance.spec.js:455:5 › Memory Usage › should track memory usage during multiple operations 
+
+    TimeoutError: page.click: Timeout 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('[data-level="E"]')[22m
+    [2m    - locator resolved to <button data-level="E" class="filter-icon active">Error</button>[22m
+    [2m  - attempting click action[22m
+    [2m    2 × waiting for element to be visible, enabled and stable[22m
+    [2m      - element is visible, enabled and stable[22m
+    [2m      - scrolling into view if needed[22m
+    [2m      - done scrolling[22m
+    [2m      - element is outside of the viewport[22m
+    [2m    - retrying click action[22m
+    [2m    - waiting 20ms[22m
+    [2m    2 × waiting for element to be visible, enabled and stable[22m
+    [2m      - element is visible, enabled and stable[22m
+    [2m      - scrolling into view if needed[22m
+    [2m      - done scrolling[22m
+    [2m      - element is outside of the viewport[22m
+    [2m    - retrying click action[22m
+    [2m      - waiting 100ms[22m
+    [2m    58 × waiting for element to be visible, enabled and stable[22m
+    [2m       - element is visible, enabled and stable[22m
+    [2m       - scrolling into view if needed[22m
+    [2m       - done scrolling[22m
+    [2m       - element is outside of the viewport[22m
+    [2m     - retrying click action[22m
+    [2m       - waiting 500ms[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/integration/performance.spec.js:496:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/integration-artifacts/performance-Memory-Usage-s-857a8--during-multiple-operations-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/integration-artifacts/performance-Memory-Usage-s-857a8--during-multiple-operations-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/integration-artifacts/performance-Memory-Usage-s-857a8--during-multiple-operations-chromium/error-context.md
+
+  5) [chromium] › tests/integration/performance.spec.js:537:5 › Export Performance › should export logs to Excel quickly 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoContain[2m([22m[32mexpected[39m[2m) // indexOf[22m
+
+    Expected substring: [32m".xlsx"[39m
+    Received string:    [31m"bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57_filtered_logs.txt"[39m
+        at /home/rk/Documents/Android_log_parser (copy)/tests/integration/performance.spec.js:560:46)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/integration-artifacts/performance-Export-Perform-c5a49-xport-logs-to-Excel-quickly-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/integration-artifacts/performance-Export-Perform-c5a49-xport-logs-to-Excel-quickly-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/integration-artifacts/performance-Export-Perform-c5a49-xport-logs-to-Excel-quickly-chromium/error-context.md
+
+  6) [chromium] › tests/integration/performance.spec.js:571:5 › Export Performance › should export filtered logs correctly 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoContain[2m([22m[32mexpected[39m[2m) // indexOf[22m
+
+    Expected substring: [32m".xlsx"[39m
+    Received string:    [31m"bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57_filtered_logs.txt"[39m
+        at /home/rk/Documents/Android_log_parser (copy)/tests/integration/performance.spec.js:594:46)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/integration-artifacts/performance-Export-Perform-e0d83-ort-filtered-logs-correctly-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/integration-artifacts/performance-Export-Perform-e0d83-ort-filtered-logs-correctly-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/integration-artifacts/performance-Export-Perform-e0d83-ort-filtered-logs-correctly-chromium/error-context.md
+
+  7) [chromium] › tests/integration/performance.spec.js:597:5 › Export Performance › should export connectivity logs 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoContain[2m([22m[32mexpected[39m[2m) // indexOf[22m
+
+    Expected substring: [32m".xlsx"[39m
+    Received string:    [31m"bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57_connectivity_logs.txt"[39m
+        at /home/rk/Documents/Android_log_parser (copy)/tests/integration/performance.spec.js:619:50)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/integration-artifacts/performance-Export-Perform-04ff1-ld-export-connectivity-logs-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/integration-artifacts/performance-Export-Perform-04ff1-ld-export-connectivity-logs-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/integration-artifacts/performance-Export-Perform-04ff1-ld-export-connectivity-logs-chromium/error-context.md
+
+  7 failed
+    [chromium] › tests/integration/performance.spec.js:219:5 › Quick Smoke Tests › should filter by log level 
+    [chromium] › tests/integration/performance.spec.js:328:5 › Scroll Restoration › should maintain scroll position after filtering 
+    [chromium] › tests/integration/performance.spec.js:395:5 › Memory Usage › should not leak memory during file operations 
+    [chromium] › tests/integration/performance.spec.js:455:5 › Memory Usage › should track memory usage during multiple operations 
+    [chromium] › tests/integration/performance.spec.js:537:5 › Export Performance › should export logs to Excel quickly 
+    [chromium] › tests/integration/performance.spec.js:571:5 › Export Performance › should export filtered logs correctly 
+    [chromium] › tests/integration/performance.spec.js:597:5 › Export Performance › should export connectivity logs 
+  11 passed (4.9m)
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report playwright-report-integration[39m
+[36m[39m

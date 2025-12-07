@@ -271,8 +271,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // NEW: Connectivity Tab Globals
     let connectivityLogLines = []; // Mapped/Merged lines for the connectivity view
     let filteredConnectivityLogLines = []; // The currently filtered set derived from connectivityLogLines
-    let activeTechs = { ble: false, nfc: false, dck: true, uwb: true }; // Master Toggles State
+    let activeTechs = { ble: false, nfc: false, dck: true, uwb: true, wallet: true }; // Master Toggles State
     let uwbLogLines = []; // Holds all UWB-related log lines
+    let walletLogLines = [];
+    let filteredWalletLogLines = [];
+    let filteredDckLogLines = [];
+    let filteredNfcLogLines = [];
 
     let filteredBtsnoopPackets = []; // Holds the filtered set of btsnoop packets
     let btsnoopConnectionEvents = []; // Holds LE Connection Complete events
@@ -449,10 +453,11 @@ document.addEventListener('DOMContentLoaded', () => {
             .log-line:hover {
                 background-color: #444;
             }
-            .log-line-E { color: #D32F2F; }
-            .log-line-W { color: #FBC02D; }
-            .log-line-I { color: #388E3C; }
-            .log-line-D { color: #1976D2; }
+            /* Adjusted Text Colors for Dark Mode Visibility */
+            .log-line-E { color: #FF5252; } /* Red 400 */
+            .log-line-W { color: #FFD740; } /* Amber A200 */
+            .log-line-I { color: #69F0AE; } /* Green A200 */
+            .log-line-D { color: #448AFF; } /* Blue A200 */
             
             /* Line numbers - fixed width to prevent misalignment */
             .line-number {
@@ -477,13 +482,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 padding: 0 5px;
                 margin: 0 5px;
                 border-radius: 3px;
-                color: #FFFFFF; /* White text on all backgrounds */
+                color: #FFFFFF; /* White text by default */
+                font-weight: bold;
                 flex-shrink: 0; /* Don't shrink */
                 width: 20px; /* Fixed width for alignment */
                 text-align: center;
             }
             .log-level-box.log-level-E { background-color: #D32F2F; }
-            .log-level-box.log-level-W { background-color: #FBC02D; }
+            .log-level-box.log-level-W { background-color: #FFC107; color: #000000; } /* Black text on Amber */
             .log-level-box.log-level-I { background-color: #388E3C; }
             .log-level-box.log-level-D { background-color: #1976D2; }
             .log-level-box.log-level-V { background-color: #757575; }
@@ -633,7 +639,8 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             techs: { ...activeTechs }, // Include connectivity toggle state
             activeBleLayers: Array.from(activeBleLayers).sort(),
-            activeNfcLayers: Array.from(activeNfcLayers).sort()
+            activeNfcLayers: Array.from(activeNfcLayers).sort(),
+            collapsed: Array.from(collapsedFileHeaders).sort()
         });
     }
 
@@ -725,6 +732,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         const tagLower = line.tag.toLowerCase();
                         return tagLower.includes('uwb') || tagLower.includes('ranging') ||
                             tagLower.includes('fiira') || tagLower.includes('nearby');
+                    });
+
+                    // Filter Wallet
+                    walletLogLines = originalLogLines.filter(line => {
+                        if (line.isMeta) return true;
+                        if (line.isWallet) return true;
+                        // Fallback to text check if isWallet not set (e.g. legacy worker)
+                        if (!line.originalText) return false;
+                        const text = line.originalText.toLowerCase();
+                        return text.includes('wallet') || text.includes('quickaccesswallet') || text.includes('walletservice');
                     });
 
                     // Trigger initial setup for connectivity
@@ -1103,6 +1120,8 @@ document.addEventListener('DOMContentLoaded', () => {
         nfcLogLines = null;
         dckLogLines = null;
         uwbLogLines = null;
+        walletLogLines = null;
+        filteredWalletLogLines = null;
         connectivityLogLines = null;
         filteredConnectivityLogLines = null;
         filteredBleLogLines = null;
@@ -1120,6 +1139,8 @@ document.addEventListener('DOMContentLoaded', () => {
         nfcLogLines = [];
         dckLogLines = [];
         uwbLogLines = [];
+        walletLogLines = [];
+        filteredWalletLogLines = [];
         connectivityLogLines = [];
         filteredConnectivityLogLines = [];
         filteredBleLogLines = [];
@@ -1161,6 +1182,14 @@ document.addEventListener('DOMContentLoaded', () => {
         btsnoopConnectionMap = new Map();
         activeBtsnoopFilters = new Set(['cmd', 'evt', 'acl', 'l2cap', 'smp', 'att']);
 
+        // Reset Filter Hashing & Caching
+        filterStateHash = null;
+        cachedFilteredResults = {
+            logs: null,
+            connectivity: null,
+            btsnoop: null
+        };
+
         // Reset state flags
         localBtAddress = 'Host';
         isBtsnoopProcessed = false;
@@ -1176,7 +1205,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderFilterChips();
 
         // Clear connectivity state
-        activeTechs = { ble: false, nfc: false, dck: true, uwb: true };
+        activeTechs = { ble: false, nfc: false, dck: true, uwb: true, wallet: true };
 
         // Clear log view
         logViewport.innerHTML = '';
@@ -1332,14 +1361,8 @@ document.addEventListener('DOMContentLoaded', () => {
         TimeTracker.start('Worker Parsing Pipeline');
 
         // Filter out binary btsnoop logs from the text-parsing pipeline.
-        // They will be handled separately by processForBtsnoop().
+        // They will be handled separately
         const tasksToParse = fileTasks.filter(task => !task.path.includes('btsnoop_hci.log'));
-        // --- Simplified Worker Pool Logic ---
-        // To bypass 'file://' CORS restrictions, the worker's code is embedded
-        // directly as a string. A Blob is created from this string, and a URL
-        // is generated for that Blob, which is a valid origin for the worker. The unmatched group is changed from .* to .+ to avoid matching empty lines.
-        // FIX: Replaced the single template literal with string concatenation to avoid syntax errors and optimized the regex.
-        // caused by nested template literals and improper escaping.
         const workerScriptText = 'self.onmessage = async (event) => {\n' +
             '    const { file, blob, path } = event.data;\n' +
             '    let fileContent = \'\';\n' +
@@ -1428,7 +1451,9 @@ document.addEventListener('DOMContentLoaded', () => {
             '    const dckKeywords = [\'DigitalCarKey\', \'CarKey\', \'UwbTransport\', \'Dck\'];\n' +
             '    const CHUNK_SIZE = 10000; // Number of lines to send back at a time\n' +
             '    const dckRegex = new RegExp(`\\\\b(${dckKeywords.join(\'|\')})\\\\b`, \'i\');\n' +
-            '    const kernelRegex = /^\\s*\\[\\s*\\d+\\.\\d+\\s*\\]/;\n' +
+            '    const walletKeywords = [\'Wallet\', \'QuickAccessWallet\', \'WalletService\', \'WalletCard\', \'GenericIdCard\', \'Barcode\', \'MagneticStripe\'];\n' +
+            '    const walletRegex = new RegExp(`\\\\b(${walletKeywords.join(\'|\')})\\\\b`, \'i\');\n' +
+            '    const kernelRegex = /^\\\\s*\\[\\\\s*\\\\d+\\\\.\\\\d+\\\\s*\\]/;\n' +
             '\n' +
             '    const yearMatch = path.match(/(\\d{4})-\\d{2}-\\d{2}/);\n' +
             '    const fileYear = yearMatch ? parseInt(yearMatch[1], 10) : new Date().getFullYear();\n' +
@@ -1605,6 +1630,9 @@ document.addEventListener('DOMContentLoaded', () => {
             '        if (dckRegex.test(lineText) || (isVerbose && dckRegex.test(lineText))) {\n' +
             '            parsedLine.isDck = true;\n' +
             '        }\n' +
+            '        if (walletRegex.test(lineText) || (isVerbose && walletRegex.test(lineText))) {\n' +
+            '            parsedLine.isWallet = true;\n' +
+            '        }\n' +
             '        }\n' +
             '\n' +
             '        // FIX: The kernel check must be independent of the logcat match and the if(parsedLine) block.\n' +
@@ -1707,7 +1735,6 @@ document.addEventListener('DOMContentLoaded', () => {
         progressText.textContent = 'Finalizing...';
 
         // --- Consolidate Results ---
-        // Reset global state before consolidating new results
         TimeTracker.start('Result Consolidation');
 
         originalLogLines = [];
@@ -1932,11 +1959,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         for (const line of linesToFilter) {
             if (line.isMeta) {
-                // Save previous header if it had matches
-                if (currentHeader && headerHasMatches) {
-                    results.push(currentHeader);
-                }
-
                 state.isInside = collapsedFileHeaders.has(line.originalText);
 
                 if (state.isInside) {
@@ -2156,7 +2178,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         // or at least clamping it to the new height.
                         // Actually, if the anchor is gone, it means the context changed. 
                         // Going to top (0) is safe, BUT if we are actively scrolling, we might want to be smarter.
-                        // For now, let's stick to 0 IF the list changed significantly, OR keep old scrollTop if plausible.
                         // Better heuristic: find the nearest neighbor? Too expensive.
                         // Fallback: If user had an explicit anchor (selection) and it's gone, clear the selection.
                         if (userAnchorLine === anchorLine) {
@@ -2670,6 +2691,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bindMasterToggle('masterToggleNfc', 'nfc', 'nfcFiltersPanel');
     bindMasterToggle('masterToggleDck', 'dck', 'dckFiltersPanel');
     bindMasterToggle('masterToggleUwb', 'uwb', 'uwbFiltersPanel');
+    bindMasterToggle('masterToggleWallet', 'wallet', null);
 
     ['bleFiltersPanel', 'nfcFiltersPanel', 'dckFiltersPanel', 'uwbFiltersPanel'].forEach(panelId => {
         const panel = document.getElementById(panelId);
@@ -3084,8 +3106,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                 } else {
                                     params = formatParam('AID', data);
                                 }
-                            } else {
-                                params = formatParam('Data', data);
                             }
                             // Return immediately for SELECT to avoid adding P1/P2 or parsing TLV
                             return { innerMsg, params };
@@ -4183,6 +4203,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // Wallet Logic
+        if (activeTechs.wallet) {
+            walletLogLines.forEach(line => {
+                addLine(line);
+            });
+        }
+
         // Sort by index to maintain chronological order
         candidates.sort((a, b) => a.index - b.index);
 
@@ -4713,7 +4740,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tbody.innerHTML = '<tr><td colspan="5">No LE Connection Complete events found.</td></tr>';
         } else {
             const tableHtml = connectionEventsOnly.map(event => `
-                <tr>
+                <tr data-row-id="btsnoop-conn-${event.packetNum}">
                     <td>${event.packetNum}</td>
                     <td>${event.timestamp || 'N/A'}</td>
                     <td>${event.address || 'N/A'}</td>
@@ -4721,6 +4748,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${escapeHtml(event.rawData)}</td>
                 </tr>`).join('');
             tbody.innerHTML = tableHtml;
+
+            // Setup filters and restore scroll position
+            setupTableFilters('btsnoopConnectionEventsTable');
+            restoreTableScroll('btsnoopConnectionEventsTable');
         }
     }
 
@@ -4798,9 +4829,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }))
             .filter(f => f.value);
 
-        // OPTIMIZATION Phase 3: Load from single blob
-        const stored = await loadData('btsnoopPackets');
-        const allPackets = stored && stored.value ? stored.value : [];
+        // OPTIMIZATION Phase 3: Check in-memory first, then load from DB being careful of sync
+        let allPackets = btsnoopPackets;
+        if (!allPackets || allPackets.length === 0) {
+            const stored = await loadData('btsnoopPackets');
+            allPackets = stored && stored.value ? stored.value : [];
+        }
 
         filteredBtsnoopPackets = allPackets.filter(packet => {
             // FIX: If no filters are active, SHOW ALL. Previously it might have been restrictive.
@@ -5309,6 +5343,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!isNaN(lineIndex) && sourceArray[lineIndex]) {
                 const clickedLine = sourceArray[lineIndex];
 
+                // FIX: Restore File Collapsing Logic
+                if (clickedLine.isMeta) {
+                    const headerText = clickedLine.originalText;
+                    if (collapsedFileHeaders.has(headerText)) {
+                        collapsedFileHeaders.delete(headerText);
+                    } else {
+                        collapsedFileHeaders.add(headerText);
+                    }
+                    console.log(`[Interaction] Toggled collapse for: ${headerText}`);
+                    refreshActiveTab(); // Re-filter and render
+                    return;
+                }
+
                 // Toggle anchor
                 if (userAnchorLine === clickedLine) {
                     userAnchorLine = null;
@@ -5414,6 +5461,18 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Could not initialize the application. Please try clearing your browser cache and reloading.");
         }
     }
+
+    // --- Expose for Testing ---
+    window._debug = {
+        get btsnoopPackets() { return btsnoopPackets; },
+        set btsnoopPackets(v) { btsnoopPackets = v; },
+        get isBtsnoopProcessed() { return isBtsnoopProcessed; },
+        set isBtsnoopProcessed(v) { isBtsnoopProcessed = v; },
+        renderBtsnoopPackets,
+        setupBtsnoopTab,
+        get selectedBtsnoopPacket() { return selectedBtsnoopPacket; },
+        set selectedBtsnoopPacket(v) { selectedBtsnoopPacket = v; }
+    };
 
     initializeApp();
 });
