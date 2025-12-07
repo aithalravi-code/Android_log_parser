@@ -1,0 +1,136 @@
+
+Running 3 tests using 3 workers
+
+Initial Time Range: 2025-01-01T10:00 to 2025-09-24T09:37
+Min: 2025-01-01T10:00, Max: 2025-09-24T09:37
+[Browser Console]: [Perf] Using cached results for logs tab - no filtering needed
+[Browser Console]: [Perf] Filter state changed - re-filtering logs tab
+[Browser Console]: [FilterDebug] Processing Broadcast Line: 2025-09-24T09:37:31.974Z Wed Sep 24 2025 05:37:31 GMT-0400 (Eastern Daylight Time)
+[Browser Console]: [FilterDebug] Broadcast Line FILTERED OUT {lineTime: 2025-09-24T09:37:31.974Z, startTime: 2025-01-01T10:00:00.000Z, endTime: 2025-09-24T05:37:00.000Z}
+Testing specific log line filter: 09-24 09:37:31.974
+Testing Broadcast 6196 log line filter: 09-24 09:37:31.974
+[Browser Console]: [Perf] Filter state changed - re-filtering logs tab
+[Browser Console]: [FilterDebug] Processing Broadcast Line: 2025-09-24T09:37:31.974Z Wed Sep 24 2025 05:37:31 GMT-0400 (Eastern Daylight Time)
+[Browser Console]: [FilterDebug] Broadcast Line FILTERED OUT {lineTime: 2025-09-24T09:37:31.974Z, startTime: 2025-09-24T05:30:00.000Z, endTime: 2025-09-24T05:30:00.000Z}
+[Browser Console]: [Perf] Filter state changed - re-filtering logs tab
+[Browser Console]: [FilterDebug] Processing Broadcast Line: 2025-09-24T09:37:31.974Z Wed Sep 24 2025 05:37:31 GMT-0400 (Eastern Daylight Time)
+[Browser Console]: [FilterDebug] Broadcast Line FILTERED OUT {lineTime: 2025-09-24T09:37:31.974Z, startTime: 2025-09-24T01:30:00.000Z, endTime: 2025-09-24T01:30:00.000Z}
+[Browser Console]: [Perf] Filter state changed - re-filtering logs tab
+[Browser Console]: [FilterDebug] Processing Broadcast Line: 2025-09-24T09:37:31.974Z Wed Sep 24 2025 05:37:31 GMT-0400 (Eastern Daylight Time)
+[Browser Console]: [FilterDebug] Broadcast Line FILTERED OUT {lineTime: 2025-09-24T09:37:31.974Z, startTime: 2025-09-23T21:30:00.000Z, endTime: 2025-09-24T05:40:00.000Z}
+[Browser Console]: [Perf] Filter state changed - re-filtering logs tab
+[Browser Console]: [FilterDebug] Processing Broadcast Line: 2025-09-24T09:37:31.974Z Wed Sep 24 2025 05:37:31 GMT-0400 (Eastern Daylight Time)
+[Browser Console]: [FilterDebug] Broadcast Line FILTERED OUT {lineTime: 2025-09-24T09:37:31.974Z, startTime: 2025-09-23T17:30:00.000Z, endTime: 2025-09-24T01:40:00.000Z}
+[Browser Console]: [Perf] Saved fileName to IndexedDB (non-blocking)
+Initial Time Range: 2025-01-01T10:00 to 2025-09-24T09:37
+Min: 2025-01-01T10:00, Max: 2025-09-24T09:37
+[Browser Console]: [Perf] Using cached results for logs tab - no filtering needed
+[Browser Console]: [Perf] Filter state changed - re-filtering logs tab
+[Browser Console]: [FilterDebug] Processing Broadcast Line: 2025-09-24T09:37:31.974Z Wed Sep 24 2025 05:37:31 GMT-0400 (Eastern Daylight Time)
+[Browser Console]: [FilterDebug] Broadcast Line FILTERED OUT JSHandle@object
+Testing specific log line filter: 09-24 09:37:31.974
+Testing Broadcast 6196 log line filter: 09-24 09:37:31.974
+[Browser Console]: [Perf] Filter state changed - re-filtering logs tab
+[Browser Console]: [FilterDebug] Processing Broadcast Line: 2025-09-24T09:37:31.974Z Wed Sep 24 2025 05:37:31 GMT-0400 (Eastern Daylight Time)
+[Browser Console]: [FilterDebug] Broadcast Line FILTERED OUT JSHandle@object
+[Browser Console]: [Perf] Filter state changed - re-filtering logs tab
+[Browser Console]: [FilterDebug] Processing Broadcast Line: 2025-09-24T09:37:31.974Z Wed Sep 24 2025 05:37:31 GMT-0400 (Eastern Daylight Time)
+[Browser Console]: [FilterDebug] Broadcast Line FILTERED OUT JSHandle@object
+[Browser Console]: [Perf] Filter state changed - re-filtering logs tab
+[Browser Console]: [FilterDebug] Processing Broadcast Line: 2025-09-24T09:37:31.974Z Wed Sep 24 2025 05:37:31 GMT-0400 (Eastern Daylight Time)
+[Browser Console]: [FilterDebug] Broadcast Line FILTERED OUT JSHandle@object
+[Browser Console]: [Perf] Filter state changed - re-filtering logs tab
+[Browser Console]: [FilterDebug] Processing Broadcast Line: 2025-09-24T09:37:31.974Z Wed Sep 24 2025 05:37:31 GMT-0400 (Eastern Daylight Time)
+[Browser Console]: [FilterDebug] Broadcast Line FILTERED OUT JSHandle@object
+[Browser Console]: [Perf] Saved fileName to IndexedDB (non-blocking)
+  ✘  2 [chromium] › tests/e2e/datetime_filter.spec.js:9:5 › DateTime Filter › should filter logs using date picker inputs (9.9s)
+  ✘  3 [webkit] › tests/e2e/datetime_filter.spec.js:9:5 › DateTime Filter › should filter logs using date picker inputs (12.3s)
+  ✘  1 [firefox] › tests/e2e/datetime_filter.spec.js:9:5 › DateTime Filter › should filter logs using date picker inputs (11.2s)
+
+
+  1) [chromium] › tests/e2e/datetime_filter.spec.js:9:5 › DateTime Filter › should filter logs using date picker inputs 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('.log-line').filter({ hasText: 'Broadcast 6196' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('.log-line').filter({ hasText: 'Broadcast 6196' })[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/datetime_filter.spec.js:109:37)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/datetime_filter-DateTime-F-007a7-gs-using-date-picker-inputs-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/datetime_filter-DateTime-F-007a7-gs-using-date-picker-inputs-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/datetime_filter-DateTime-F-007a7-gs-using-date-picker-inputs-chromium/error-context.md
+
+  2) [firefox] › tests/e2e/datetime_filter.spec.js:9:5 › DateTime Filter › should filter logs using date picker inputs 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('.log-line').filter({ hasText: 'Broadcast 6196' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('.log-line').filter({ hasText: 'Broadcast 6196' })[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/datetime_filter.spec.js:109:37)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/datetime_filter-DateTime-F-007a7-gs-using-date-picker-inputs-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/datetime_filter-DateTime-F-007a7-gs-using-date-picker-inputs-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/datetime_filter-DateTime-F-007a7-gs-using-date-picker-inputs-firefox/error-context.md
+
+  3) [webkit] › tests/e2e/datetime_filter.spec.js:9:5 › DateTime Filter › should filter logs using date picker inputs 
+
+    TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('.log-line') to be visible[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/datetime_filter.spec.js:17:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/datetime_filter-DateTime-F-007a7-gs-using-date-picker-inputs-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/datetime_filter-DateTime-F-007a7-gs-using-date-picker-inputs-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/datetime_filter-DateTime-F-007a7-gs-using-date-picker-inputs-webkit/error-context.md
+
+  3 failed
+    [chromium] › tests/e2e/datetime_filter.spec.js:9:5 › DateTime Filter › should filter logs using date picker inputs 
+    [firefox] › tests/e2e/datetime_filter.spec.js:9:5 › DateTime Filter › should filter logs using date picker inputs 
+    [webkit] › tests/e2e/datetime_filter.spec.js:9:5 › DateTime Filter › should filter logs using date picker inputs 
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report results/playwright-report[39m
+[36m[39m

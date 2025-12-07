@@ -1,0 +1,15 @@
+
+Running 1 test using 1 worker
+
+📦 Testing with file: bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57.zip (16.21 MB)
+✅ File loaded in 9613ms (threshold: 30000ms)
+📊 Rendered 76 log lines
+📄 Current file: File: bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57.zip
+  ✓  1 [chromium] › tests/integration/performance.spec.js:53:5 › File Loading Performance › should load small ZIP file (17MB) within threshold (10.4s)
+
+  1 passed (12.4s)
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report results/playwright-report-integration[39m
+[36m[39m

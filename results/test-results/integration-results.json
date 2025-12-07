@@ -1,0 +1,422 @@
+{
+  "config": {
+    "configFile": "/home/rk/Documents/Android_log_parser (copy)/config/playwright.integration.config.js",
+    "rootDir": "/home/rk/Documents/Android_log_parser (copy)/tests/integration",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "outputFolder": "../results/playwright-report-integration",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "../results/test-results/integration-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/home/rk/Documents/Android_log_parser (copy)/results/test-results/integration-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/rk/Documents/Android_log_parser (copy)/tests/integration",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.spec.js"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.57.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "performance.spec.js",
+      "file": "performance.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Rendering Performance",
+          "file": "performance.spec.js",
+          "line": 142,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should render initial view quickly after file load",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9945,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🎨 Initial render shows 76 log lines\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-07T15:52:41.570Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0395ec5c307b4a8c0388-bf8b5dd100fd770cee62",
+              "file": "performance.spec.js",
+              "line": 156,
+              "column": 5
+            },
+            {
+              "title": "should scroll smoothly through large log files",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10790,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "📜 Scroll operations completed in 484ms\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-07T15:52:51.789Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0395ec5c307b4a8c0388-d9dcb7e54f65110bd645",
+              "file": "performance.spec.js",
+              "line": 170,
+              "column": 5
+            }
+          ]
+        },
+        {
+          "title": "Quick Smoke Tests",
+          "file": "performance.spec.js",
+          "line": 206,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should filter by log level",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11862,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔍 Filter operation: 1858ms\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-07T15:53:02.628Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0395ec5c307b4a8c0388-99ee70f7b3d27eedce10",
+              "file": "performance.spec.js",
+              "line": 219,
+              "column": 5
+            },
+            {
+              "title": "should switch tabs quickly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9829,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔄 Tab switch: 660ms\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-07T15:53:14.527Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0395ec5c307b4a8c0388-f20a5b92bad4020cb1ac",
+              "file": "performance.spec.js",
+              "line": 253,
+              "column": 5
+            },
+            {
+              "title": "should search by keyword",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10324,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔎 Keyword search: 1135ms\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-07T15:53:24.383Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0395ec5c307b4a8c0388-ef954c0c65c5ccf289bb",
+              "file": "performance.spec.js",
+              "line": 270,
+              "column": 5
+            }
+          ]
+        },
+        {
+          "title": "Memory Usage",
+          "file": "performance.spec.js",
+          "line": 412,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should not leak memory during file operations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 14824,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "💾 Initial memory: 10.89 MB\n"
+                        },
+                        {
+                          "text": "💾 After load memory: 405.75 MB\n"
+                        },
+                        {
+                          "text": "📈 Memory increase: 394.86 MB\n"
+                        },
+                        {
+                          "text": "💾 After clear memory: 417.38 MB\n"
+                        },
+                        {
+                          "text": "📉 Memory change: -11.63 MB\n"
+                        },
+                        {
+                          "text": "ℹ️  Memory increased by 11.63 MB after clear\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-07T15:53:34.736Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0395ec5c307b4a8c0388-ce18e7275877b7317ab3",
+              "file": "performance.spec.js",
+              "line": 419,
+              "column": 5
+            },
+            {
+              "title": "should track memory usage during multiple operations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13621,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "💾 Initial: 10.89 MB\n"
+                        },
+                        {
+                          "text": "💾 After file load: 405.96 MB\n"
+                        },
+                        {
+                          "text": "💾 After filter: 442.27 MB\n"
+                        },
+                        {
+                          "text": "💾 After tab switch: 414.99 MB\n"
+                        },
+                        {
+                          "text": "💾 After search: 436.01 MB\n"
+                        },
+                        {
+                          "text": "\n📊 Memory Usage Summary:\n"
+                        },
+                        {
+                          "text": "   Initial             : 10.89 MB\n"
+                        },
+                        {
+                          "text": "   After file load     : 405.96 MB\n"
+                        },
+                        {
+                          "text": "   After filter        : 442.27 MB\n"
+                        },
+                        {
+                          "text": "   After tab switch    : 414.99 MB\n"
+                        },
+                        {
+                          "text": "   After search        : 436.01 MB\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-07T15:53:49.583Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0395ec5c307b4a8c0388-bdf1eff68d8e482254e4",
+              "file": "performance.spec.js",
+              "line": 492,
+              "column": 5
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-12-07T15:52:40.373Z",
+    "duration": 83234.53499999999,
+    "expected": 7,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -16,9 +16,9 @@ import fs from 'fs';
 
 // Test file paths
 const TEST_FILES = {
-    small: '/home/rk/Documents/Android_log_parser (copy)/TestFiles/bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57.zip',
-    medium: '/home/rk/Documents/Android_log_parser (copy)/TestFiles/dumpState_G996BXXSBGXDH_202406120637.zip',
-    large: '/home/rk/Documents/Android_log_parser (copy)/TestFiles/dumpState_S918BXXS8DYG5_202509231248.zip'
+    small: '/home/rk/Documents/Android_log_parser (copy)/tests/fixtures/bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57.zip',
+    medium: '/home/rk/Documents/Android_log_parser (copy)/tests/fixtures/dumpState_G996BXXSBGXDH_202406120637.zip',
+    large: '/home/rk/Documents/Android_log_parser (copy)/tests/fixtures/dumpState_S918BXXS8DYG5_202509231248.zip'
 };
 
 // Performance thresholds (in milliseconds)
@@ -46,7 +46,7 @@ async function waitForFileProcessing(page, timeout = 60000) {
 test.describe('File Loading Performance', () => {
     test.beforeEach(async ({ page }) => {
         test.setTimeout(180000); // 3 minutes
-        await page.goto('http://localhost:8080/index.html');
+        await page.goto('http://localhost:8080/src/index.html');
         await page.waitForLoadState('domcontentloaded');
     });
 
@@ -142,7 +142,7 @@ test.describe('File Loading Performance', () => {
 test.describe('Rendering Performance', () => {
     test.beforeEach(async ({ page }) => {
         test.setTimeout(180000);
-        await page.goto('http://localhost:8080/index.html');
+        await page.goto('http://localhost:8080/src/index.html');
         await page.waitForLoadState('domcontentloaded');
 
         // Load a file for rendering tests
@@ -206,7 +206,7 @@ test.describe('Rendering Performance', () => {
 test.describe('Quick Smoke Tests', () => {
     test.beforeEach(async ({ page }) => {
         test.setTimeout(180000);
-        await page.goto('http://localhost:8080/index.html');
+        await page.goto('http://localhost:8080/src/index.html');
         await page.waitForLoadState('domcontentloaded');
 
         if (fs.existsSync(TEST_FILES.small)) {
@@ -290,7 +290,7 @@ test.describe('Quick Smoke Tests', () => {
 test.describe('Scroll Restoration', () => {
     test.beforeEach(async ({ page }) => {
         test.setTimeout(180000);
-        await page.goto('http://localhost:8080/index.html');
+        await page.goto('http://localhost:8080/src/index.html');
         await page.waitForLoadState('domcontentloaded');
 
         if (fs.existsSync(TEST_FILES.small)) {
@@ -412,7 +412,7 @@ test.describe('Scroll Restoration', () => {
 test.describe('Memory Usage', () => {
     test.beforeEach(async ({ page }) => {
         test.setTimeout(180000);
-        await page.goto('http://localhost:8080/index.html');
+        await page.goto('http://localhost:8080/src/index.html');
         await page.waitForLoadState('domcontentloaded');
     });
 
@@ -572,7 +572,7 @@ test.describe('Memory Usage', () => {
 test.describe('Export Performance', () => {
     test.beforeEach(async ({ page }) => {
         test.setTimeout(180000);
-        await page.goto('http://localhost:8080/index.html');
+        await page.goto('http://localhost:8080/src/index.html');
         await page.waitForLoadState('domcontentloaded');
 
         if (fs.existsSync(TEST_FILES.small)) {
@@ -674,7 +674,7 @@ test.describe('Export Performance', () => {
 test.describe('Scroll Speed Benchmarks', () => {
     test.beforeEach(async ({ page }) => {
         test.setTimeout(180000);
-        await page.goto('http://localhost:8080/index.html');
+        await page.goto('http://localhost:8080/src/index.html');
         await page.waitForLoadState('domcontentloaded');
 
         if (fs.existsSync(TEST_FILES.small)) {

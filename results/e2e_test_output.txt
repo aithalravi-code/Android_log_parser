@@ -1,0 +1,1157 @@
+
+> android-log-parser@1.0.0 test:e2e
+> playwright test -c config/playwright.config.js
+
+
+Running 57 tests using 6 workers
+
+  ✘   6 [chromium] › tests/e2e/file-upload.spec.js:22:5 › UI Elements › should display initial UI correctly (1.3s)
+  ✘   2 [chromium] › tests/e2e/btsnoop_scroll.spec.js:3:1 › BTSnoop Scroll Restoration on Filter Clear (1.3s)
+  ✘   5 [chromium] › tests/e2e/file_collapse.spec.js:9:5 › File Collapsing › should collapse and expand file sections when clicking headers (1.8s)
+  -   1 [chromium] › tests/e2e/btsnoop_load_bug.spec.js:16:5 › BTSnoop Reload Behavior › Should reload BTSnoop logs when uploading ZIP while already on BTSnoop tab
+Initial Time Range: 2025-01-01T10:00 to 2025-09-24T09:37
+Min: 2025-01-01T10:00, Max: 2025-09-24T09:37
+  -   3 [chromium] › tests/e2e/btsnoop_copy.spec.js:12:5 › BTSnoop Layout & Interaction › BTSnoop Copy Action should copy entire row
+  ✘   7 [chromium] › tests/e2e/file-upload.spec.js:87:5 › Tab Navigation › should have connectivity tab (480ms)
+  ✘   8 [chromium] › tests/e2e/file-upload.spec.js:92:5 › Tab Navigation › should have stats tab (346ms)
+Testing specific log line filter: 09-24 09:37:31.974
+Testing Broadcast 6196 log line filter: 09-24 09:37:31.974
+  ✘  10 [chromium] › tests/e2e/file-upload.spec.js:37:5 › UI Elements › should have all required UI elements (652ms)
+  ✘   9 [chromium] › tests/e2e/file-upload.spec.js:51:5 › UI Elements › should load page within 3 seconds (682ms)
+  ✘  11 [chromium] › tests/e2e/file-upload.spec.js:70:5 › Tab Navigation › should switch between tabs (496ms)
+  ✘  12 [chromium] › tests/e2e/file-upload.spec.js:104:5 › Filter Controls › should have log level filter buttons (511ms)
+  ✘  13 [chromium] › tests/e2e/file-upload.spec.js:115:5 › Filter Controls › should have AND/OR logic toggle (522ms)
+  ✘  14 [chromium] › tests/e2e/file-upload.spec.js:123:5 › Filter Controls › should toggle between AND/OR logic (725ms)
+  ✘  15 [chromium] › tests/e2e/file-upload.spec.js:144:5 › Filter Controls › should have search input (690ms)
+  ✘  16 [chromium] › tests/e2e/file-upload.spec.js:161:5 › Performance Tracker › should have performance tracker available in console (603ms)
+  ✘  17 [chromium] › tests/e2e/file-upload.spec.js:179:5 › Accessibility › should be keyboard navigable (683ms)
+  ✘  18 [chromium] › tests/e2e/file-upload.spec.js:193:5 › Accessibility › should have proper document title (635ms)
+[Browser Console] log: [Init] Cleared old data.
+  -  19 [chromium] › tests/e2e/reproduce_issue.spec.js:20:5 › BTSnoop Scroll Restoration Reproduction › Reproduce scroll jumping issue when changing filters with selected packet
+  ✘   4 [chromium] › tests/e2e/datetime_filter.spec.js:9:5 › DateTime Filter › should filter logs using date picker inputs (11.9s)
+[Browser] [Init] Cleared old data.
+  -  21 [firefox] › tests/e2e/btsnoop_load_bug.spec.js:16:5 › BTSnoop Reload Behavior › Should reload BTSnoop logs when uploading ZIP while already on BTSnoop tab
+[Browser Log] [Init] Cleared old data.
+  -  20 [firefox] › tests/e2e/btsnoop_copy.spec.js:12:5 › BTSnoop Layout & Interaction › BTSnoop Copy Action should copy entire row
+  ✘  26 [firefox] › tests/e2e/file-upload.spec.js:37:5 › UI Elements › should have all required UI elements (1.4s)
+Initial Time Range: 2025-01-01T10:00 to 2025-09-24T09:37
+Min: 2025-01-01T10:00, Max: 2025-09-24T09:37
+  ✘  27 [firefox] › tests/e2e/file-upload.spec.js:51:5 › UI Elements › should load page within 3 seconds (2.0s)
+  ✘  22 [firefox] › tests/e2e/btsnoop_scroll.spec.js:3:1 › BTSnoop Scroll Restoration on Filter Clear (4.4s)
+Testing specific log line filter: 09-24 09:37:31.974
+Testing Broadcast 6196 log line filter: 09-24 09:37:31.974
+  ✘  25 [firefox] › tests/e2e/file-upload.spec.js:22:5 › UI Elements › should display initial UI correctly (4.3s)
+  ✘  24 [firefox] › tests/e2e/file_collapse.spec.js:9:5 › File Collapsing › should collapse and expand file sections when clicking headers (4.0s)
+  ✘  28 [firefox] › tests/e2e/file-upload.spec.js:70:5 › Tab Navigation › should switch between tabs (2.8s)
+  ✘  29 [firefox] › tests/e2e/file-upload.spec.js:87:5 › Tab Navigation › should have connectivity tab (2.8s)
+  ✘  30 [firefox] › tests/e2e/file-upload.spec.js:92:5 › Tab Navigation › should have stats tab (3.1s)
+  ✘  23 [firefox] › tests/e2e/datetime_filter.spec.js:9:5 › DateTime Filter › should filter logs using date picker inputs (15.5s)
+  ✘  31 [firefox] › tests/e2e/file-upload.spec.js:104:5 › Filter Controls › should have log level filter buttons (3.1s)
+  ✘  32 [firefox] › tests/e2e/file-upload.spec.js:115:5 › Filter Controls › should have AND/OR logic toggle (3.1s)
+  ✘  33 [firefox] › tests/e2e/file-upload.spec.js:123:5 › Filter Controls › should toggle between AND/OR logic (3.1s)
+  ✘  34 [firefox] › tests/e2e/file-upload.spec.js:144:5 › Filter Controls › should have search input (3.2s)
+  ✘  35 [firefox] › tests/e2e/file-upload.spec.js:161:5 › Performance Tracker › should have performance tracker available in console (3.3s)
+  ✘  37 [firefox] › tests/e2e/file-upload.spec.js:193:5 › Accessibility › should have proper document title (3.4s)
+  ✘  36 [firefox] › tests/e2e/file-upload.spec.js:179:5 › Accessibility › should be keyboard navigable (3.7s)
+[Browser Console] log: [Init] Cleared old data.
+  -  38 [firefox] › tests/e2e/reproduce_issue.spec.js:20:5 › BTSnoop Scroll Restoration Reproduction › Reproduce scroll jumping issue when changing filters with selected packet
+  ✘  41 [webkit] › tests/e2e/btsnoop_scroll.spec.js:3:1 › BTSnoop Scroll Restoration on Filter Clear (1.3s)
+  -  39 [webkit] › tests/e2e/btsnoop_copy.spec.js:12:5 › BTSnoop Layout & Interaction › BTSnoop Copy Action should copy entire row
+  -  40 [webkit] › tests/e2e/btsnoop_load_bug.spec.js:16:5 › BTSnoop Reload Behavior › Should reload BTSnoop logs when uploading ZIP while already on BTSnoop tab
+  ✘  43 [webkit] › tests/e2e/file-upload.spec.js:51:5 › UI Elements › should load page within 3 seconds (1.4s)
+  ✘  44 [webkit] › tests/e2e/file-upload.spec.js:70:5 › Tab Navigation › should switch between tabs (1.3s)
+  ✘  45 [webkit] › tests/e2e/file_collapse.spec.js:9:5 › File Collapsing › should collapse and expand file sections when clicking headers (2.1s)
+  ✘  46 [webkit] › tests/e2e/file-upload.spec.js:37:5 › UI Elements › should have all required UI elements (973ms)
+  ✘  47 [webkit] › tests/e2e/file-upload.spec.js:22:5 › UI Elements › should display initial UI correctly (988ms)
+  ✘  48 [webkit] › tests/e2e/file-upload.spec.js:87:5 › Tab Navigation › should have connectivity tab (941ms)
+  ✘  49 [webkit] › tests/e2e/file-upload.spec.js:92:5 › Tab Navigation › should have stats tab (1.0s)
+  ✘  50 [webkit] › tests/e2e/file-upload.spec.js:104:5 › Filter Controls › should have log level filter buttons (964ms)
+  ✘  51 [webkit] › tests/e2e/file-upload.spec.js:123:5 › Filter Controls › should toggle between AND/OR logic (1.0s)
+  ✘  52 [webkit] › tests/e2e/file-upload.spec.js:115:5 › Filter Controls › should have AND/OR logic toggle (970ms)
+  ✘  54 [webkit] › tests/e2e/file-upload.spec.js:161:5 › Performance Tracker › should have performance tracker available in console (935ms)
+  ✘  53 [webkit] › tests/e2e/file-upload.spec.js:144:5 › Filter Controls › should have search input (983ms)
+  ✘  56 [webkit] › tests/e2e/file-upload.spec.js:179:5 › Accessibility › should be keyboard navigable (841ms)
+  ✘  57 [webkit] › tests/e2e/file-upload.spec.js:193:5 › Accessibility › should have proper document title (811ms)
+[Browser Console] log: [Init] Cleared old data.
+  -  55 [webkit] › tests/e2e/reproduce_issue.spec.js:20:5 › BTSnoop Scroll Restoration Reproduction › Reproduce scroll jumping issue when changing filters with selected packet
+  ✘  42 [webkit] › tests/e2e/datetime_filter.spec.js:9:5 › DateTime Filter › should filter logs using date picker inputs (12.8s)
+
+
+  1) [chromium] › tests/e2e/btsnoop_scroll.spec.js:3:1 › BTSnoop Scroll Restoration on Filter Clear 
+
+    Error: page.goto: net::ERR_FILE_NOT_FOUND at file:///home/rk/Documents/Android_log_parser%20(copy)/index.html
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/btsnoop_scroll.spec.js:5:16)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:15)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:22)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › tests/e2e/datetime_filter.spec.js:9:5 › DateTime Filter › should filter logs using date picker inputs 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('.log-line').filter({ hasText: 'Broadcast 6196' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('.log-line').filter({ hasText: 'Broadcast 6196' })[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/datetime_filter.spec.js:108:37)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/datetime_filter-DateTime-F-007a7-gs-using-date-picker-inputs-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/datetime_filter-DateTime-F-007a7-gs-using-date-picker-inputs-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/datetime_filter-DateTime-F-007a7-gs-using-date-picker-inputs-chromium/error-context.md
+
+  3) [chromium] › tests/e2e/file_collapse.spec.js:9:5 › File Collapsing › should collapse and expand file sections when clicking headers 
+
+    Error: ENOENT: no such file or directory, stat '/home/rk/Documents/Android_log_parser (copy)/test-data/file1.txt'
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file_collapse-File-Collaps-c2fcf-tions-when-clicking-headers-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file_collapse-File-Collaps-c2fcf-tions-when-clicking-headers-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/file_collapse-File-Collaps-c2fcf-tions-when-clicking-headers-chromium/error-context.md
+
+  4) [chromium] › tests/e2e/file-upload.spec.js:22:5 › UI Elements › should display initial UI correctly 
+
+    Error: page.goto: net::ERR_FILE_NOT_FOUND at file:///home/rk/Documents/Android_log_parser%20(copy)/index.html
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:18:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-UI-Elements-should-display-initial-UI-correctly-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-UI-Elements-should-display-initial-UI-correctly-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [chromium] › tests/e2e/file-upload.spec.js:37:5 › UI Elements › should have all required UI elements 
+
+    Error: page.goto: net::ERR_FILE_NOT_FOUND at file:///home/rk/Documents/Android_log_parser%20(copy)/index.html
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:18:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-UI-Elements-should-have-all-required-UI-elements-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-UI-Elements-should-have-all-required-UI-elements-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [chromium] › tests/e2e/file-upload.spec.js:51:5 › UI Elements › should load page within 3 seconds 
+
+    Error: page.goto: net::ERR_FILE_NOT_FOUND at file:///home/rk/Documents/Android_log_parser%20(copy)/index.html
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:18:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-UI-Elements-should-load-page-within-3-seconds-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-UI-Elements-should-load-page-within-3-seconds-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  7) [chromium] › tests/e2e/file-upload.spec.js:70:5 › Tab Navigation › should switch between tabs ─
+
+    Error: page.goto: net::ERR_FILE_NOT_FOUND at file:///home/rk/Documents/Android_log_parser%20(copy)/index.html
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:66:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Tab-Navigation-should-switch-between-tabs-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Tab-Navigation-should-switch-between-tabs-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8) [chromium] › tests/e2e/file-upload.spec.js:87:5 › Tab Navigation › should have connectivity tab 
+
+    Error: page.goto: net::ERR_FILE_NOT_FOUND at file:///home/rk/Documents/Android_log_parser%20(copy)/index.html
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:66:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Tab-Navigation-should-have-connectivity-tab-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Tab-Navigation-should-have-connectivity-tab-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  9) [chromium] › tests/e2e/file-upload.spec.js:92:5 › Tab Navigation › should have stats tab ──────
+
+    Error: page.goto: net::ERR_FILE_NOT_FOUND at file:///home/rk/Documents/Android_log_parser%20(copy)/index.html
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:66:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Tab-Navigation-should-have-stats-tab-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Tab-Navigation-should-have-stats-tab-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  10) [chromium] › tests/e2e/file-upload.spec.js:104:5 › Filter Controls › should have log level filter buttons 
+
+    Error: page.goto: net::ERR_FILE_NOT_FOUND at file:///home/rk/Documents/Android_log_parser%20(copy)/index.html
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:100:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Control-db7e9-ve-log-level-filter-buttons-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Control-db7e9-ve-log-level-filter-buttons-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  11) [chromium] › tests/e2e/file-upload.spec.js:115:5 › Filter Controls › should have AND/OR logic toggle 
+
+    Error: page.goto: net::ERR_FILE_NOT_FOUND at file:///home/rk/Documents/Android_log_parser%20(copy)/index.html
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:100:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Controls-should-have-AND-OR-logic-toggle-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Controls-should-have-AND-OR-logic-toggle-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  12) [chromium] › tests/e2e/file-upload.spec.js:123:5 › Filter Controls › should toggle between AND/OR logic 
+
+    Error: page.goto: net::ERR_FILE_NOT_FOUND at file:///home/rk/Documents/Android_log_parser%20(copy)/index.html
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:100:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Control-e5426-toggle-between-AND-OR-logic-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Control-e5426-toggle-between-AND-OR-logic-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  13) [chromium] › tests/e2e/file-upload.spec.js:144:5 › Filter Controls › should have search input 
+
+    Error: page.goto: net::ERR_FILE_NOT_FOUND at file:///home/rk/Documents/Android_log_parser%20(copy)/index.html
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:100:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Controls-should-have-search-input-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Controls-should-have-search-input-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  14) [chromium] › tests/e2e/file-upload.spec.js:161:5 › Performance Tracker › should have performance tracker available in console 
+
+    Error: page.goto: net::ERR_FILE_NOT_FOUND at file:///home/rk/Documents/Android_log_parser%20(copy)/index.html
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:157:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Performance-Tr-f699e-racker-available-in-console-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Performance-Tr-f699e-racker-available-in-console-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  15) [chromium] › tests/e2e/file-upload.spec.js:179:5 › Accessibility › should be keyboard navigable 
+
+    Error: page.goto: net::ERR_FILE_NOT_FOUND at file:///home/rk/Documents/Android_log_parser%20(copy)/index.html
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:175:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Accessibility-should-be-keyboard-navigable-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Accessibility-should-be-keyboard-navigable-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  16) [chromium] › tests/e2e/file-upload.spec.js:193:5 › Accessibility › should have proper document title 
+
+    Error: page.goto: net::ERR_FILE_NOT_FOUND at file:///home/rk/Documents/Android_log_parser%20(copy)/index.html
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:175:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Accessibility-should-have-proper-document-title-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Accessibility-should-have-proper-document-title-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  17) [firefox] › tests/e2e/btsnoop_scroll.spec.js:3:1 › BTSnoop Scroll Restoration on Filter Clear 
+
+    Error: page.goto: NS_ERROR_FILE_NOT_FOUND
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/btsnoop_scroll.spec.js:5:16)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:15)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:22)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-firefox/error-context.md
+
+  18) [firefox] › tests/e2e/datetime_filter.spec.js:9:5 › DateTime Filter › should filter logs using date picker inputs 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('.log-line').filter({ hasText: 'Broadcast 6196' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('.log-line').filter({ hasText: 'Broadcast 6196' })[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/datetime_filter.spec.js:108:37)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/datetime_filter-DateTime-F-007a7-gs-using-date-picker-inputs-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/datetime_filter-DateTime-F-007a7-gs-using-date-picker-inputs-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/datetime_filter-DateTime-F-007a7-gs-using-date-picker-inputs-firefox/error-context.md
+
+  19) [firefox] › tests/e2e/file_collapse.spec.js:9:5 › File Collapsing › should collapse and expand file sections when clicking headers 
+
+    Error: ENOENT: no such file or directory, stat '/home/rk/Documents/Android_log_parser (copy)/test-data/file1.txt'
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file_collapse-File-Collaps-c2fcf-tions-when-clicking-headers-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file_collapse-File-Collaps-c2fcf-tions-when-clicking-headers-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/file_collapse-File-Collaps-c2fcf-tions-when-clicking-headers-firefox/error-context.md
+
+  20) [firefox] › tests/e2e/file-upload.spec.js:22:5 › UI Elements › should display initial UI correctly 
+
+    Error: page.goto: NS_ERROR_FILE_NOT_FOUND
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:18:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-UI-Elements-should-display-initial-UI-correctly-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-UI-Elements-should-display-initial-UI-correctly-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/file-upload-UI-Elements-should-display-initial-UI-correctly-firefox/error-context.md
+
+  21) [firefox] › tests/e2e/file-upload.spec.js:37:5 › UI Elements › should have all required UI elements 
+
+    Error: page.goto: NS_ERROR_FILE_NOT_FOUND
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:18:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-UI-Elements-should-have-all-required-UI-elements-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-UI-Elements-should-have-all-required-UI-elements-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/file-upload-UI-Elements-should-have-all-required-UI-elements-firefox/error-context.md
+
+  22) [firefox] › tests/e2e/file-upload.spec.js:51:5 › UI Elements › should load page within 3 seconds 
+
+    Error: page.goto: NS_ERROR_FILE_NOT_FOUND
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:18:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-UI-Elements-should-load-page-within-3-seconds-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-UI-Elements-should-load-page-within-3-seconds-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/file-upload-UI-Elements-should-load-page-within-3-seconds-firefox/error-context.md
+
+  23) [firefox] › tests/e2e/file-upload.spec.js:70:5 › Tab Navigation › should switch between tabs ─
+
+    Error: page.goto: NS_ERROR_FILE_NOT_FOUND
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:66:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Tab-Navigation-should-switch-between-tabs-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Tab-Navigation-should-switch-between-tabs-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/file-upload-Tab-Navigation-should-switch-between-tabs-firefox/error-context.md
+
+  24) [firefox] › tests/e2e/file-upload.spec.js:87:5 › Tab Navigation › should have connectivity tab 
+
+    Error: page.goto: NS_ERROR_FILE_NOT_FOUND
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:66:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Tab-Navigation-should-have-connectivity-tab-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Tab-Navigation-should-have-connectivity-tab-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/file-upload-Tab-Navigation-should-have-connectivity-tab-firefox/error-context.md
+
+  25) [firefox] › tests/e2e/file-upload.spec.js:92:5 › Tab Navigation › should have stats tab ──────
+
+    Error: page.goto: NS_ERROR_FILE_NOT_FOUND
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:66:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Tab-Navigation-should-have-stats-tab-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Tab-Navigation-should-have-stats-tab-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/file-upload-Tab-Navigation-should-have-stats-tab-firefox/error-context.md
+
+  26) [firefox] › tests/e2e/file-upload.spec.js:104:5 › Filter Controls › should have log level filter buttons 
+
+    Error: page.goto: NS_ERROR_FILE_NOT_FOUND
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:100:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Control-db7e9-ve-log-level-filter-buttons-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Control-db7e9-ve-log-level-filter-buttons-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/file-upload-Filter-Control-db7e9-ve-log-level-filter-buttons-firefox/error-context.md
+
+  27) [firefox] › tests/e2e/file-upload.spec.js:115:5 › Filter Controls › should have AND/OR logic toggle 
+
+    Error: page.goto: NS_ERROR_FILE_NOT_FOUND
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:100:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Controls-should-have-AND-OR-logic-toggle-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Controls-should-have-AND-OR-logic-toggle-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/file-upload-Filter-Controls-should-have-AND-OR-logic-toggle-firefox/error-context.md
+
+  28) [firefox] › tests/e2e/file-upload.spec.js:123:5 › Filter Controls › should toggle between AND/OR logic 
+
+    Error: page.goto: NS_ERROR_FILE_NOT_FOUND
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:100:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Control-e5426-toggle-between-AND-OR-logic-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Control-e5426-toggle-between-AND-OR-logic-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/file-upload-Filter-Control-e5426-toggle-between-AND-OR-logic-firefox/error-context.md
+
+  29) [firefox] › tests/e2e/file-upload.spec.js:144:5 › Filter Controls › should have search input ─
+
+    Error: page.goto: NS_ERROR_FILE_NOT_FOUND
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:100:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Controls-should-have-search-input-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Controls-should-have-search-input-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/file-upload-Filter-Controls-should-have-search-input-firefox/error-context.md
+
+  30) [firefox] › tests/e2e/file-upload.spec.js:161:5 › Performance Tracker › should have performance tracker available in console 
+
+    Error: page.goto: NS_ERROR_FILE_NOT_FOUND
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:157:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Performance-Tr-f699e-racker-available-in-console-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Performance-Tr-f699e-racker-available-in-console-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/file-upload-Performance-Tr-f699e-racker-available-in-console-firefox/error-context.md
+
+  31) [firefox] › tests/e2e/file-upload.spec.js:179:5 › Accessibility › should be keyboard navigable 
+
+    Error: page.goto: NS_ERROR_FILE_NOT_FOUND
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:175:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Accessibility-should-be-keyboard-navigable-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Accessibility-should-be-keyboard-navigable-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/file-upload-Accessibility-should-be-keyboard-navigable-firefox/error-context.md
+
+  32) [firefox] › tests/e2e/file-upload.spec.js:193:5 › Accessibility › should have proper document title 
+
+    Error: page.goto: NS_ERROR_FILE_NOT_FOUND
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:175:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Accessibility-should-have-proper-document-title-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Accessibility-should-have-proper-document-title-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/file-upload-Accessibility-should-have-proper-document-title-firefox/error-context.md
+
+  33) [webkit] › tests/e2e/btsnoop_scroll.spec.js:3:1 › BTSnoop Scroll Restoration on Filter Clear ─
+
+    Error: page.goto: Error opening file /home/rk/Documents/Android_log_parser (copy)/index.html: No such file or directory
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/btsnoop_scroll.spec.js:5:16)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:15)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:22)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/btsnoop_scroll-BTSnoop-Scroll-Restoration-on-Filter-Clear-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  34) [webkit] › tests/e2e/datetime_filter.spec.js:9:5 › DateTime Filter › should filter logs using date picker inputs 
+
+    TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('.log-line') to be visible[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/datetime_filter.spec.js:17:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/datetime_filter-DateTime-F-007a7-gs-using-date-picker-inputs-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/datetime_filter-DateTime-F-007a7-gs-using-date-picker-inputs-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/datetime_filter-DateTime-F-007a7-gs-using-date-picker-inputs-webkit/error-context.md
+
+  35) [webkit] › tests/e2e/file_collapse.spec.js:9:5 › File Collapsing › should collapse and expand file sections when clicking headers 
+
+    Error: ENOENT: no such file or directory, stat '/home/rk/Documents/Android_log_parser (copy)/test-data/file1.txt'
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file_collapse-File-Collaps-c2fcf-tions-when-clicking-headers-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file_collapse-File-Collaps-c2fcf-tions-when-clicking-headers-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: results/test-results/artifacts/file_collapse-File-Collaps-c2fcf-tions-when-clicking-headers-webkit/error-context.md
+
+  36) [webkit] › tests/e2e/file-upload.spec.js:22:5 › UI Elements › should display initial UI correctly 
+
+    Error: page.goto: Error opening file /home/rk/Documents/Android_log_parser (copy)/index.html: No such file or directory
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:18:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-UI-Elements-should-display-initial-UI-correctly-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-UI-Elements-should-display-initial-UI-correctly-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  37) [webkit] › tests/e2e/file-upload.spec.js:37:5 › UI Elements › should have all required UI elements 
+
+    Error: page.goto: Error opening file /home/rk/Documents/Android_log_parser (copy)/index.html: No such file or directory
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:18:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-UI-Elements-should-have-all-required-UI-elements-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-UI-Elements-should-have-all-required-UI-elements-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  38) [webkit] › tests/e2e/file-upload.spec.js:51:5 › UI Elements › should load page within 3 seconds 
+
+    Error: page.goto: Error opening file /home/rk/Documents/Android_log_parser (copy)/index.html: No such file or directory
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:18:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-UI-Elements-should-load-page-within-3-seconds-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-UI-Elements-should-load-page-within-3-seconds-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  39) [webkit] › tests/e2e/file-upload.spec.js:70:5 › Tab Navigation › should switch between tabs ──
+
+    Error: page.goto: Error opening file /home/rk/Documents/Android_log_parser (copy)/index.html: No such file or directory
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:66:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Tab-Navigation-should-switch-between-tabs-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Tab-Navigation-should-switch-between-tabs-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  40) [webkit] › tests/e2e/file-upload.spec.js:87:5 › Tab Navigation › should have connectivity tab 
+
+    Error: page.goto: Error opening file /home/rk/Documents/Android_log_parser (copy)/index.html: No such file or directory
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:66:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Tab-Navigation-should-have-connectivity-tab-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Tab-Navigation-should-have-connectivity-tab-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  41) [webkit] › tests/e2e/file-upload.spec.js:92:5 › Tab Navigation › should have stats tab ───────
+
+    Error: page.goto: Error opening file /home/rk/Documents/Android_log_parser (copy)/index.html: No such file or directory
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:66:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Tab-Navigation-should-have-stats-tab-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Tab-Navigation-should-have-stats-tab-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  42) [webkit] › tests/e2e/file-upload.spec.js:104:5 › Filter Controls › should have log level filter buttons 
+
+    Error: page.goto: Error opening file /home/rk/Documents/Android_log_parser (copy)/index.html: No such file or directory
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:100:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Control-db7e9-ve-log-level-filter-buttons-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Control-db7e9-ve-log-level-filter-buttons-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  43) [webkit] › tests/e2e/file-upload.spec.js:115:5 › Filter Controls › should have AND/OR logic toggle 
+
+    Error: page.goto: Error opening file /home/rk/Documents/Android_log_parser (copy)/index.html: No such file or directory
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:100:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Controls-should-have-AND-OR-logic-toggle-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Controls-should-have-AND-OR-logic-toggle-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  44) [webkit] › tests/e2e/file-upload.spec.js:123:5 › Filter Controls › should toggle between AND/OR logic 
+
+    Error: page.goto: Error opening file /home/rk/Documents/Android_log_parser (copy)/index.html: No such file or directory
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:100:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Control-e5426-toggle-between-AND-OR-logic-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Control-e5426-toggle-between-AND-OR-logic-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  45) [webkit] › tests/e2e/file-upload.spec.js:144:5 › Filter Controls › should have search input ──
+
+    Error: page.goto: Error opening file /home/rk/Documents/Android_log_parser (copy)/index.html: No such file or directory
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:100:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Controls-should-have-search-input-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Filter-Controls-should-have-search-input-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  46) [webkit] › tests/e2e/file-upload.spec.js:161:5 › Performance Tracker › should have performance tracker available in console 
+
+    Error: page.goto: Error opening file /home/rk/Documents/Android_log_parser (copy)/index.html: No such file or directory
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:157:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Performance-Tr-f699e-racker-available-in-console-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Performance-Tr-f699e-racker-available-in-console-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  47) [webkit] › tests/e2e/file-upload.spec.js:179:5 › Accessibility › should be keyboard navigable 
+
+    Error: page.goto: Error opening file /home/rk/Documents/Android_log_parser (copy)/index.html: No such file or directory
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:175:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Accessibility-should-be-keyboard-navigable-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Accessibility-should-be-keyboard-navigable-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  48) [webkit] › tests/e2e/file-upload.spec.js:193:5 › Accessibility › should have proper document title 
+
+    Error: page.goto: Error opening file /home/rk/Documents/Android_log_parser (copy)/index.html: No such file or directory
+    Call log:
+    [2m  - navigating to "file:///home/rk/Documents/Android_log_parser%20(copy)/index.html", waiting until "load"[22m
+
+        at /home/rk/Documents/Android_log_parser (copy)/tests/e2e/file-upload.spec.js:175:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/fixtureRunner.js:228:52)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:17)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:478:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:314:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:310:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Accessibility-should-have-proper-document-title-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    results/test-results/artifacts/file-upload-Accessibility-should-have-proper-document-title-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  48 failed
+    [chromium] › tests/e2e/btsnoop_scroll.spec.js:3:1 › BTSnoop Scroll Restoration on Filter Clear ─
+    [chromium] › tests/e2e/datetime_filter.spec.js:9:5 › DateTime Filter › should filter logs using date picker inputs 
+    [chromium] › tests/e2e/file_collapse.spec.js:9:5 › File Collapsing › should collapse and expand file sections when clicking headers 
+    [chromium] › tests/e2e/file-upload.spec.js:22:5 › UI Elements › should display initial UI correctly 
+    [chromium] › tests/e2e/file-upload.spec.js:37:5 › UI Elements › should have all required UI elements 
+    [chromium] › tests/e2e/file-upload.spec.js:51:5 › UI Elements › should load page within 3 seconds 
+    [chromium] › tests/e2e/file-upload.spec.js:70:5 › Tab Navigation › should switch between tabs ──
+    [chromium] › tests/e2e/file-upload.spec.js:87:5 › Tab Navigation › should have connectivity tab 
+    [chromium] › tests/e2e/file-upload.spec.js:92:5 › Tab Navigation › should have stats tab ───────
+    [chromium] › tests/e2e/file-upload.spec.js:104:5 › Filter Controls › should have log level filter buttons 
+    [chromium] › tests/e2e/file-upload.spec.js:115:5 › Filter Controls › should have AND/OR logic toggle 
+    [chromium] › tests/e2e/file-upload.spec.js:123:5 › Filter Controls › should toggle between AND/OR logic 
+    [chromium] › tests/e2e/file-upload.spec.js:144:5 › Filter Controls › should have search input ──
+    [chromium] › tests/e2e/file-upload.spec.js:161:5 › Performance Tracker › should have performance tracker available in console 
+    [chromium] › tests/e2e/file-upload.spec.js:179:5 › Accessibility › should be keyboard navigable 
+    [chromium] › tests/e2e/file-upload.spec.js:193:5 › Accessibility › should have proper document title 
+    [firefox] › tests/e2e/btsnoop_scroll.spec.js:3:1 › BTSnoop Scroll Restoration on Filter Clear ──
+    [firefox] › tests/e2e/datetime_filter.spec.js:9:5 › DateTime Filter › should filter logs using date picker inputs 
+    [firefox] › tests/e2e/file_collapse.spec.js:9:5 › File Collapsing › should collapse and expand file sections when clicking headers 
+    [firefox] › tests/e2e/file-upload.spec.js:22:5 › UI Elements › should display initial UI correctly 
+    [firefox] › tests/e2e/file-upload.spec.js:37:5 › UI Elements › should have all required UI elements 
+    [firefox] › tests/e2e/file-upload.spec.js:51:5 › UI Elements › should load page within 3 seconds 
+    [firefox] › tests/e2e/file-upload.spec.js:70:5 › Tab Navigation › should switch between tabs ───
+    [firefox] › tests/e2e/file-upload.spec.js:87:5 › Tab Navigation › should have connectivity tab ─
+    [firefox] › tests/e2e/file-upload.spec.js:92:5 › Tab Navigation › should have stats tab ────────
+    [firefox] › tests/e2e/file-upload.spec.js:104:5 › Filter Controls › should have log level filter buttons 
+    [firefox] › tests/e2e/file-upload.spec.js:115:5 › Filter Controls › should have AND/OR logic toggle 
+    [firefox] › tests/e2e/file-upload.spec.js:123:5 › Filter Controls › should toggle between AND/OR logic 
+    [firefox] › tests/e2e/file-upload.spec.js:144:5 › Filter Controls › should have search input ───
+    [firefox] › tests/e2e/file-upload.spec.js:161:5 › Performance Tracker › should have performance tracker available in console 
+    [firefox] › tests/e2e/file-upload.spec.js:179:5 › Accessibility › should be keyboard navigable ─
+    [firefox] › tests/e2e/file-upload.spec.js:193:5 › Accessibility › should have proper document title 
+    [webkit] › tests/e2e/btsnoop_scroll.spec.js:3:1 › BTSnoop Scroll Restoration on Filter Clear ───
+    [webkit] › tests/e2e/datetime_filter.spec.js:9:5 › DateTime Filter › should filter logs using date picker inputs 
+    [webkit] › tests/e2e/file_collapse.spec.js:9:5 › File Collapsing › should collapse and expand file sections when clicking headers 
+    [webkit] › tests/e2e/file-upload.spec.js:22:5 › UI Elements › should display initial UI correctly 
+    [webkit] › tests/e2e/file-upload.spec.js:37:5 › UI Elements › should have all required UI elements 
+    [webkit] › tests/e2e/file-upload.spec.js:51:5 › UI Elements › should load page within 3 seconds 
+    [webkit] › tests/e2e/file-upload.spec.js:70:5 › Tab Navigation › should switch between tabs ────
+    [webkit] › tests/e2e/file-upload.spec.js:87:5 › Tab Navigation › should have connectivity tab ──
+    [webkit] › tests/e2e/file-upload.spec.js:92:5 › Tab Navigation › should have stats tab ─────────
+    [webkit] › tests/e2e/file-upload.spec.js:104:5 › Filter Controls › should have log level filter buttons 
+    [webkit] › tests/e2e/file-upload.spec.js:115:5 › Filter Controls › should have AND/OR logic toggle 
+    [webkit] › tests/e2e/file-upload.spec.js:123:5 › Filter Controls › should toggle between AND/OR logic 
+    [webkit] › tests/e2e/file-upload.spec.js:144:5 › Filter Controls › should have search input ────
+    [webkit] › tests/e2e/file-upload.spec.js:161:5 › Performance Tracker › should have performance tracker available in console 
+    [webkit] › tests/e2e/file-upload.spec.js:179:5 › Accessibility › should be keyboard navigable ──
+    [webkit] › tests/e2e/file-upload.spec.js:193:5 › Accessibility › should have proper document title 
+  9 skipped
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report results/playwright-report[39m
+[36m[39m
