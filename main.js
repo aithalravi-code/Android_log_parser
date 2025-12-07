@@ -2362,19 +2362,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // When input fields are changed, update the slider
         [startTimeInput, endTimeInput].forEach(input => {
-            input.addEventListener('change', () => {
+            input.addEventListener('change', async () => {
                 isUpdatingFromInput = true;
                 isTimeFilterActive = true;
                 const startVal = startTimeInput.value ? new Date(startTimeInput.value).getTime() : minTime;
                 const endVal = endTimeInput.value ? new Date(endTimeInput.value).getTime() : maxTime;
                 timeRangeSlider.noUiSlider.set([startVal, endVal]);
                 isUpdatingFromInput = false;
+                await refreshActiveTab(); // Apply filters after input change
             });
         });
     }
 
     function dateToISO(date) {
-        return date.toISOString().substring(0, 16);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
     }
 
     function logcatToISO(logcatTimestamp) {
