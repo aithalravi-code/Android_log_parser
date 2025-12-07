@@ -1,0 +1,55 @@
+{
+    "name": "android-log-parser",
+    "version": "1.0.0",
+    "description": "Advanced Android Log & BTSnoop Analyzer with automated testing",
+    "type": "module",
+    "scripts": {
+        "test": "npm run test:unit && npm run test:e2e",
+        "test:unit": "vitest run --coverage",
+        "test:unit:watch": "vitest",
+        "test:unit:ui": "vitest --ui",
+        "test:e2e": "playwright test tests/e2e",
+        "test:e2e:ui": "playwright test tests/e2e --ui",
+        "test:e2e:headed": "playwright test tests/e2e --headed",
+        "test:e2e:debug": "playwright test tests/e2e --debug",
+        "test:integration": "playwright test tests/integration",
+        "test:perf": "playwright test tests/performance --reporter=json",
+        "test:perf:real": "playwright test tests/integration/performance.spec.js",
+        "test:all": "npm run test:unit && npm run test:e2e && npm run test:integration",
+        "coverage": "vitest run --coverage && open coverage/index.html",
+        "report:allure": "allure generate allure-results --clean && allure open",
+        "report:playwright": "playwright show-report",
+        "perf:export": "node scripts/export-performance-metrics.js",
+        "install:browsers": "playwright install --with-deps",
+        "clean": "rm -rf coverage test-results playwright-report allure-results allure-report",
+        "lint": "eslint .",
+        "format": "prettier --write ."
+    },
+    "keywords": [
+        "android",
+        "log-parser",
+        "btsnoop",
+        "bluetooth",
+        "debugging",
+        "testing"
+    ],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "@playwright/test": "^1.40.0",
+        "@vitest/coverage-v8": "^1.0.0",
+        "@vitest/ui": "^1.0.0",
+        "allure-commandline": "^2.25.0",
+        "allure-playwright": "^2.15.0",
+        "eslint": "^8.55.0",
+        "fake-indexeddb": "^5.0.0",
+        "jsdom": "^23.0.0",
+        "prettier": "^3.1.0",
+        "vitest": "^1.0.0"
+    },
+    "dependencies": {},
+    "engines": {
+        "node": ">=18.0.0",
+        "npm": ">=9.0.0"
+    }
+}

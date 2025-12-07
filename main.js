@@ -309,6 +309,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedBtsnoopPacket = null; // Track the user-selected BTSnoop packet
     let currentBtsnoopGridTemplate = null; // Store the current grid column layout
     let localBtAddress = 'Host'; // Store the local device's BT address.
+    let btsnoopAnchorPacketNumber = null; // Track the packet number to restore scroll position
+    let isProgrammaticBtsnoopScroll = false; // Flag to prevent clearing anchor during programmatic scrolls
 
     // --- OPTIMIZATION Phase 1: Filter State Tracking & Caching ---
     let filterStateHash = null;
@@ -990,7 +992,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         // Attach export listeners
         const exportLogsBtn = document.getElementById('exportLogsBtn');
-        if (exportLogsBtn) exportLogsBtn.addEventListener('click', () => handleExport(filteredLogLines, 'filtered_logs.txt'));
+        if (exportLogsBtn) exportLogsBtn.addEventListener('click', () => handleExport(filteredLogLines, 'filtered_logs.xlsx'));
 
         const exportBtsnoopXlsxBtn = document.getElementById('exportBtsnoopXlsxBtn');
         if (exportBtsnoopXlsxBtn) {
@@ -1000,7 +1002,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
         const exportConnectivityBtn = document.getElementById('exportConnectivityBtn');
-        if (exportConnectivityBtn) exportConnectivityBtn.addEventListener('click', () => handleExport(filteredConnectivityLogLines, 'connectivity_logs.txt'));
+        if (exportConnectivityBtn) exportConnectivityBtn.addEventListener('click', () => handleExport(filteredConnectivityLogLines, 'connectivity_logs.xlsx'));
 
         const exportAnalyticsBtn = document.getElementById('exportStatsBtn');
         if (exportAnalyticsBtn) {
@@ -1094,10 +1096,49 @@ document.addEventListener('DOMContentLoaded', () => {
         // Invalidate any currently running filter operations
         filterVersion++;
 
+        // Clear all log arrays - set to null first to help GC
+        originalLogLines = null;
+        filteredLogLines = null;
+        bleLogLines = null;
+        nfcLogLines = null;
+        dckLogLines = null;
+        uwbLogLines = null;
+        connectivityLogLines = null;
+        filteredConnectivityLogLines = null;
+        filteredBleLogLines = null;
+        filteredNfcLogLines = null;
+        filteredDckLogLines = null;
+        btsnoopPackets = null;
+        filteredBtsnoopPackets = null;
+        btsnoopConnectionEvents = null;
+        cccStatsData = null;
+
+        // Now reinitialize as empty arrays
         originalLogLines = [];
+        filteredLogLines = [];
+        bleLogLines = [];
+        nfcLogLines = [];
+        dckLogLines = [];
+        uwbLogLines = [];
+        connectivityLogLines = [];
+        filteredConnectivityLogLines = [];
+        filteredBleLogLines = [];
+        filteredNfcLogLines = [];
+        filteredDckLogLines = [];
+        btsnoopPackets = [];
+        filteredBtsnoopPackets = [];
+        btsnoopConnectionEvents = [];
+        cccStatsData = [];
+
+        // Clear other data structures
         filterKeywords = [];
-        liveSearchQuery = ''; // Reset live search query
-        searchInput.value = ''; // Clear the input field visually
+        logTags = [];
+        allAppVersions = [];
+        fileTasks = [];
+
+        // Clear search and filters
+        liveSearchQuery = '';
+        searchInput.value = '';
 
         // Clear time filters
         startTimeInput.value = '';
@@ -1112,47 +1153,42 @@ document.addEventListener('DOMContentLoaded', () => {
         activeLogLevels = new Set(['V', 'D', 'I', 'W', 'E']);
         logLevelButtons.forEach(btn => btn.classList.add('active'));
 
-        // Reset specialized log data
-        logTags = [];
-        bleLogLines = [];
+        // Clear maps and sets
         collapsedFileHeaders.clear();
-        filteredBleLogLines = [];
-        nfcLogLines = [];
-        filteredNfcLogLines = [];
-        dckLogLines = [];
-        filteredDckLogLines = [];
-        filteredDckLogLines = [];
-        localBtAddress = 'Host'; // Reset local address on clear.
         if (typeof btsnoopConnectionMap !== 'undefined') {
             btsnoopConnectionMap.clear();
-        } else {
-            btsnoopConnectionMap = new Map(); // Safety init
         }
-        btsnoopConnectionMap = new Map(); // Safety init
-
-        btsnoopPackets = [];
-        btsnoopConnectionEvents = [];
-        btsnoopConnectionEvents = [];
-        isBtsnoopProcessed = false; // FIX: Reset the processing flag.
-        allAppVersions = [];
+        btsnoopConnectionMap = new Map();
         activeBtsnoopFilters = new Set(['cmd', 'evt', 'acl', 'l2cap', 'smp', 'att']);
-        fileTasks = []; // Clear the list of discovered files
+
+        // Reset state flags
+        localBtAddress = 'Host';
+        isBtsnoopProcessed = false;
+        userAnchorLine = null;
+
+        // Clear UI tables
         if (bleKeysTable) bleKeysTable.innerHTML = '';
         if (appVersionsTable) appVersionsTable.innerHTML = '';
         if (accountsList) accountsList.innerHTML = '';
         if (deviceEventsTable) deviceEventsTable.innerHTML = '';
-        if (deviceEventsTable) deviceEventsTable.innerHTML = '';
-        renderFilterChips(); // Clear filter chips from the UI
-        userAnchorLine = null; // Clear the user-selected anchor
 
-        // Directly clear the log view instead of calling renderUI, which can cause race conditions.
-        filteredLogLines = [];
-        filteredConnectivityLogLines = []; // Clear connectivity lines
-        activeTechs = { ble: false, nfc: false, dck: true }; // Reset to default
+        // Clear filter chips
+        renderFilterChips();
+
+        // Clear connectivity state
+        activeTechs = { ble: false, nfc: false, dck: true, uwb: true };
+
+        // Clear log view
         logViewport.innerHTML = '';
         logSizer.style.height = '0px';
 
-        // OPTIMIZATION Phase 2: Reset lazy loading flags
+        // Clear connectivity view if it exists
+        const connectivityViewport = document.getElementById('connectivityLogViewport');
+        const connectivitySizer = document.getElementById('connectivityLogSizer');
+        if (connectivityViewport) connectivityViewport.innerHTML = '';
+        if (connectivitySizer) connectivitySizer.style.height = '0px';
+
+        // Reset lazy loading flags
         tabsLoaded = {
             logs: true,
             connectivity: false,
@@ -1161,9 +1197,13 @@ document.addEventListener('DOMContentLoaded', () => {
             stats: false
         };
 
-        if (clearStorage && db) { // Also clear the persisted data from IndexedDB
+        // Clear IndexedDB if requested
+        if (clearStorage && db) {
             await clearData();
         }
+
+        // Give browser a moment to process cleanup
+        await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     async function processFiles(files, fromModal = false) {
@@ -1809,9 +1849,14 @@ document.addEventListener('DOMContentLoaded', () => {
         renderBatteryPlot(consolidatedBatteryDataPoints);
         renderCccStats(finalCccMessages);
 
-        // The initial render is now handled by a direct call to applyFilters,
-        // which is the correct way to populate the log view for the first time.
-        applyFilters(true);
+        // Reset the processing flag BEFORE refreshing the active tab,
+        // otherwise applyFilters (called by refreshActiveTab) will abort.
+        isProcessing = false;
+
+        // Refresh the currently active tab. This ensures that if the user is on
+        // 'btsnoop' or 'connectivity' tabs, they find the data ready (e.g., lazy loading triggered).
+        // This replaces the hardcoded applyFilters(true).
+        await refreshActiveTab();
 
         // Auto-collapse left panel to maximize log viewing space
         if (leftPanel && panelToggleBtn && !leftPanel.classList.contains('collapsed')) {
@@ -1820,9 +1865,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('[UI] Auto-collapsed left panel after file loading');
         }
 
-        // Reset the processing flag now that everything is complete
         progressText.textContent = 'Complete!';
-        isProcessing = false;
     }
 
     /**
@@ -4221,6 +4264,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!btsnoopScrollListenerAttached && btsnoopLogContainer instanceof HTMLElement) {
             // FIX: Attach the correct virtual scroll listener.
             btsnoopLogContainer.addEventListener('scroll', () => {
+                // Clear the anchor when user manually scrolls
+                // This allows scroll restoration to work only when filters change
                 if (!window.btsnoopScrollFrame) {
                     window.btsnoopScrollFrame = requestAnimationFrame(() => {
                         renderBtsnoopVirtualLogs();
@@ -4230,6 +4275,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         const header = document.getElementById('btsnoopHeader');
                         if (header && header.firstChild) {
                             header.scrollLeft = btsnoopLogContainer.scrollLeft;
+                        }
+
+                        // Clear anchor after manual scroll (debounced)
+                        // But ONLY if this is not a programmatic scroll
+                        if (!isProgrammaticBtsnoopScroll) {
+                            clearTimeout(window.btsnoopAnchorClearTimer);
+                            window.btsnoopAnchorClearTimer = setTimeout(() => {
+                                btsnoopAnchorPacketNumber = null;
+                            }, 100);
                         }
                     });
                 }
@@ -4278,15 +4332,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- BTSnoop Log Processing ---
     async function processForBtsnoop() {
+        console.log('[BTSnoop Debug] processForBtsnoop called');
         return new Promise(async (resolve, reject) => {
             const exportXlsxBtn = document.getElementById('exportBtsnoopXlsxBtn');
 
             // FIX: Ensure the database is open before proceeding.
             if (!db) {
+                console.error('[BTSnoop Debug] DB not open');
                 return reject('DB not open');
             }
 
-            if (!btsnoopInitialView || !btsnoopContentView || !btsnoopFilterContainer) return reject('BTSnoop UI elements not found');
+            if (!btsnoopInitialView || !btsnoopContentView || !btsnoopFilterContainer) {
+                console.error('[BTSnoop Debug] UI elements missing', { btsnoopInitialView, btsnoopContentView, btsnoopFilterContainer });
+                return reject('BTSnoop UI elements not found');
+            }
 
             // Check if worker code has changed and invalidate cache
             const workerVersion = '2025-12-07-00:09';
@@ -4586,6 +4645,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         setupBtsnoopTab();
                         worker.terminate();
                         URL.revokeObjectURL(workerURL); // Clean up the blob URL
+                        resolve();
                     } else if (type === 'error') {
                         reject(new Error(`BTSnoop Worker Error: ${message}\n${stack}`));
                     }
@@ -4596,6 +4656,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     btsnoopInitialView.innerHTML = `<p>An unexpected error occurred during parsing: ${err.message}</p>`;
                     URL.revokeObjectURL(workerURL);
                     TimeTracker.stop('BTSnoop Processing');
+                    reject(err);
                 };
 
                 worker.postMessage({ fileBuffers, localBtAddress: localBtAddress }, fileBuffers);
@@ -4609,6 +4670,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     btsnoopProcessingPromise = null;
                 }
                 TimeTracker.stop('BTSnoop Processing');
+                reject(error);
             }
         });
     }
@@ -4695,19 +4757,39 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('[BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).');
         TimeTracker.start('BTSnoop Filtering');
 
-        // --- Scroll Restoration Logic ---
-        // 1. Find the anchor packet. Prioritize the selected packet.
-        let anchorPacket = selectedBtsnoopPacket;
-        // If no selected packet, or it's not in the current view, fall back to the top visible packet.
-        if (!anchorPacket && filteredBtsnoopPackets.length > 0 && btsnoopLogContainer.scrollTop > 0) {
-            const topVisibleIndex = Math.floor(btsnoopLogContainer.scrollTop / LINE_HEIGHT); // Approx
-            anchorPacket = filteredBtsnoopPackets[topVisibleIndex];
+        // --- LIVE Scroll Restoration Logic ---
+        // Step 1: Capture the current scroll anchor BEFORE filtering
+        // Priority: 1) Selected packet, 2) Top visible packet, 3) null
+        if (!btsnoopAnchorPacketNumber && btsnoopLogContainer && btsnoopLogContainer.scrollTop > 0) {
+            // Find the top visible packet in the CURRENT filtered list
+            const scrollTop = btsnoopLogContainer.scrollTop;
+
+            // Binary search to find the packet at scrollTop
+            let topVisibleIndex = 0;
+            if (btsnoopRowPositions && btsnoopRowPositions.length > 0) {
+                let low = 0, high = btsnoopRowPositions.length - 1;
+                while (low <= high) {
+                    const mid = (low + high) >>> 1;
+                    if (btsnoopRowPositions[mid] < scrollTop) {
+                        low = mid + 1;
+                    } else {
+                        high = mid - 1;
+                    }
+                }
+                topVisibleIndex = Math.max(0, Math.min(high, filteredBtsnoopPackets.length - 1));
+            }
+
+            if (filteredBtsnoopPackets[topVisibleIndex]) {
+                btsnoopAnchorPacketNumber = filteredBtsnoopPackets[topVisibleIndex].number;
+                console.log('[BTSnoop Scroll] Captured anchor packet:', btsnoopAnchorPacketNumber);
+            }
         }
 
-        // Store the anchor used for this render cycle
-        const currentAnchor = anchorPacket;
-
-        // --- End Scroll Restoration ---
+        // If we have a selected packet, always use it as the anchor
+        if (selectedBtsnoopPacket) {
+            btsnoopAnchorPacketNumber = selectedBtsnoopPacket.number;
+        }
+        // --- End Step 1 ---
 
         const columnFilters = Array.from(btsnoopColumnFilters)
             .map(input => ({
@@ -4734,26 +4816,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // --- Scroll Restoration Logic ---
-        // 2. Find the new index of the anchor and set the scroll position.
-        let newScrollTop = 0;
-        if (anchorPacket) {
-            const newAnchorIndex = filteredBtsnoopPackets.findIndex(p => p.number === anchorPacket.number);
-            if (newAnchorIndex !== -1) {
-                // FIX: Center the selected packet in the viewport
-                const containerHeight = btsnoopLogContainer.clientHeight;
-                // Scroll to selected packet (approximate position for variable heights)
-                const avgRowHeight = 40; // Estimate: 20px base + some wrapping
-                const centerOffset = Math.floor(containerHeight / 2);
-                newScrollTop = Math.max(0, (newAnchorIndex * avgRowHeight) - centerOffset);
-            } else if (selectedBtsnoopPacket) {
-                // If anchor not found but we have a selected packet, clear selection
-                selectedBtsnoopPacket = null;
-            }
-        }
-        // Store scroll position for later (after render)
-        // --- End Scroll Restoration ---
-
         // OPTIMIZATION Phase 3: Pre-calculate row positions for virtual scrolling
         // This moves O(N) calculation from scroll event (16ms) to filter event (once).
         btsnoopRowPositions = new Float32Array(filteredBtsnoopPackets.length); // Use TypedArray for memory efficiency
@@ -4769,7 +4831,89 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         TimeTracker.stop('BTSnoop Filtering');
-        renderBtsnoopVirtualLogs(); // Render the filtered results - scroll will happen inside
+
+        // Step 2: Calculate scroll position to restore anchor BEFORE rendering
+        let targetScrollTop = null;
+        let shouldCenterSelected = false;
+
+        // Step 2: Calculate target scroll position based on anchor
+        if (btsnoopAnchorPacketNumber !== null) {
+            // Find the index of the anchor packet in the filtered list
+            let foundPacketIndex = -1;
+
+            // Optimization: If we have many packets, linear scan is slow (100k packets -> 10ms).
+            // But acceptable for UI interaction.
+            for (let i = 0; i < filteredBtsnoopPackets.length; i++) {
+                if (filteredBtsnoopPackets[i].number === btsnoopAnchorPacketNumber) {
+                    foundPacketIndex = i;
+                    break;
+                }
+            }
+
+            if (foundPacketIndex !== -1) {
+                targetScrollTop = btsnoopRowPositions[foundPacketIndex];
+
+                // If this is the selected packet, we want to CENTER it
+                if (selectedBtsnoopPacket && btsnoopAnchorPacketNumber === selectedBtsnoopPacket.number) {
+                    const containerHeight = btsnoopLogContainer.clientHeight;
+                    // Center: target - (viewport/2) + (rowHeight/2)
+                    targetScrollTop = Math.max(0, targetScrollTop - (containerHeight / 2) + 10);
+                    shouldCenterSelected = true;
+                }
+            } else {
+                // Anchor packet no longer in filtered list. Reset anchor.
+                btsnoopAnchorPacketNumber = null;
+            }
+        }
+        // Note: We intentionally do NOT clear selectedBtsnoopPacket here
+        // The user's selection should persist until they explicitly select another packet
+
+        // Render the filtered results
+        renderBtsnoopVirtualLogs();
+
+        // Step 3: Restore scroll position AFTER rendering
+        if (targetScrollTop !== null && btsnoopLogContainer) {
+            // CRITICAL: Clear any pending anchor-clear timers from previous manual scrolls!
+            // If we don't do this, a leftover timer might fire after we set our new anchor
+            // and wipe it out.
+            clearTimeout(window.btsnoopAnchorClearTimer);
+
+            requestAnimationFrame(() => {
+                // FORCE LAYOUT UPDATE: Read scrollHeight to ensure the new sizer height is applied
+                const _ = btsnoopLogContainer.scrollHeight;
+
+                // Set flag to prevent scroll listener from clearing anchor
+                isProgrammaticBtsnoopScroll = true;
+                btsnoopLogContainer.scrollTop = targetScrollTop;
+
+                // Debug clamping
+                if (Math.abs(btsnoopLogContainer.scrollTop - targetScrollTop) > 5) {
+                    console.warn('[BTSnoop Scroll] WARNING: Scroll clamping detected!',
+                        'Target:', targetScrollTop,
+                        'Actual:', btsnoopLogContainer.scrollTop,
+                        'ScrollHeight:', btsnoopLogContainer.scrollHeight,
+                        'SizerHeight:', (document.getElementById('btsnoopLogSizer')?.style.height)
+                    );
+                } else {
+                    console.log('[BTSnoop Scroll] Scroll applied successfully. Target:', targetScrollTop, 'Actual:', btsnoopLogContainer.scrollTop);
+                }
+
+                // CRITICAL: Force immediate re-render at the new position
+                // Otherwise the viewport might be empty until the scroll event fires
+                renderBtsnoopVirtualLogs();
+
+                if (shouldCenterSelected) {
+                    console.log('[BTSnoop Scroll] Centered selected packet in viewport at scroll position', targetScrollTop);
+                } else {
+                    console.log('[BTSnoop Scroll] Restored scroll to', targetScrollTop);
+                }
+
+                // Clear flag after a short delay
+                setTimeout(() => {
+                    isProgrammaticBtsnoopScroll = false;
+                }, 200);
+            });
+        }
     }
 
     function createBtsnoopFilterHeader() {
@@ -4923,37 +5067,8 @@ document.addEventListener('DOMContentLoaded', () => {
             endIndex = Math.min(filteredBtsnoopPackets.length, startIndex + 50);
         }
 
-        // Scroll to selected packet if needed
-        // Scroll to selected packet OR restore anchor position
-        const targetPacket = selectedBtsnoopPacket || (typeof currentAnchor !== 'undefined' ? currentAnchor : null);
-
-        if (targetPacket) {
-            const targetIndex = filteredBtsnoopPackets.findIndex(p => p.number === targetPacket.number);
-            if (targetIndex !== -1 && btsnoopRowPositions[targetIndex] !== undefined) {
-                const targetPosition = btsnoopRowPositions[targetIndex];
-
-                // Only force scroll if it's a selection (always visible) OR if we are restoring an anchor
-                // For selection: center it. For anchor: put it at top (approx).
-                if (selectedBtsnoopPacket) {
-                    const nextPos = btsnoopRowPositions[targetIndex + 1];
-                    const selectedHeight = nextPos ? (nextPos - targetPosition) : 20;
-                    const centerOffset = Math.floor(containerHeight / 2) - (selectedHeight / 2);
-                    const targetScroll = Math.max(0, targetPosition - centerOffset);
-
-                    if (targetPosition < scrollTop || targetPosition > scrollTop + containerHeight) {
-                        console.log('[BTSnoop Scroll] Scrolling to selected packet', targetPacket.number);
-                        container.scrollTop = targetScroll;
-                    }
-                } else {
-                    // Just restore the anchor to the top-ish (simple restore)
-                    // If we just re-filtered, we want to stay near this packet
-                    // But we won't force it if we are already there-ish. 
-                    // Actually, for restoration, we should set it.
-                    container.scrollTop = targetPosition;
-                }
-            }
-        }
-
+        // Note: Scroll position is now managed entirely by renderBtsnoopPackets()
+        // We removed the duplicate scroll logic here to avoid conflicts
 
 
         // Recycle or create DOM elements for the rows
@@ -5085,10 +5200,35 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. Handle Copy Actions (Button or Ctrl+Click)
         const isCopyBtn = target.classList.contains('copy-log-btn');
         const isCtrlClick = (event.ctrlKey || event.metaKey);
-        const copyTarget = target.closest('.copy-cell') || target.closest('.btsnoop-copy-cell');
+        // Identify potential copy targets: specific class or generic table cell
+        const copyTarget = target.closest('.copy-cell') || target.closest('.btsnoop-copy-cell') || target.closest('td');
 
         if (isCopyBtn || (isCtrlClick && copyTarget)) {
-            const logText = isCopyBtn ? target.dataset.logText : copyTarget.dataset.logText;
+            let logText = '';
+
+            if (isCopyBtn) {
+                logText = target.dataset.logText;
+            } else if (copyTarget) {
+                // Check if this is part of a Table Row (TR) or BTSnoop Row (Div-based)
+                const trRow = copyTarget.closest('tr'); // Standard tables
+                const btsnoopRow = copyTarget.closest('.btsnoop-row'); // BTSnoop Virtual Table
+
+                if (trRow) {
+                    // Standard Table Row: Aggregate all cells
+                    const cells = Array.from(trRow.querySelectorAll('td'));
+                    // Use double space separator for tabular data
+                    logText = cells.map(c => c.dataset.logText || c.textContent.trim()).join('  ');
+                    console.log(`[Copy] Aggregated Table Row (${cells.length} cols):`, logText.length, 'chars');
+                } else if (btsnoopRow) {
+                    // BTSnoop Row: Aggregate all BTSnoop cells
+                    const cells = Array.from(btsnoopRow.querySelectorAll('.btsnoop-cell'));
+                    logText = cells.map(c => c.dataset.logText || c.textContent).join('  ');
+                    console.log('[Copy] Aggregated BTSnoop Row:', logText.length, 'chars');
+                } else {
+                    // Fallback to single cell copy (e.g., Virtual Log Line span)
+                    logText = copyTarget.dataset.logText || copyTarget.textContent;
+                }
+            }
 
             if (logText) {
                 navigator.clipboard.writeText(logText).then(() => {
@@ -5197,8 +5337,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (packet) {
                     if (selectedBtsnoopPacket === packet) {
                         selectedBtsnoopPacket = null; // Toggle off
+                        btsnoopAnchorPacketNumber = null; // Clear anchor
                     } else {
                         selectedBtsnoopPacket = packet;
+                        btsnoopAnchorPacketNumber = packet.number; // Update anchor
                     }
                     console.log('[Interaction] Selected BTSnoop Packet:', selectedBtsnoopPacket ? selectedBtsnoopPacket.number : 'None');
                     renderBtsnoopVirtualLogs();
@@ -5209,8 +5351,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 5. Handle BTSnoop Deselection (Click outside)
         else if (selectedBtsnoopPacket && !target.closest('.btsnoop-copy-cell') && !target.closest('.btsnoop-header-cell')) {
+            // FIX: Don't deselect if clicking on UI controls (filters, tabs, inputs)
+            if (target.closest('.filter-icon') || target.closest('input') || target.closest('.tab-btn') || target.closest('#btsnoopFilterContainer')) {
+                return;
+            }
+
             // Clicked outside BTSnoop table while selected -> Clear selection
+            console.log('[Interaction] Cleared BTSnoop Selection (Clicked outside)');
             selectedBtsnoopPacket = null;
+            btsnoopAnchorPacketNumber = null; // Clear anchor
             renderBtsnoopVirtualLogs();
         }
     }

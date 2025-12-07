@@ -84,13 +84,20 @@ You can load logs in two ways:
 ## 📂 Project Structure
 
 ```
-├── index.html          # Main application entry point
-├── styles.css          # Global styling and themes
-├── main.js             # Core application logic and state management
-├── table-resize.js     # Utility for resizable table columns
-├── btsnoop-worker.js   # (Embedded in main.js) Binary parser for HCI logs
-└── jszip.min.js        # Library for handling ZIP files in browser
+├── index.html                      # Main application entry point
+├── styles.css                      # Global styling and themes
+├── main.js                         # Core application logic and state management
+├── table-resize.js                 # Utility for resizable table columns
+├── btsnoop-worker.js               # (Embedded in main.js) Binary parser for HCI logs
+├── jszip.min.js                    # Library for handling ZIP files in browser
+├── BTSNOOP_SCROLL_RESTORATION.md   # Documentation for scroll restoration feature
+└── BTSNOOP_SCROLL_TEST_GUIDE.md    # Testing guide for scroll restoration
 ```
+
+## 🔍 Advanced Features
+
+### BTSnoop Scroll Restoration
+The BTSnoop tab includes intelligent scroll restoration that preserves your viewing position when applying filters. See [BTSNOOP_SCROLL_RESTORATION.md](./BTSNOOP_SCROLL_RESTORATION.md) for implementation details and [BTSNOOP_SCROLL_TEST_GUIDE.md](./BTSNOOP_SCROLL_TEST_GUIDE.md) for testing instructions.
 
 ## 🤝 Contribution
 
