@@ -1,0 +1,1957 @@
+.service-icons-scroll {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 0.2rem;
+    padding-bottom: 0.2rem;
+    margin-bottom: 0.2rem;
+    scrollbar-width: thin;
+}
+
+html,
+body,
+.container {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', Arial, sans-serif;
+    background: #121212;
+    /* Dark background */
+    color: #e8eaed;
+    /* Light text */
+    color-scheme: dark;
+    /* Force browser default dark scrollbars if supported */
+    scrollbar-color: #555 #1e1e1e;
+    /* Firefox */
+}
+
+/* Webkit Scrollbars */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1e1e1e;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+body {
+    min-height: 100vh;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+.container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #121212;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    text-align: center;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #3c4043;
+    background: #1e1e1e;
+    /* Dark header */
+}
+
+header h1 {
+    margin: 0.2rem 0;
+    font-size: 1.3rem;
+    color: #e8eaed;
+}
+
+.current-file-display {
+    color: #9aa0a6;
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+    min-height: 1.2em;
+    font-weight: 500;
+}
+
+main {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: row;
+    min-height: 0;
+    padding: 0 2vw 2vw 2vw;
+    box-sizing: border-box;
+    gap: 1.5rem;
+}
+
+.left-panel {
+    width: 300px;
+    min-width: 300px;
+    max-width: 700px;
+    background: #1e1e1e;
+    /* Dark panel */
+    border-right: 1px solid #3c4043;
+    padding: 1.5rem;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    transition: margin-left 0.35s ease-in-out;
+}
+
+.left-panel.collapsed {
+    /* When collapsed, move it off-screen to the left */
+    margin-left: -300px;
+    /* Default width, will be adjusted by JS for resized panel */
+}
+
+.main-content {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    /* Important for flexbox children */
+    position: relative;
+}
+
+.panel-toggle-btn {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    /* Position on the right edge of the panel */
+    transform: translate(50%, -50%);
+    /* Center it on the border */
+    z-index: 1001;
+    background: #4285F4;
+    color: white;
+    border: 1px solid #1a73e8;
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    width: 30px;
+    /* Larger button */
+    height: 70px;
+    /* Larger button */
+    cursor: pointer;
+    font-size: 1.5rem;
+    /* Larger icon */
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease-in-out;
+}
+
+.panel-toggle-btn:hover {
+    filter: brightness(90%);
+}
+
+.resize-handle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 5px;
+    /* The draggable area */
+    height: 100%;
+    cursor: col-resize;
+    z-index: 1000;
+}
+
+details {
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    margin-bottom: 1rem;
+}
+
+summary {
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.5rem 0;
+}
+
+.upload-column {
+    padding-top: 1rem;
+}
+
+.upload-choice {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.filter-column {
+    flex: 1 1 auto;
+    /* Allow this column to grow and shrink */
+    min-height: 0;
+    /* Important for scrolling within a flex item */
+    overflow-y: auto;
+    /* Only this part will scroll if needed */
+    margin-right: -1rem;
+    /* Hide scrollbar visually by pushing it out */
+    padding-right: 1rem;
+    /* Add padding back to keep content aligned */
+}
+
+.upload-section {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+}
+
+.upload-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+input[type="file"],
+input[type="datetime-local"] {
+    border: 1px solid #555;
+    padding: 0.5rem;
+    border-radius: 6px;
+    background: #2a2a2a;
+    font-family: 'Inter', Arial, sans-serif;
+    color: #e8eaed;
+}
+
+input[type="file"]:hover {
+    border-color: #adb5bd;
+}
+
+.time-filter-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.time-filter-controls input {
+    flex: 1 1 auto;
+}
+
+.log-level-filters span,
+.time-range-section label,
+.search-section label {
+    display: block;
+    width: 100%;
+    font-weight: 600;
+    /* Bolder weight */
+    margin-bottom: 0.5rem;
+}
+
+.tab-nav {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 1px solid #3c4043;
+    /* Dark border */
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 0.8rem 0.5rem;
+    margin: 0 0.8rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: #9aa0a6;
+    /* Light grey text */
+    transition: all 0.2s;
+}
+
+.tab-btn.active {
+    color: #4285F4;
+    /* Google Blue */
+    border-bottom-color: #4285F4;
+}
+
+.tab-content {
+    display: none;
+    background: transparent;
+    /* Changed from white to transparent to allow body bg */
+    border-radius: 8px;
+    padding: 0.5rem;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.tab-content.active {
+    display: flex;
+    /* Use flex to make content fill space */
+    flex-direction: column;
+}
+
+.log-container,
+.ble-output {
+    position: relative;
+    flex: 1 1 auto;
+    /* Allow log container to grow */
+    overflow: auto;
+    /* Enable both vertical and horizontal scrolling */
+    background: #202124;
+    /* Google's dark surface color */
+    color: #e0e0e0;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.log-sizer {
+    position: relative;
+    width: 100%;
+    height: 0;
+    /* Will be set by JS */
+}
+
+.log-viewport {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    font-size: 0.98rem;
+    user-select: text;
+    /* Allow text selection */
+}
+
+.log-line {
+    height: 20px;
+    /* Match the LINE_HEIGHT in JS */
+    line-height: 20px;
+    /* Vertically center the text */
+    padding: 0 1rem;
+    /* Simulate padding of old pre tag */
+    white-space: pre;
+    /* Prevent wrapping, use pre for horizontal scroll */
+    position: relative;
+    /* Needed for positioning the copy button */
+}
+
+.copy-log-btn {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #5f6368;
+    color: #e0e0e0;
+    border: none;
+    border-radius: 4px;
+    padding: 1px 5px;
+    cursor: pointer;
+    opacity: 0;
+    /* Hidden by default */
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    font-size: 0.8rem;
+}
+
+.log-line:hover .copy-log-btn {
+    opacity: 1;
+    /* Show on hover */
+    visibility: visible;
+}
+
+/* Keyword filter chips */
+.keyword-chips {
+    margin-top: 0.5rem;
+    min-height: 28px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.keyword-chip {
+    display: inline-block;
+    background: #e8eaed;
+    /* Inactive color */
+    color: #3c4043;
+    border-radius: 16px;
+    padding: 0.3rem 0.5rem 0.3rem 1rem;
+    font-size: 0.97rem;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.keyword-chip.active {
+    background: #4285F4;
+    color: #fff;
+}
+
+.keyword-chip .remove-chip {
+    margin-left: 0.7rem;
+    color: #888;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 1.1em;
+}
+
+.export-btn {
+    margin-top: 1rem;
+    background: #4285F4;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.export-btn:hover,
+.modal-btn:hover {
+    filter: brightness(90%);
+}
+
+.filter-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: #2a2a2a;
+    /* Dark button background */
+    border: 1px solid #555;
+    /* Default border */
+    color: #e8eaed;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    height: 32px;
+    box-sizing: border-box;
+    user-select: none;
+}
+
+/* Connectivity Actions Buttons */
+.connectivity-actions {
+    padding: 10px;
+    background: #1e1e1e;
+    border-top: 1px solid #333;
+    display: flex;
+    gap: 10px;
+}
+
+.connectivity-actions .export-btn {
+    margin: 0;
+    /* Override default margin */
+    flex: 1;
+    /* Make button fill available space if needed, or just be consistent */
+    background: #4285F4;
+    border: none;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.connectivity-actions .export-btn:hover {
+    background: #3367D6;
+}
+
+.filter-icon.active {
+    background: #4285F4;
+    color: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    border-color: #4285F4;
+    /* Ensure border matches background when active */
+}
+
+.log-level-filters {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    align-items: center;
+    margin-bottom: 1rem;
+    /* Removed background/padding for cleaner look */
+}
+
+/* Redundant .filter-action-btn block removed */
+
+.btsnoop-filters {
+    /* Add some space between the main filters and the top of the tab */
+    margin-bottom: 1rem;
+}
+
+/* Unify all filter-related buttons for consistent height and feel */
+.filter-icon,
+.logic-btn,
+.filter-action-btn {
+    height: 32px;
+    /* Set a fixed height */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+
+
+.filter-action-btn {
+    margin-left: 0.5rem;
+    padding: 0.3rem 0.7rem;
+    border: 1px solid #555;
+    background: #2a2a2a;
+    /* Dark button */
+    color: #e8eaed;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+/* Small Export Button for Headers */
+.header-export-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    background: #34a853;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    /* Push to right if in flex container */
+    transition: background 0.2s;
+    font-weight: 500;
+}
+
+.header-export-btn:hover {
+    background: #2d8e47;
+}
+
+/* Control buttons (collapse, sort, etc.) */
+.control-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 1rem;
+    background: #4285F4;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    font-weight: 500;
+    min-width: 32px;
+}
+
+.control-btn:hover {
+    background: #3367D6;
+}
+
+/* Header container ensuring flex alignment */
+.tab-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+.nfc-filters,
+.ble-filters {
+    margin-bottom: 1rem;
+}
+
+.clear-btn {
+    margin-left: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid #555;
+    background: #2a2a2a;
+    color: #e8eaed;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.clear-btn:hover {
+    background: #3c4043;
+}
+
+.log-level-filters {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.log-level-filters span {
+    font-weight: 500;
+}
+
+/* Search Input */
+.search-section {
+    position: relative;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #555;
+    background: #2a2a2a;
+    color: #e8eaed;
+    font-size: 1rem;
+    margin-top: 0.5rem;
+    box-sizing: border-box;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #4285F4;
+}
+
+/* Autocomplete Suggestions */
+.autocomplete-.suggestions-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 1rem;
+    border: 1px solid #3c4043;
+    border-top: none;
+    background-color: #1e1e1e;
+    /* Dark dropdown */
+    width: calc(100% - 2rem - 2px);
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 999;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.suggestion-item {
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    color: #e8eaed;
+}
+
+.suggestion-item:hover {
+    background-color: #2c2c2c;
+    /* Dark hover */
+}
+
+.search-header {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.search-header label {
+    display: inline-block;
+    width: auto;
+    margin-bottom: 0;
+    color: #e8eaed;
+}
+
+.logic-toggle {
+    display: inline-flex;
+    background: #2a2a2a;
+    /* Darker background */
+    border-radius: 8px;
+    padding: 2px;
+}
+
+.logic-btn {
+    padding: 4px 12px;
+    background: transparent;
+    min-width: auto;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #9aa0a6;
+    transition: all 0.2s;
+    user-select: none;
+    border-radius: 6px;
+}
+
+.logic-btn+.logic-btn {
+    border-left: none;
+}
+
+.logic-btn.active {
+    background: #4285F4;
+    /* Blue active */
+    color: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+
+/* Progress Bar */
+.progress-bar-container.fixed-bottom-right {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 200px;
+    /* Smaller width */
+    height: 15px;
+    /* Smaller height */
+    z-index: 1001;
+    /* Ensure it's above everything else */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.progress-bar-container.fixed-bottom-right .progress-text {
+    font-size: 0.8rem;
+    /* Smaller text */
+    line-height: 15px;
+}
+
+/* Progress Bar */
+.progress-bar-container {
+    width: 100%;
+    height: 18px;
+    background: #333;
+    /* Darker track */
+    margin-top: 1rem;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: #4285F4;
+    border-radius: 8px;
+    transition: width 0.3s;
+}
+
+.progress-text {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+    font-size: 0.95rem;
+    color: #202124;
+    line-height: 18px;
+}
+
+/* Service color highlights (example) */
+.service-ble {
+    color: #4fc3f7;
+}
+
+.service-auth {
+    color: #81c784;
+}
+
+.service-api {
+    color: #ffb74d;
+}
+
+.service-ui {
+    color: #ba68c8;
+}
+
+.service-other {
+    color: #e57373;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.toggle-all-container {
+    margin-top: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.file-selection-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.file-selection-list div {
+    margin-bottom: 0.5rem;
+}
+
+.modal-actions {
+    text-align: right;
+}
+
+.modal-btn {
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    margin-left: 1rem;
+    background: #4285F4;
+    color: #fff;
+    transition: background 0.2s;
+}
+
+.modal-btn.cancel {
+    background: #e0e0e0;
+}
+
+/* System Status Tab Styles */
+.system-status-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.status-card {
+    flex: 1 1 120px;
+    /* Allow cards to grow but have a base size */
+    background: #f8f9fa;
+    /* Slightly different background for inner cards */
+    border: 1px solid #e8eaed;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: left;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s;
+}
+
+.status-card h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.status-indicator {
+    font-size: 1.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-on {
+    color: #34a853;
+}
+
+/* Google Green */
+.status-off {
+    color: #ea4335;
+}
+
+/* Google Red */
+.status-unknown {
+    color: #5f6368;
+}
+
+/* Google Grey */
+
+.status-note {
+    font-size: 0.85rem;
+    color: #757575;
+    margin: 0.5rem 0 0 0;
+}
+
+.filter-section,
+.search-section,
+.time-range-section {
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+/* Styles for the new Highlights section on the Stats tab */
+.highlights-container {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    overflow-y: auto;
+    /* Allow highlights to scroll if they overflow */
+    padding: 1rem;
+}
+
+.highlight-section h3 {
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.highlight-list {
+    list-style-type: disc;
+    padding-left: 20px;
+}
+
+.highlight-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+/* Legacy highlight-table styles removed to favor unified dark mode tables */
+
+/* Dashboard Grid Styles */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.dashboard-card {
+    background: #1e1e1e;
+    border: 1px solid #3c4043;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.dashboard-card.large-card {
+    grid-column: span 2;
+    /* Make this card wider on larger screens */
+}
+
+.dashboard-card.full-width-card {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 900px) {
+    .dashboard-card.large-card {
+        grid-column: span 1;
+        /* Stack on smaller screens */
+    }
+}
+
+.dashboard-card h3 {
+    margin-top: 0;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.dashboard-card p {
+    margin: 0.5rem 0;
+    font-size: 1rem;
+}
+
+.dashboard-card .stat-value {
+    font-weight: 600;
+    color: #4285F4;
+    /* Google Blue */
+    margin-left: 0.5rem;
+}
+
+/* BTSnoop Packet Table Styles */
+/* Bar Graph Styles for Log Level Distribution */
+.dist-bar-container {
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dist-label {
+    width: 60px;
+    /* Fixed width for labels */
+    font-weight: 500;
+    text-align: left;
+    /* Ensure all labels are left-aligned */
+}
+
+.dist-bar-wrapper {
+    flex-grow: 1;
+    background-color: #f1f3f4;
+    border-radius: 4px;
+    height: 20px;
+}
+
+.dist-bar {
+    height: 100%;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    /* Add a subtle border to all bars */
+    border-radius: 4px;
+    transition: width 0.5s ease-in-out;
+    text-align: right;
+    padding-right: 5px;
+    box-sizing: border-box;
+    color: #fff;
+    font-size: 0.85rem;
+    line-height: 20px;
+    font-weight: 600;
+    min-width: 22px;
+    /* Ensure even small numbers are visible */
+}
+
+/* Special case for Verbose bar to make text visible */
+/* Log Line Structure */
+.log-line-content {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.log-meta {
+    width: 150px;
+    min-width: 150px;
+    display: inline-block;
+    color: #9aa0a6;
+    margin-right: 10px;
+    overflow: hidden;
+    text-overflow: clip;
+    /* Prefer clip over ellipsis for timestamps if tight */
+}
+
+/* Updated PID/TID/UID column - fixed width to prevent jitter, but wide enough */
+.log-pid-tid {
+    width: 180px;
+    /* Increased from implicit default */
+    min-width: 180px;
+    display: inline-block;
+    margin-right: 10px;
+    text-align: right;
+    font-family: 'Roboto Mono', monospace;
+    overflow: visible;
+    /* Ensure content is not hidden */
+    white-space: nowrap;
+}
+
+.log-tag {
+    width: 140px;
+    min-width: 140px;
+    display: inline-block;
+    margin-right: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+}
+
+.log-message {
+    flex: 1;
+    display: inline-block;
+    overflow: visible;
+    white-space: pre;
+}
+
+/* Log Level Box */
+.log-level-box {
+    display: inline-block;
+    width: 20px;
+    text-align: center;
+    border-radius: 2px;
+    font-weight: bold;
+    margin-right: 10px;
+    color: #fff;
+}
+
+/* Level Specific Colors */
+.log-level-V {
+    background-color: #BDBDBD;
+    color: #000;
+}
+
+.log-level-D {
+    background-color: #2196F3;
+}
+
+.log-level-I {
+    background-color: #4CAF50;
+}
+
+.log-level-W {
+    background-color: #FF9800;
+}
+
+.log-level-E {
+    background-color: #F44336;
+}
+
+.dist-bar.log-line-V {
+    color: #202124;
+    /* Dark text for light grey bar */
+    background-color: #BDBDBD;
+}
+
+.dist-bar.log-line-D {
+    background-color: #2196F3;
+}
+
+.dist-bar.log-line-I {
+    background-color: #4CAF50;
+}
+
+.dist-bar.log-line-W {
+    background-color: #FF9800;
+}
+
+.dist-bar.log-line-E {
+    background-color: #F44336;
+}
+
+/* Sparkline Plot Styles */
+.plot-container {
+    width: 100%;
+    height: 100px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.plot-container svg {
+    width: 100%;
+    height: 100%;
+}
+
+.sparkline {
+    fill: none;
+    stroke: #4285F4;
+    stroke-width: 2;
+}
+
+.scrollable-table-container {
+    max-height: 400px;
+    /* Adjust height as needed */
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+}
+
+/* Color-code the direction for quick scanning */
+.direction-out {
+    color: #81D4FA;
+    /* Light Blue for outgoing packets */
+}
+
+.direction-in {
+    color: #A5D6A7;
+    /* Light Green for incoming packets */
+}
+
+/* --- CSS Grid Layout for BTSnoop --- */
+.btsnoop-grid-container {
+    display: grid;
+    grid-template-columns: 60px 120px 160px 160px 80px minmax(200px, 2fr) minmax(200px, 3fr);
+    width: 100%;
+    min-width: 1200px;
+    /* Ensure horizontal scroll if needed */
+}
+
+/* Header specific styling */
+.btsnoop-header-grid {
+    display: grid;
+    grid-template-columns: 60px 120px 160px 160px 80px minmax(200px, 2fr) minmax(200px, 3fr);
+    width: 100%;
+    min-width: 1200px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #f2f2f2;
+    border-bottom: 1px solid #ccc;
+}
+
+.btsnoop-header-cell {
+    padding: 8px 5px;
+    border-right: 1px solid #e0e0e0;
+    text-align: left;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    position: relative;
+    font-weight: bold;
+    color: #3c4043;
+    background-color: #f2f2f2;
+}
+
+.btsnoop-filter-cell {
+    padding: 4px;
+    background-color: #f2f2f2;
+    border-right: 1px solid #e0e0e0;
+    border-bottom: 1px solid #ccc;
+}
+
+.btsnoop-filter-cell input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 4px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+}
+
+/* Body row styling */
+.btsnoop-row {
+    /* Virtual scroll requires absolute positioning, so we cannot use display: contents.
+       Instead, each row is its own grid container. */
+    display: grid;
+    grid-template-columns: 60px 120px 160px 160px 80px minmax(200px, 2fr) minmax(200px, 3fr);
+    width: 100%;
+    min-width: 1200px;
+    /* Match header width */
+    height: 20px;
+    /* Match LINE_HEIGHT */
+    box-sizing: border-box;
+}
+
+.btsnoop-cell {
+    padding: 0 5px;
+    /* Reduced padding for tighter rows */
+    border-right: 1px solid #444;
+    border-bottom: 1px solid #333;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    line-height: 20px;
+    /* Center text vertically */
+    color: #e0e0e0;
+    background-color: #2C2C2C;
+}
+
+.btsnoop-row:hover .btsnoop-cell {
+    background-color: #444;
+}
+
+.btsnoop-row.selected .btsnoop-cell {
+    background-color: #2c3e50;
+    color: #fff;
+}
+
+/* Resize handle */
+.resize-handle-col {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    cursor: col-resize;
+    z-index: 1;
+}
+
+.resize-handle-col:hover {
+    background-color: #4285f4;
+}
+
+/* BTSnoop Header Horizontal Scroll */
+#btsnoopHeader {
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%;
+}
+
+#btsnoopHeader::-webkit-scrollbar {
+    height: 0;
+    display: none;
+}
+
+/* Allow Data column (7th column) to wrap */
+.btsnoop-cell:nth-child(7) {
+    white-space: pre-wrap !important;
+    word-break: break-all;
+    overflow: visible;
+    min-height: 20px;
+    height: auto;
+}
+
+/* Adjust row height to accommodate wrapped content */
+.btsnoop-row {
+    min-height: 20px;
+    height: auto !important;
+}
+
+/* Alternating row backgrounds for BTSnoop */
+.btsnoop-row.even-row .btsnoop-cell {
+    background-color: #2C2C2C;
+    /* Darker gray */
+}
+
+.btsnoop-row.odd-row .btsnoop-cell {
+    background-color: #333333;
+    /* Lighter gray */
+}
+
+/* Hover and selection override alternating colors */
+.btsnoop-row:hover .btsnoop-cell {
+    background-color: #444 !important;
+}
+
+.btsnoop-row.selected .btsnoop-cell {
+    background-color: #2c3e50 !important;
+    color: #fff;
+}
+
+.stat-item {
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* CCC Table - Styled to match BTSnoop design */
+.ccc-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+    table-layout: fixed;
+    /* Enforce column widths */
+}
+
+.ccc-table th,
+.ccc-table td {
+    padding: 8px 12px;
+    border: 1px solid #333;
+    text-align: left;
+    overflow-wrap: break-word;
+    /* Ensure long text wraps */
+    word-wrap: break-word;
+}
+
+.ccc-table thead th {
+    background-color: #f2f2f2;
+    color: #3c4043;
+    font-weight: bold;
+    text-align: left;
+    padding: 8px 5px;
+    border-bottom: 1px solid #ccc;
+    border-right: 1px solid #e0e0e0;
+}
+
+.ccc-table tbody td {
+    background-color: #2C2C2C;
+    color: #e0e0e0;
+    padding: 4px 5px;
+    border-bottom: 1px solid #333;
+    border-right: 1px solid #444;
+    vertical-align: top;
+}
+
+.ccc-table tbody tr:nth-child(odd) td {
+    background-color: #333333;
+}
+
+.ccc-table tbody tr:hover td {
+    background-color: #444;
+}
+
+/* CCC Parameter Styling */
+.ccc-pair {
+    display: inline-block;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin-right: 6px;
+    margin-bottom: 2px;
+    max-width: 100%;
+    vertical-align: top;
+}
+
+.ccc-param {
+    color: #a0c0ff;
+    /* Light blue for keys */
+    font-weight: 500;
+    margin-right: 4px;
+}
+
+.ccc-value {
+    color: #e0e0e0;
+    /* Off-white for values */
+    font-weight: 400;
+    word-break: break-all;
+    white-space: normal;
+}
+
+/* Nested TLV Styles */
+.tlv-block {
+    display: block;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+.tlv-indent {
+    display: block;
+    margin-left: 12px;
+    padding-left: 8px;
+    border-left: 2px solid #555;
+    margin-top: 2px;
+}
+
+/* ============================================================================= */
+/* OPTIMIZATION Phase 2: Skeleton Loader for Progressive Loading */
+/* ============================================================================= */
+
+.skeleton-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #1a1a1a;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+}
+
+.skeleton-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #2a2a2a;
+}
+
+.skeleton-logo {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(90deg,
+            #2a2a2a 25%,
+            #3a3a3a 50%,
+            #2a2a2a 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+}
+
+.skeleton-title {
+    font-size: 1.5rem;
+    color: #888;
+    font-weight: 500;
+}
+
+.skeleton-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #2a2a2a;
+}
+
+.skeleton-tab {
+    width: 100px;
+    height: 36px;
+    background: linear-gradient(90deg,
+            #2a2a2a 25%,
+            #3a3a3a 50%,
+            #2a2a2a 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+}
+
+.skeleton-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 1rem;
+    background: #202124;
+    border-radius: 8px;
+}
+
+.skeleton-line {
+    height: 20px;
+    background: linear-gradient(90deg,
+            #2a2a2a 25%,
+            #3a3a3a 50%,
+            #2a2a2a 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-line:nth-child(1) {
+    width: 95%;
+}
+
+.skeleton-line:nth-child(2) {
+    width: 88%;
+}
+
+.skeleton-line:nth-child(3) {
+    width: 92%;
+}
+
+.skeleton-line:nth-child(4) {
+    width: 85%;
+}
+
+.skeleton-line:nth-child(5) {
+    width: 90%;
+}
+
+.skeleton-line:nth-child(6) {
+    width: 87%;
+}
+
+.skeleton-line:nth-child(7) {
+    width: 93%;
+}
+
+.skeleton-line:nth-child(8) {
+    width: 89%;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.skeleton-loader.fade-out {
+    animation: fadeOut 0.3s ease-out forwards;
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+/* --- Connectivity Tab Styles --- */
+.connectivity-header {
+    display: flex;
+    flex-direction: row;
+    gap: 0;
+    padding: 8px 10px;
+    background: #1e1e1e;
+    border-bottom: 1px solid #333;
+    align-items: center;
+    overflow-x: auto;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.tech-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 15px;
+    border-bottom: none;
+    border-right: 1px solid #333;
+}
+
+.tech-section:last-child {
+    border-right: none;
+}
+
+.tech-master-toggle {
+    min-width: 150px;
+    flex-shrink: 0;
+}
+
+.switch-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.tech-name {
+    font-weight: bold;
+    color: #e0e0e0;
+    margin-left: 10px;
+    font-size: 1.1em;
+}
+
+/* Master Toggle Checkbox Styling */
+.switch-label input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 40px;
+    height: 20px;
+    background: #444;
+    border-radius: 20px;
+    position: relative;
+    outline: none;
+    transition: background 0.3s;
+    cursor: pointer;
+}
+
+.switch-label input[type="checkbox"]::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.3s;
+}
+
+.switch-label input[type="checkbox"]:checked {
+    background: #34a853;
+}
+
+.switch-label input[type="checkbox"]:checked::after {
+    transform: translateX(20px);
+}
+
+/* Gray out filters when disabled */
+.tech-section.disabled .log-level-filters {
+    opacity: 0.3;
+    /* allow clicks to re-enable */
+    filter: grayscale(100%);
+}
+
+/* Connectivity Header Filter Styling */
+.connectivity-header .log-level-filters {
+    flex-wrap: nowrap;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-bottom: 0;
+}
+
+.connectivity-header .filter-icon {
+    color: #9aa0a6;
+    /* Light grey for contrast on dark */
+}
+
+.connectivity-header .filter-icon:hover {
+    color: #e8eaed;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.connectivity-header .filter-icon.active {
+    background: #4285F4;
+    color: #fff;
+    box-shadow: none;
+}
+
+/* Dark Mode Table Styles for BTSnoop, CCC, Stats, and App Versions */
+#btsnoopTab table,
+#statsTab table,
+#cccTab table,
+.stats-table table,
+.ccc-table,
+.highlight-table {
+    background-color: #1e1e1e !important;
+    color: #e8eaed !important;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+#btsnoopTab th,
+#statsTab th,
+#cccTab th,
+.stats-table th,
+.ccc-table th,
+.highlight-table th {
+    background-color: #333333 !important;
+    /* Lighter than bg for distinction */
+    color: #ffffff !important;
+    border: 1px solid #444 !important;
+    padding: 10px;
+    text-align: left;
+    font-weight: 600;
+}
+
+#btsnoopTab td,
+#statsTab td,
+#cccTab td,
+.stats-table td,
+.ccc-table td,
+.highlight-table td {
+    border: 1px solid #3c4043 !important;
+    padding: 8px;
+    color: #e8eaed !important;
+}
+
+#btsnoopTab tr:hover,
+#statsTab tr:hover,
+#cccTab tr:hover,
+.stats-table tr:hover,
+.ccc-table tr:hover,
+.highlight-table tr:hover,
+.log-line:hover {
+    background-color: #2c2c2c !important;
+}
+
+/* Generic Table & Log Line Selection Highlighting */
+.ccc-table tr.selected,
+.highlight-table tr.selected,
+.stats-table tr.selected,
+.log-line.selected {
+    background-color: #2c3e50 !important;
+    /* Dark blue selection */
+    color: #fff !important;
+}
+
+.ccc-table tr.selected td,
+.highlight-table tr.selected td,
+.stats-table tr.selected td,
+.log-line.selected .log-message,
+.log-line.selected .log-tag,
+.log-line.selected .log-pid-tid,
+.log-line.selected .log-meta {
+    color: #fff !important;
+    /* Ensure text is white on selection */
+}
+
+/* BTSnoop Virtual View (Div-based) Dark Mode */
+.btsnoop-header-grid {
+    background-color: #333333;
+    border-bottom: 2px solid #444;
+}
+
+.btsnoop-header-cell {
+    color: #ffffff;
+    font-weight: 600;
+    padding: 8px;
+    background-color: #333333;
+    border-right: 1px solid #555;
+    position: relative;
+}
+
+.btsnoop-filter-cell {
+    background-color: #333333 !important;
+    border-right: 1px solid #555;
+    border-bottom: 1px solid #444;
+}
+
+.btsnoop-filter-cell input {
+    background-color: #2a2a2a;
+    color: #fff;
+    border: 1px solid #555;
+}
+
+.btsnoop-row {
+    background-color: #1e1e1e;
+    border-bottom: 1px solid #333;
+}
+
+.btsnoop-row:hover {
+    background-color: #2c2c2c;
+    /* Hover effect */
+}
+
+/* Override inline styles for cells if needed, though inline usually wins. 
+   We rely on the JS using a color that works or us resetting it here if possible, 
+   but since JS sets style.color, we might need !important if the JS color is bad.
+   The JS uses #e0e0e0 which is good for dark mode. */
+.btsnoop-cell {
+    border-right: 1px solid #333;
+    padding: 4px 8px;
+}
+
+/* Ensure filter buttons in btsnoop and stats behave like connectivity ones */
+#btsnoopTab .filter-icon,
+#statsTab .filter-icon,
+#cccTab .filter-icon {
+    /* Base style similar to connectivity inactive */
+    background: transparent;
+    color: #9aa0a6;
+    border: 1px solid #3c4043;
+    /* Add border for visibility on dark */
+    margin: 0;
+    /* consistent */
+}
+
+#btsnoopTab .filter-icon:hover,
+#statsTab .filter-icon:hover,
+#cccTab .filter-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e8eaed;
+}
+
+#btsnoopTab .filter-icon.active,
+#statsTab .filter-icon.active,
+#cccTab .filter-icon.active {
+    background: #4285F4;
+    color: #fff;
+    border-color: #4285F4;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* CSS Fixes for File Input and Search Alignment */
+
+/* Fix file input button background */
+input[type="file"]::file-selector-button {
+    background-color: #3c4043;
+    color: #e8eaed;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 0.3rem 0.8rem;
+    margin-right: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+input[type="file"]::file-selector-button:hover {
+    background-color: #4a4e51;
+}
+
+/* Fix App Package Search Input Alignment */
+.dashboard-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* Ensure items are vertically centered */
+    height: 40px;
+    /* Enforce a consistent height for the header row */
+}
+
+.dashboard-card .card-header h3 {
+    margin: 0;
+    line-height: 40px;
+    /* Align text vertically */
+}
+
+.dashboard-card .card-header .search-section {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    border: none;
+    /* FIX: Remove the generic search-section border */
+    padding: 0;
+    /* FIX: Remove generic padding */
+}
+
+.dashboard-card .card-header .search-input {
+    height: 32px;
+    /* Match standard button height or fit within 40px header */
+    padding: 0 10px;
+    box-sizing: border-box;
+    vertical-align: middle;
+    /* Ensure alignment */
+}
+
+/* Dark Mode fixes for filter rows in Highlight Tables and BTSnoop */
+
+/* Ensure filter row background is dark and text is light */
+.filter-row th {
+    background-color: #333333 !important;
+    /* Match header background */
+    border: 1px solid #444 !important;
+    padding: 5px !important;
+}
+
+.filter-row input {
+    background-color: #2a2a2a;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 4px 8px;
+    width: 90%;
+    /* Prevent overflow */
+    box-sizing: border-box;
+    /* Include padding in width */
+}
+
+.filter-row input:focus {
+    border-color: #4285F4;
+    outline: none;
+}
+
+/* Fix overlap in 'Device & Setting Events' table specifically */
+#deviceEventsTable th {
+    /* Ensure minimal width for columns with filters to prevent squeezing/overlap */
+    min-width: 100px;
+}
+
+/* Specific fix for Date/Time columns which might be too narrow for the filter input */
+#deviceEventsTable th:nth-child(1),
+#deviceEventsTable th:nth-child(2) {
+    min-width: 110px;
+    /* Slightly larger than 90px to fit 'Filter...' placeholder */
+}
+
+/* General table responsiveness to prevent overlap */
+.ccc-table,
+.highlight-table {
+    table-layout: fixed;
+    /* Respect column widths */
+}
+
+/* Ensure inputs don't overflow cells */
+.ccc-table input,
+.highlight-table input {
+    width: 100%;
+    min-width: 0;
+    /* Allow shrinking if needed, but width 100% usually fills cell */
+}
+
+/* Column Resize Handle Styles */
+.resize-handle-col {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 5px;
+    height: 100%;
+    cursor: col-resize;
+    user-select: none;
+    z-index: 10;
+    background: transparent;
+    transition: background 0.2s;
+}
+
+.resize-handle-col:hover {
+    background: rgba(66, 133, 244, 0.3);
+}
+
+/* Ensure table headers support resize handles */
+.ccc-table th,
+.highlight-table th,
+#btsnoopTab th,
+#statsTab th {
+    position: relative;
+}
+
+/* Improve table cell text handling during resize */
+.ccc-table td,
+.highlight-table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Allow wrapping for specific columns if needed */
+.ccc-table td:last-child,
+.ccc-table td:nth-last-child(2),
+.highlight-table td:last-child {
+    white-space: normal;
+    word-break: break-all;
+    overflow: visible;
+    text-overflow: clip;
+}
