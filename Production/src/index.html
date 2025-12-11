@@ -148,10 +148,13 @@
                             <button id="logicAndBtn" class="logic-btn"
                                 title="Show lines that match ALL active keywords">AND</button>
                         </div>
-                        <input type="text" id="searchInput" name="searchInput" class="search-input"
-                            placeholder="Live search or type & Enter..." autocomplete="off" />
+                        <div class="search-input-wrapper" style="position: relative;">
+                            <input type="text" id="searchInput" name="searchInput" class="search-input"
+                                placeholder="Live search or type & Enter... (#123 to jump to line)"
+                                autocomplete="off" />
+                            <div id="autocompleteSuggestions" class="autocomplete-suggestions"></div>
+                        </div>
                         <div id="keywordChips" class="keyword-chips"></div>
-                        <div id="autocompleteSuggestions" class="autocomplete-suggestions"></div>
                     </section>
                     <section class="time-range-section">
                         <label for="startTime">Time Range:</label>
@@ -178,8 +181,7 @@
                     <button class="tab-btn" data-tab="stats">Stats</button>
                 </nav>
                 <section id="logsTab" class="tab-content active">
-                    <div class="tab-header-row">
-                        <h2 style="margin: 0;">Logs</h2>
+                    <div class="tab-header-row" style="justify-content: flex-end;">
                         <div style="display: flex; gap: 0.5rem;">
                             <button id="collapseAllBtn" class="control-btn" title="Collapse All Files">⊟</button>
                             <button id="sortBySizeBtn" class="control-btn"

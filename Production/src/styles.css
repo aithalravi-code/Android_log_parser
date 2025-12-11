@@ -1955,3 +1955,60 @@ input[type="file"]::file-selector-button:hover {
     overflow: visible;
     text-overflow: clip;
 }
+
+/* ============================================================================= */
+/* NEW FEATURE: Scrollable Search Suggestions Dropdown */
+/* ============================================================================= */
+
+.autocomplete-suggestions {
+    position: absolute;
+    top: 100%; /* Position directly below the search input */
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background-color: #1e1e1e;
+    border: 1px solid #444;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+    max-height: 300px; /* Allow for many items but constrain height */
+    overflow-y: auto;  /* Enable vertical scrolling */
+    display: none;     /* Hidden by default */
+    margin-top: 2px;
+}
+
+.suggestion-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    color: #e0e0e0;
+    border-bottom: 1px solid #333;
+    font-size: 14px;
+    transition: background-color 0.15s;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background-color: #4285F4; /* Highlight with Google Blue */
+    color: white;
+}
+
+/* Scrollbar styling for the dropdown */
+.autocomplete-suggestions::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.autocomplete-suggestions::-webkit-scrollbar-track {
+    background: #1e1e1e;
+}
+
+.autocomplete-suggestions::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+.autocomplete-suggestions::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}

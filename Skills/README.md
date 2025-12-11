@@ -7,6 +7,8 @@ This directory contains documentation about the project's capabilities and featu
 - **feature-list.md** - Comprehensive list of all implemented features
 - **technical-capabilities.md** - Technical capabilities and performance metrics
 - **roadmap.md** - Planned features and improvements
+- **New_Feature_Workflow.md** - Standard process for brainstorming, planning, and documenting new features
+
 
 ## Purpose
 

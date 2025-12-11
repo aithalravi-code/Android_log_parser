@@ -293,6 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let nfcLogLines = []; // Holds all NFC-related log lines
     let dckLogLines = []; // Holds all DCK-related log lines
     let btsnoopPackets = []; // Holds parsed btsnoop packets
+    let consolidatedBatteryDataPoints = []; // Holds battery data points from workers
 
     // --- Worker Setup ---
     // Increment this version when worker logic changes to force updates
@@ -792,30 +793,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
 
                 case 'stats':
-                    console.log(`[Perf Phase2] Processing stats...`);
-
-                    // Calculate log level statistics
-                    const logStats = { total: 0, E: 0, W: 0, I: 0, D: 0, V: 0 };
-                    for (const line of originalLogLines) {
-                        if (line.isMeta) continue;
-                        logStats.total++;
-                        if (line.level && logStats[line.level] !== undefined) {
-                            logStats[line.level]++;
-                        }
-                    }
-
-                    // Render log level statistics and distribution chart
-                    renderStats(logStats);
-
-                    // Calculate and render dashboard stats (CPU, temp, battery)
-                    const dashboardStats = processForDashboardStats();
-                    renderDashboardStats(dashboardStats);
-
-                    // Render Charts
-                    if (cpuLoadPlotContainer) renderCpuPlot(dashboardStats.cpuDataPoints);
-                    if (temperatureStats) renderTemperaturePlot(dashboardStats.temperatureDataPoints);
-                    if (batteryStats) renderBatteryPlot(dashboardStats.batteryDataPoints);
-
+                    await setupStatsTab(originalLogLines, {
+                        cpuLoadStats: document.getElementById('cpuLoadStats'),
+                        temperatureStats: document.getElementById('temperatureStats'),
+                        batteryStats: document.getElementById('batteryStats'),
+                        cpuLoadPlotContainer: document.getElementById('cpuLoadPlotContainer'),
+                        batteryPlotContainer: document.getElementById('batteryPlotContainer'),
+                        temperaturePlotContainer: document.getElementById('temperaturePlotContainer'),
+                        logCounts: document.getElementById('logCounts'),
+                        errorDistribution: document.getElementById('errorDistribution'),
+                        appVersionsTable: document.getElementById('appVersionsTable'),
+                        appSearchInput: document.getElementById('appSearchInput')
+                    }, consolidatedBatteryDataPoints);
                     console.log(`[Perf Phase2] ${tabId} tab ready`);
                     break;
             }
@@ -1565,7 +1554,7 @@ document.addEventListener('DOMContentLoaded', () => {
             '    const btDisconnectRegex = /(?:onConnectionStateChange|DISCONNECT|connectionStateChange).*?newState=(?:0|DISCONNECTED)/i;\n' +
             '    const btAddressRegex = /([0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2})/i;\n' +
             '    \n' +
-            '    const batteryRegex = /level: (\\\\d+).*scale: (\\\\d+)/;\n' +
+            '    const batteryRegex = /(?<![a-zA-Z])(?:level:\\\\s*|battery_level:\\\\s*\\\\[|batteryLevel:\\\\s*)(\\\\d+)/;\\n' +
             '    const batteryDataPoints = [];\n' +
             '    const cccMessages = [];\n' +
             '    const cccRegex = /(?:Sending|Received):\\s*\\[([0-9a-fA-F]+)\\]/;\n' +
@@ -1941,7 +1930,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const finalBleKeys = new Map();
         let finalLocalBtAddress = null;
         const consolidatedAppVersions = new Map();
-        let consolidatedBatteryDataPoints = [];
+        consolidatedBatteryDataPoints = [];
         const finalCccMessages = [];
 
         let resultIndex = 0;
@@ -2082,12 +2071,16 @@ document.addEventListener('DOMContentLoaded', () => {
         renderHighlights(finalHighlights);
 
         // Process and render secondary dashboard stats like CPU, Temp, and App Versions
-        const dashboardStats = processForDashboardStats();
-        renderDashboardStats(dashboardStats);
-        renderAppVersions(allAppVersions);
-        renderTemperaturePlot(dashboardStats.temperatureDataPoints);
-        renderCpuPlot(dashboardStats.cpuDataPoints);
-        renderBatteryPlot(consolidatedBatteryDataPoints);
+        const dashboardStats = processForDashboardStats(originalLogLines, consolidatedBatteryDataPoints);
+        renderDashboardStats(dashboardStats, {
+            cpuLoadStats: document.getElementById('cpuLoadStats'),
+            temperatureStats: document.getElementById('temperatureStats'),
+            batteryStats: document.getElementById('batteryStats')
+        });
+        renderAppVersions(allAppVersions, document.getElementById('appVersionsTable'), document.getElementById('appSearchInput'));
+        renderTemperaturePlot(dashboardStats.temperatureDataPoints, document.getElementById('temperaturePlotContainer'));
+        renderCpuPlot(dashboardStats.cpuDataPoints, document.getElementById('cpuLoadPlotContainer'));
+        renderBatteryPlot(consolidatedBatteryDataPoints, document.getElementById('batteryPlotContainer'));
         renderCccStats(finalCccMessages);
 
         // Reset the processing flag BEFORE refreshing the active tab,
@@ -2114,73 +2107,6 @@ document.addEventListener('DOMContentLoaded', () => {
      * Only re-filters when filter state actually changes.
      * Lazy loads tab data on first visit.
      */
-    // Helper function to jump to a specific line number
-    function gotoLine(lineNumber) {
-        console.log(`[Goto Line] Jumping to line #${lineNumber}...`);
-
-        // Clear filters internally but keep search box value for user to see
-        const searchInput = document.getElementById('searchInput');
-        // Don't clear searchInput.value - let user see what they typed
-        liveSearchQuery = '';
-
-        // Clear keyword chips
-        filterKeywords.forEach(kw => kw.active = false);
-        const keywordChipsContainer = document.getElementById('keywordChips');
-        if (keywordChipsContainer) keywordChipsContainer.innerHTML = '';
-
-        // Hide autocomplete
-        const autocompleteSuggestions = document.getElementById('autocompleteSuggestions');
-        if (autocompleteSuggestions) autocompleteSuggestions.style.display = 'none';
-
-        // Refresh to show full log, then scroll
-        refreshActiveTab().then(() => {
-            setTimeout(() => {
-                // Find the FIRST non-meta line with this lineNumber
-                console.log(`[Goto Line Debug] Looking for lineNumber: ${lineNumber}`);
-                console.log(`[Goto Line Debug] Sample lines:`, originalLogLines.slice(0, 5).map(l => ({
-                    lineNumber: l.lineNumber,
-                    isMeta: l.isMeta,
-                    text: l.originalText?.substring(0, 50)
-                })));
-
-                const targetIndex = originalLogLines.findIndex(line =>
-                    !line.isMeta && line.lineNumber === lineNumber
-                );
-
-                if (targetIndex !== -1) {
-                    const foundLine = originalLogLines[targetIndex];
-                    console.log(`[Goto Line Debug] Found at index ${targetIndex}:`, {
-                        lineNumber: foundLine.lineNumber,
-                        isMeta: foundLine.isMeta,
-                        text: foundLine.originalText?.substring(0, 80)
-                    });
-
-                    const LINE_HEIGHT = 24;
-                    const logContainer = document.getElementById('logContainer');
-
-                    if (logContainer) {
-                        logContainer.scrollTop = targetIndex * LINE_HEIGHT;
-                        console.log(`[Goto Line] Scrolled to line #${lineNumber} at index ${targetIndex}`);
-
-                        // Highlight the line after a short delay
-                        setTimeout(() => {
-                            const rows = logContainer.querySelectorAll('.log-row');
-                            rows.forEach(row => {
-                                const lineNum = row.getAttribute('data-line-number');
-                                if (lineNum && parseInt(lineNum) === lineNumber) {
-                                    row.style.backgroundColor = '#fff3cd';
-                                    setTimeout(() => { row.style.backgroundColor = ''; }, 2000);
-                                }
-                            });
-                        }, 400);
-                    }
-                } else {
-                    console.warn(`[Goto Line] Line #${lineNumber} not found`);
-                }
-            }, 200);
-        });
-    }
-
     async function refreshActiveTab() {
         const activeTabId = document.querySelector('.tab-btn.active')?.dataset.tab;
 
@@ -3035,18 +2961,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         searchInput.addEventListener('input', () => {
-            const inputValue = searchInput.value;
-
-            // Check for goto line pattern: #123 or line:123
-            const gotoLineMatch = inputValue.match(/^(?:#|line:)\s*(\d+)$/i);
-            if (gotoLineMatch) {
-                clearTimeout(debounceTimer);
-                const targetLineNumber = parseInt(gotoLineMatch[1]);
-                gotoLine(targetLineNumber);
-                return;
-            }
-
-            // Normal search behavior (debounced)
+            // Debounce the live search filtering
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
                 liveSearchQuery = searchInput.value;
