@@ -43,6 +43,7 @@ test_*.txt
 
 # Build outputs (except Production/dist which is tracked for distribution)
 dist/
+!Production/dist/
 build/
 # Production/dist/ is TRACKED for easy client-side distribution
 
