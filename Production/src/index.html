@@ -330,17 +330,26 @@
                                 <table id="bleKeysTable" class="ccc-table">
                                     <thead>
                                         <tr>
+                                            <th style="width: 80px;">Packet #</th>
+                                            <th style="width: 150px;">Timestamp</th>
                                             <th style="width: 200px;">Peer Address</th>
                                             <th style="width: 150px;">Key Type</th>
                                             <th>Key Value</th>
+                                            <th>Raw Data</th>
                                         </tr>
                                         <tr class="filter-row">
-                                            <th><input type="text" placeholder="Filter..." data-col="0"
-                                                    name="bleKeysFilter0"></th>
-                                            <th><input type="text" placeholder="Filter..." data-col="1"
-                                                    name="bleKeysFilter1"></th>
-                                            <th><input type="text" placeholder="Filter..." data-col="2"
-                                                    name="bleKeysFilter2"></th>
+                                            <th style="width: 80px;"><input type="text" placeholder="Filter..."
+                                                    data-col="0" name="bleKeysFilter0"></th>
+                                            <th style="width: 150px;"><input type="text" placeholder="Filter..."
+                                                    data-col="1" name="bleKeysFilter1"></th>
+                                            <th style="width: 200px;"><input type="text" placeholder="Filter..."
+                                                    data-col="2" name="bleKeysFilter2"></th>
+                                            <th style="width: 150px;"><input type="text" placeholder="Filter..."
+                                                    data-col="3" name="bleKeysFilter3"></th>
+                                            <th><input type="text" placeholder="Filter..." data-col="4"
+                                                    name="bleKeysFilter4"></th>
+                                            <th><input type="text" placeholder="Filter..." data-col="5"
+                                                    name="bleKeysFilter5"></th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -355,21 +364,27 @@
                                         <tr>
                                             <th style="width: 100px;">Packet No.</th>
                                             <th style="width: 140px;">Timestamp</th>
-                                            <th style="width: 150px;">Connection Handle</th>
-                                            <th style="width: 200px;">Peer Address</th>
-                                            <th>Raw Packet</th>
+                                            <th style="width: 120px;">Event Type</th>
+                                            <th style="width: 140px;">Connection Handle</th>
+                                            <th style="width: 150px;">Peer Address</th>
+                                            <th style="width: 300px;">Parameters</th>
+                                            <th>Raw Data</th>
                                         </tr>
                                         <tr class="filter-row">
-                                            <th><input type="text" placeholder="Filter..." data-col="0"
-                                                    name="btsnoopConnFilter0"></th>
-                                            <th><input type="text" placeholder="Filter..." data-col="1"
-                                                    name="btsnoopConnFilter1"></th>
-                                            <th><input type="text" placeholder="Filter..." data-col="2"
-                                                    name="btsnoopConnFilter2"></th>
-                                            <th><input type="text" placeholder="Filter..." data-col="3"
-                                                    name="btsnoopConnFilter3"></th>
-                                            <th><input type="text" placeholder="Filter..." data-col="4"
-                                                    name="btsnoopConnFilter4"></th>
+                                            <th style="width: 100px;"><input type="text" placeholder="Filter..."
+                                                    data-col="0" name="btsnoopConnFilter0"></th>
+                                            <th style="width: 140px;"><input type="text" placeholder="Filter..."
+                                                    data-col="1" name="btsnoopConnFilter1"></th>
+                                            <th style="width: 120px;"><input type="text" placeholder="Filter..."
+                                                    data-col="2" name="btsnoopConnFilter2"></th>
+                                            <th style="width: 140px;"><input type="text" placeholder="Filter..."
+                                                    data-col="3" name="btsnoopConnFilter3"></th>
+                                            <th style="width: 150px;"><input type="text" placeholder="Filter..."
+                                                    data-col="4" name="btsnoopConnFilter4"></th>
+                                            <th style="width: 200px;"><input type="text" placeholder="Filter..."
+                                                    data-col="5" name="btsnoopConnFilter5"></th>
+                                            <th><input type="text" placeholder="Filter..." data-col="6"
+                                                    name="btsnoopConnFilter6"></th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -393,18 +408,18 @@
                                         <th style="min-width: 400px;">Original Log Line</th>
                                     </tr>
                                     <tr class="filter-row">
-                                        <th><input type="text" placeholder="Filter..." data-col="0"
+                                        <th style="width: 90px;"><input type="text" placeholder="Filter..." data-col="0"
                                                 name="deviceEventsFilter0"></th>
-                                        <th><input type="text" placeholder="Filter..." data-col="1"
+                                        <th style="width: 90px;"><input type="text" placeholder="Filter..." data-col="1"
                                                 name="deviceEventsFilter1"></th>
-                                        <th><input type="text" placeholder="Filter..." data-col="2"
-                                                name="deviceEventsFilter2"></th>
-                                        <th><input type="text" placeholder="Filter..." data-col="3"
-                                                name="deviceEventsFilter3"></th>
-                                        <th><input type="text" placeholder="Filter..." data-col="4"
-                                                name="deviceEventsFilter4"></th>
-                                        <th><input type="text" placeholder="Filter..." data-col="5"
-                                                name="deviceEventsFilter5"></th>
+                                        <th style="width: 200px;"><input type="text" placeholder="Filter..."
+                                                data-col="2" name="deviceEventsFilter2"></th>
+                                        <th style="width: 150px;"><input type="text" placeholder="Filter..."
+                                                data-col="3" name="deviceEventsFilter3"></th>
+                                        <th style="width: 150px;"><input type="text" placeholder="Filter..."
+                                                data-col="4" name="deviceEventsFilter4"></th>
+                                        <th style="min-width: 400px;"><input type="text" placeholder="Filter..."
+                                                data-col="5" name="deviceEventsFilter5"></th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -486,7 +501,7 @@
         <span id="progressText" class="progress-text"></span>
     </div>
 
-    <script src="jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- noUiSlider for the time range slider -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css"
         integrity="sha512-qveKnGrvOChbSzAdtSs8p69eoLegyh+1hwOMbmpCViIwj7rn4oJjdmMvWOuyQlTOZgTlZA0N2PXA7iA8/2TUYA=="
@@ -495,7 +510,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"
         integrity="sha512-UOJe4paV6hYWBnS0c9GnIRH8PLm2nFK22uhfAvsTIqd3uwnWsVri1OPn5fJYdLtGY3wB11LGHJ4yPU1WFJeBYQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="table-resize.js"></script>
     <script type="module" src="./main.js"></script>
 </body>
 

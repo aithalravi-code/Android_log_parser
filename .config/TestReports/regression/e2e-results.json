@@ -1,0 +1,647 @@
+{
+  "config": {
+    "configFile": "/home/rk/Documents/Android_log_parser (copy)/.config/test/playwright.config.js",
+    "rootDir": "/home/rk/Documents/Android_log_parser (copy)/TestScripts/regression",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "outputFolder": "../TestReports/regression/playwright-report",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "../TestReports/regression/e2e-results.json"
+        }
+      ],
+      [
+        "junit",
+        {
+          "outputFile": "../TestReports/regression/e2e-results.xml"
+        }
+      ],
+      [
+        "/home/rk/Documents/Android_log_parser (copy)/node_modules/allure-playwright/dist/index.js",
+        {
+          "outputFolder": "../TestReports/regression/allure-results"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/rk/Documents/Android_log_parser (copy)/TestScripts/regression",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.spec.js"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "/home/rk/Documents/Android_log_parser (copy)/TestScripts/regression",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.spec.js"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/home/rk/Documents/Android_log_parser (copy)/TestScripts/regression",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.spec.js"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.57.0",
+    "workers": 6,
+    "webServer": {
+      "command": "npm run dev",
+      "port": 5173,
+      "timeout": 120000,
+      "reuseExistingServer": true
+    }
+  },
+  "suites": [
+    {
+      "title": "btsnoop_collapsible_headers.spec.js",
+      "file": "btsnoop_collapsible_headers.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "BTSnoop Collapsible Headers",
+          "file": "btsnoop_collapsible_headers.spec.js",
+          "line": 6,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Should display collapsible file headers for multiple BTSnoop logs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2709,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Uploading created ZIP file...\n"
+                        },
+                        {
+                          "text": "[Browser] [Worker] Syncing data...\n"
+                        },
+                        {
+                          "text": "[Browser] [Time Range Debug] consolidatedMinTimestamp: undefined\n"
+                        },
+                        {
+                          "text": "[Browser] [Time Range Debug] consolidatedMaxTimestamp: undefined\n"
+                        },
+                        {
+                          "text": "[Browser] [Time Range Debug] minLogDate: null\n"
+                        },
+                        {
+                          "text": "[Browser] [Time Range Debug] maxLogDate: null\n"
+                        },
+                        {
+                          "text": "[Browser] [Sorting] Making table sortable: deviceEventsTable, 6 columns\n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] Applying default sort: deviceEventsTable, column 0, order desc \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] sortTable called: table = deviceEventsTable, column = 0, order = desc \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] Sorting deviceEventsTable column 0: none → desc \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] Sorting 1 rows in deviceEventsTable \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] ✓ Sorted deviceEventsTable successfully\n"
+                        },
+                        {
+                          "text": "[Browser] [Sorting] Making table sortable: bleKeysTable, 6 columns\n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] Applying default sort: bleKeysTable, column 0, order desc \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] sortTable called: table = bleKeysTable, column = 0, order = desc \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] Sorting bleKeysTable column 0: none → desc \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] Sorting 1 rows in bleKeysTable \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] ✓ Sorted bleKeysTable successfully\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Called for table: deviceEventsTable\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Table element found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] thead found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] headerRow found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Found 6 header cells\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 0\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 1\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 2\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 3\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 4\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 5\n"
+                        },
+                        {
+                          "text": "[Browser] Table \"deviceEventsTable\" is now resizable\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Called for table: bleKeysTable\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Table element found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] thead found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] headerRow found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Found 6 header cells\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 0\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 1\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 2\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 3\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 4\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 5\n"
+                        },
+                        {
+                          "text": "[Browser] Table \"bleKeysTable\" is now resizable\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Called for table: btsnoopConnectionEventsTable\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Table element found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] thead found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] headerRow found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Found 7 header cells\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 0\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 1\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 2\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 3\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 4\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 5\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 6\n"
+                        },
+                        {
+                          "text": "[Browser] Table \"btsnoopConnectionEventsTable\" is now resizable\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Called for table: cccStatsTable\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Table element found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] thead found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] headerRow found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Found 8 header cells\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 0\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 1\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 2\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 3\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 4\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 5\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 6\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Added resize handle to column 7\n"
+                        },
+                        {
+                          "text": "[Browser] Table \"cccStatsTable\" is now resizable\n"
+                        },
+                        {
+                          "text": "[Browser] [Sorting] Making table sortable: cccStatsTable, 8 columns\n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] Applying default sort: cccStatsTable, column 0, order desc \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] sortTable called: table = cccStatsTable, column = 0, order = desc \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] Sorting cccStatsTable column 0: none → desc \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] Sorting 1 rows in cccStatsTable \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] ✓ Sorted cccStatsTable successfully\n"
+                        },
+                        {
+                          "text": "[Browser] [Perf] Filter state changed - re-filtering logs tab\n"
+                        },
+                        {
+                          "text": "[Browser] [Worker] Data loaded: 0 lines\n"
+                        },
+                        {
+                          "text": "[Browser] [UI] Auto-collapsed left panel after file loading\n"
+                        },
+                        {
+                          "text": "Switching to BTSnoop tab...\n"
+                        },
+                        {
+                          "text": "[Browser] [Click Debug] Target: BUTTON Classes: tab-btn active ParentTable: undefined\n"
+                        },
+                        {
+                          "text": "[Browser] [Perf Phase2] Lazy loading btsnoop tab...\n"
+                        },
+                        {
+                          "text": "[Browser] [BTSnoop Debug] processForBtsnoop called\n"
+                        },
+                        {
+                          "text": "[Browser] [BTSnoop] Worker code changed (v2025-12-07-21:50), clearing ALL cache...\n"
+                        },
+                        {
+                          "text": "[Browser] [BTSnoop] All cache cleared (including logStore), will force re-process\n"
+                        },
+                        {
+                          "text": "[Browser] [Perf] Resolving btsnoop handles in memory...\n"
+                        },
+                        {
+                          "text": "[Browser] [Perf] Resolved handles for 0 packets in 0.00ms\n"
+                        },
+                        {
+                          "text": "[Browser] [Sorting] Making table sortable: deviceEventsTable, 6 columns\n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] Applying default sort: deviceEventsTable, column 0, order desc \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] sortTable called: table = deviceEventsTable, column = 0, order = desc \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] Sorting deviceEventsTable column 0: desc → desc \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] Sorting 1 rows in deviceEventsTable \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] ✓ Sorted deviceEventsTable successfully\n"
+                        },
+                        {
+                          "text": "[Browser] [Sorting] Making table sortable: bleKeysTable, 6 columns\n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] Applying default sort: bleKeysTable, column 0, order desc \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] sortTable called: table = bleKeysTable, column = 0, order = desc \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] Sorting bleKeysTable column 0: desc → desc \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] Sorting 1 rows in bleKeysTable \n"
+                        },
+                        {
+                          "text": "[Browser] [Sort] ✓ Sorted bleKeysTable successfully\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Called for table: deviceEventsTable\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Table element found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] thead found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] headerRow found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Found 6 header cells\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Column 0 already has resize handle, skipping\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Column 1 already has resize handle, skipping\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Column 2 already has resize handle, skipping\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Column 3 already has resize handle, skipping\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Column 4 already has resize handle, skipping\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Column 5 already has resize handle, skipping\n"
+                        },
+                        {
+                          "text": "[Browser] Table \"deviceEventsTable\" is now resizable\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Called for table: bleKeysTable\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Table element found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] thead found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] headerRow found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Found 6 header cells\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Column 0 already has resize handle, skipping\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Column 1 already has resize handle, skipping\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Column 2 already has resize handle, skipping\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Column 3 already has resize handle, skipping\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Column 4 already has resize handle, skipping\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Column 5 already has resize handle, skipping\n"
+                        },
+                        {
+                          "text": "[Browser] Table \"bleKeysTable\" is now resizable\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Called for table: btsnoopConnectionEventsTable\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Table element found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] thead found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] headerRow found: JSHandle@node\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Found 7 header cells\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Column 0 already has resize handle, skipping\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Column 1 already has resize handle, skipping\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Column 2 already has resize handle, skipping\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Column 3 already has resize handle, skipping\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Column 4 already has resize handle, skipping\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Column 5 already has resize handle, skipping\n"
+                        },
+                        {
+                          "text": "[Browser] [makeTableResizable] Column 6 already has resize handle, skipping\n"
+                        },
+                        {
+                          "text": "[Browser] Table \"btsnoopConnectionEventsTable\" is now resizable\n"
+                        },
+                        {
+                          "text": "[Browser] [BTSnoop Debug] 1. setupBtsnoopTab called.\n"
+                        },
+                        {
+                          "text": "[Browser] [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.\n"
+                        },
+                        {
+                          "text": "[Browser] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).\n"
+                        },
+                        {
+                          "text": "[Browser] [BTSnoop Debug] 6. Created 2 visible rows\n"
+                        },
+                        {
+                          "text": "[Browser] [BTSnoop Debug] 7. Viewport now has 2 children\n"
+                        },
+                        {
+                          "text": "[Browser] [Perf Phase2] BTSnoop tab loaded. Total packets: 2\n"
+                        },
+                        {
+                          "text": "[Browser] [Perf Phase2] btsnoop tab loaded in 64.60ms\n"
+                        },
+                        {
+                          "text": "[Browser] [Perf] Filter state changed - re-filtering btsnoop tab\n"
+                        },
+                        {
+                          "text": "[Browser] [BTSnoop Debug] 1. setupBtsnoopTab called.\n"
+                        },
+                        {
+                          "text": "[Browser] [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.\n"
+                        },
+                        {
+                          "text": "[Browser] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).\n"
+                        },
+                        {
+                          "text": "[Browser] [BTSnoop Debug] 6. Created 2 visible rows\n"
+                        },
+                        {
+                          "text": "[Browser] [BTSnoop Debug] 7. Viewport now has 2 children\n"
+                        },
+                        {
+                          "text": "Found 2 file headers.\n"
+                        },
+                        {
+                          "text": "Header texts: [ \u001b[32m'▼ btsnoop_hci.log'\u001b[39m, \u001b[32m'▼ btsnoop_hci.log'\u001b[39m ]\n"
+                        },
+                        {
+                          "text": "[Browser] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).\n"
+                        },
+                        {
+                          "text": "[Browser] [BTSnoop Debug] 6. Created 2 visible rows\n"
+                        },
+                        {
+                          "text": "[Browser] [BTSnoop Debug] 7. Viewport now has 2 children\n"
+                        },
+                        {
+                          "text": "[Browser] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).\n"
+                        },
+                        {
+                          "text": "[Browser] [BTSnoop Debug] 6. Created 2 visible rows\n"
+                        },
+                        {
+                          "text": "[Browser] [BTSnoop Debug] 7. Viewport now has 2 children\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-12T19:42:18.033Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e4e89d6ed40f63e00acb-f9d0ff2a95bfacf36ba8",
+              "file": "btsnoop_collapsible_headers.spec.js",
+              "line": 22,
+              "column": 5
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-12-12T19:42:14.706Z",
+    "duration": 6334.608,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

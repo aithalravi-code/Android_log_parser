@@ -6,7 +6,7 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
     // Test directory
-    testDir: '../TestScripts/regression',
+    testDir: '../../TestScripts/regression',
 
     // Test file pattern
     testMatch: '**/*.spec.js',

@@ -5,6 +5,7 @@ import 'nouislider/dist/nouislider.css';
 import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import { Chart, registerables } from 'chart.js';
+import { makeTableResizable } from './table-resize.js';
 
 // Register Chart.js components
 Chart.register(...registerables);
@@ -293,6 +294,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let nfcLogLines = []; // Holds all NFC-related log lines
     let dckLogLines = []; // Holds all DCK-related log lines
     let btsnoopPackets = []; // Holds parsed btsnoop packets
+    let btsnoopSortColumn = 1; // Revert to Timestamp column (Index 1)
+    let btsnoopSortOrder = 'desc'; // Default: Descending (newest first)
+    let btsnoopCollapsedFiles = new Set(); // Track collapsed files
+    let tableSortState = {}; // Track sort state for all tables
 
     // --- Worker Setup ---
     // Increment this version when worker logic changes to force updates
@@ -1096,7 +1101,82 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log('[Sort Debug] No log lines to sort');
                     return;
                 }
+                // Apply active filters
+                let filteredPackets = allPackets.filter(packet => {
+                    if (!packet) return false;
 
+                    // Layer filters
+                    if (activeBtsnoopLayers.size > 0 && !activeBtsnoopLayers.has(packet.layer)) return false;
+
+                    // Text filters for each column
+                    for (let i = 0; i < btsnoopFilters.length; i++) {
+                        const filterValue = btsnoopFilters[i];
+                        if (!filterValue) continue;
+
+                        let cellText = '';
+                        switch (i) {
+                            case 0: cellText = String(packet.packetNum); break;
+                            case 1: cellText = packet.timestamp || ''; break;
+                            case 2: cellText = packet.source || ''; break;
+                            case 3: cellText = packet.destination || ''; break;
+                            case 4: cellText = packet.type || ''; break;
+                            case 5: cellText = packet.summary || ''; break;
+                            case 6: cellText = packet.dataHex || ''; break;
+                        }
+
+                        if (!cellText.toLowerCase().includes(filterValue.toLowerCase())) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                });
+
+                // Apply sorting if column is selected
+                if (btsnoopSortColumn !== null) {
+                    console.log(`[BTSnoop Sort] Sorting ${filteredPackets.length} packets by column ${btsnoopSortColumn}`);
+
+                    filteredPackets.sort((a, b) => {
+                        let aValue = '';
+                        let bValue = '';
+
+                        // Get values based on column
+                        switch (btsnoopSortColumn) {
+                            case 0: aValue = String(a.packetNum); bValue = String(b.packetNum); break;
+                            case 1: aValue = a.timestamp || ''; bValue = b.timestamp || ''; break;
+                            case 2: aValue = a.source || ''; bValue = b.source || ''; break;
+                            case 3: aValue = a.destination || ''; bValue = b.destination || ''; break;
+                            case 4: aValue = a.type || ''; bValue = b.type || ''; break;
+                            case 5: aValue = a.summary || ''; bValue = b.summary || ''; break;
+                            case 6: aValue = a.dataHex || ''; bValue = a.dataHex || ''; break; // Corrected bValue here
+                        }
+
+                        // Smart comparison
+                        const isTimestamp = /\d{1,2}[-:]\d{1,2}/.test(aValue);
+
+                        if (isTimestamp) {
+                            // String comparison for timestamps
+                            return btsnoopSortOrder === 'asc'
+                                ? aValue.localeCompare(bValue)
+                                : bValue.localeCompare(aValue);
+                        }
+
+                        // Try numeric comparison
+                        const aNum = parseFloat(aValue.replace(/[^0-9.-]/g, ''));
+                        const bNum = parseFloat(bValue.replace(/[^0-9.-]/g, ''));
+
+                        if (!isNaN(aNum) && !isNaN(bNum)) {
+                            return btsnoopSortOrder === 'asc' ? aNum - bNum : bNum - aNum;
+                        }
+
+                        // String comparison
+                        return btsnoopSortOrder === 'asc'
+                            ? aValue.localeCompare(bValue)
+                            : bValue.localeCompare(aValue);
+                    });
+                }
+
+                const packetCount = filteredPackets.length;
                 // Group lines by file (using isMeta headers as delimiters)
                 const fileSections = [];
                 let currentSection = null;
@@ -3845,14 +3925,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             <th style="width: 200px;">Raw Data</th>
                         </tr>
                         <tr class="filter-row">
-                            <th><input type="text" placeholder="Filter..." data-col="0"></th>
-                            <th><input type="text" placeholder="Filter..." data-col="1"></th>
-                            <th><input type="text" placeholder="Filter..." data-col="2"></th>
-                            <th><input type="text" placeholder="Filter..." data-col="3"></th>
-                            <th><input type="text" placeholder="Filter..." data-col="4"></th>
-                            <th><input type="text" placeholder="Filter..." data-col="5"></th>
-                            <th><input type="text" placeholder="Filter..." data-col="6"></th>
-                            <th><input type="text" placeholder="Filter..." data-col="7"></th>
+                            <th style="width: 140px;"><input type="text" placeholder="Filter..." data-col="0"></th>
+                            <th style="width: 150px;"><input type="text" placeholder="Filter..." data-col="1"></th>
+                            <th style="width: 60px;"><input type="text" placeholder="Filter..." data-col="2"></th>
+                            <th style="width: 150px;"><input type="text" placeholder="Filter..." data-col="3"></th>
+                            <th style="width: 125px;"><input type="text" placeholder="Filter..." data-col="4"></th>
+                            <th style="width: 90px;"><input type="text" placeholder="Filter..." data-col="5"></th>
+                            <th style="width: 400px;"><input type="text" placeholder="Filter..." data-col="6"></th>
+                            <th style="width: 200px;"><input type="text" placeholder="Filter..." data-col="7"></th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -4043,7 +4123,12 @@ document.addEventListener('DOMContentLoaded', () => {
             tbody.innerHTML = html;
         }
 
+        // Initial render
         updateCccTableBody();
+
+        // Make table sortable with default descending sort by time
+        makeSortable('cccStatsTable', 0, 'desc');
+
         // Restore selection/scroll for CCC Table
         restoreTableScroll('cccTable');
     }
@@ -4101,9 +4186,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const rowId = `ble-key-${event.keyValue}`;
 
                     keyTableHtml += `<tr data-row-id="${rowId}">
+                        <td>${event.packetNum || '-'}</td>
+                        <td>${event.timestamp || '-'}</td>
                         <td class="copy-cell" data-log-text="${peerAddress}">${peerAddress}</td>
                         <td>${event.keyType}</td>
                         <td class="copy-cell" data-log-text="${event.keyValue}"><span style="font-family: monospace; font-size: 0.9em;">${event.keyValue}</span></td>
+                        <td class="copy-cell" data-log-text="${event.data || '-'}"><span style="font-family: monospace; font-size: 0.85em; display: block; word-break: break-all; white-space: normal;">${event.data || '-'}</span></td> 
                     </tr>`;
                 }
                 bleKeysTbody.innerHTML = keyTableHtml;
@@ -4156,6 +4244,10 @@ document.addEventListener('DOMContentLoaded', () => {
         restoreTableScroll('deviceEventsTable');
         restoreTableScroll('bleKeysTable');
         restoreTableScroll('btsnoopConnectionEventsTable');
+
+        // Make tables sortable with default descending sort
+        makeSortable('deviceEventsTable', 0, 'desc'); // Sort by Timestamp
+        makeSortable('bleKeysTable', 0, 'desc'); // Sort by Packet No
 
         // Make tables resizable
 
@@ -4750,12 +4842,13 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const bufferPromises = btsnoopTasks.map(task => (task.file || task.blob).arrayBuffer());
                 const fileBuffers = await Promise.all(bufferPromises);
+                const fileNames = btsnoopTasks.map(task => task.file ? task.file.name : task.path.split('/').pop()); // Extract filename
 
                 // FIX: Embed the worker script to avoid file:// origin security errors.
                 const btsnoopWorkerScript = `
                 // --- Dictionaries for HCI Parsing ---
                 const HCI_COMMANDS = { 0x200C: 'LE Set Scan Enable', 0x200B: 'LE Set Scan Parameters', 0x2006: 'LE Set Advertising Parameters', 0x200A: 'LE Set Advertising Enable', 0x200D: 'LE Create Connection' };
-                const HCI_EVENTS = { 0x0E: 'Command Complete', 0x0F: 'Command Status', 0x3E: 'LE Meta Event' };
+                const HCI_EVENTS = { 0x05: 'Disconnect Complete', 0x0E: 'Command Complete', 0x0F: 'Command Status', 0x3E: 'LE Meta Event' };
                 const LE_META_EVENTS = { 0x01: 'LE Connection Complete', 0x02: 'LE Advertising Report', 0x0A: 'LE Enhanced Connection Complete', 0x0B: 'LE Connection Update Complete' };
                 const L2CAP_CIDS = { 0x0004: 'ATT', 0x0005: 'LE Signaling', 0x0006: 'SMP' };
                 const ATT_OPCODES = { 0x01: 'Error Rsp', 0x02: 'Exchange MTU Req', 0x03: 'Exchange MTU Rsp', 0x04: 'Find Info Req', 0x05: 'Find Info Rsp', 0x08: 'Read By Type Req', 0x09: 'Read By Type Rsp', 0x0A: 'Read Req', 0x0B: 'Read Rsp', 0x0C: 'Read Blob Req', 0x0D: 'Read Blob Rsp', 0x10: 'Read By Group Type Req', 0x11: 'Read By Group Type Rsp', 0x12: 'Write Req', 0x13: 'Write Rsp', 0x52: 'Write Cmd', 0x1B: 'Notification', 0x1D: 'Indication', 0x1E: 'Confirmation' };
@@ -4763,30 +4856,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // --- Main Worker Logic ---
                 self.onmessage = async (event) => {
-                    let { fileBuffers, localBtAddress } = event.data; // Receive local address
+                    let { fileBuffers, fileNames, localBtAddress } = event.data; // Receive local address and filenames
                     if (!fileBuffers || fileBuffers.length === 0) {
                         self.postMessage({ type: 'error', message: 'No file buffers received.' });
                         return;
                     }
 
                     try {
-                        const finalBuffer = concatenateBtsnoopBuffers(fileBuffers);
-                        const dataView = new DataView(finalBuffer);
-
-                        const magic = new TextDecoder().decode(finalBuffer.slice(0, 8));
-                        if (magic !== 'btsnoop\\0') {
-                            throw new Error('Invalid btsnoop file format.');
-                        }
-
-                        let offset = 16;
                         let packetNumber = 1;
                         const BTSNOOP_EPOCH_DELTA = 0x00dcddb30f2f8000n;
                         const connectionMap = new Map();
-                        const packets = [];
                         const CHUNK_SIZE = 1000;
+                        const packets = [];
 
-                        while (offset < finalBuffer.byteLength) {
-                            if (offset + 24 > finalBuffer.byteLength) break;
+                        // Process each file separately
+                        for (let fIndex = 0; fIndex < fileBuffers.length; fIndex++) {
+                            const buffer = fileBuffers[fIndex];
+                            const currentFileName = fileNames ? fileNames[fIndex] : '';
+                            const dataView = new DataView(buffer);
+
+                            const magic = new TextDecoder().decode(buffer.slice(0, 8));
+                            if (magic !== 'btsnoop\\0') {
+                                console.warn('Skipping file ' + currentFileName + ': Invalid btsnoop header');
+                                continue;
+                            }
+
+                            // Inject META packet for the file header
+                            packets.push({
+                                type: 'META',
+                                fileName: currentFileName,
+                                number: 0, // Meta packets don't have a real number, but need one for sorting if needed
+                                timestamp: '',
+                                source: '',
+                                destination: '',
+                                summary: 'File: ' + currentFileName,
+                                data: ''
+                            });
+
+                            let offset = 16;
+                            
+                            while (offset < buffer.byteLength) {
+                            if (offset + 24 > buffer.byteLength) break;
 
                             const includedLength = dataView.getUint32(offset + 4, false);
                             const flags = dataView.getUint32(offset + 8, false); // FIX: Flags are at offset 8, not 12.
@@ -4797,9 +4907,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             const timestampStr = \`\${(date.getUTCMonth()+1).toString().padStart(2, '0')}-\${date.getUTCDate().toString().padStart(2, '0')} \${date.getUTCHours().toString().padStart(2, '0')}:\${date.getUTCMinutes().toString().padStart(2, '0')}:\${date.getUTCSeconds().toString().padStart(2, '0')}.\${date.getUTCMilliseconds().toString().padStart(3, '0')}\`;
 
                             offset += 24;
-                            if (offset + includedLength > finalBuffer.byteLength) break;
+                            if (offset + includedLength > buffer.byteLength) break;
 
-                            const packetData = new Uint8Array(finalBuffer, offset, includedLength);
+                            const packetData = new Uint8Array(buffer, offset, includedLength);
                             const direction = (flags & 1) === 0 ? 'Host -> Controller' : 'Controller -> Host';
 
                             const interpretation = interpretHciPacket(packetData, connectionMap, packetNumber, direction, timestampStr, localBtAddress);
@@ -4810,17 +4920,20 @@ document.addEventListener('DOMContentLoaded', () => {
                                 self.postMessage({ type: 'localAddressFound', address: localBtAddress });
                             }
 
-                            const packet = { ...interpretation, number: packetNumber, timestamp: timestampStr, direction };
+                            const packet = { ...interpretation, number: packetNumber, timestamp: timestampStr, fileName: currentFileName, direction };
                             packets.push(packet);
 
-                            if (packets.length >= CHUNK_SIZE) {
-                                self.postMessage({ type: 'chunk', packets: packets });
-                                packets.length = 0;
-                            }
-
                             packetNumber++;
+                            
+                            // Chunking update (per file loop or global? Global is better suited here, checking total packets)
+                            if (packets.length >= CHUNK_SIZE) {
+                                self.postMessage({ type: 'chunk', packets: packets.splice(0, packets.length) });
+                                // Yield
+                                await new Promise(resolve => setTimeout(resolve, 0));
+                            }
                             offset += includedLength;
                         }
+                    } // End of file loop
 
                         if (packets.length > 0) {
                             self.postMessage({ type: 'chunk', packets: packets });
@@ -4869,6 +4982,29 @@ document.addEventListener('DOMContentLoaded', () => {
                             const ogf = (data[2] >> 2) & 0x3F;
                             const opcode = (ogf << 10) | ocf;
                             const paramLength = data[3];
+
+                            // Extract LTK from LE Start Encryption (0x2019) or LE LTK Request Reply (0x201A)
+                            if ((opcode === 0x2019 && data.length >= 32) || (opcode === 0x201A && data.length >= 22)) {
+                                const handle = data[4] | (data[5] << 8);
+                                let ltkBytes;
+                                
+                                if (opcode === 0x2019) {
+                                    // 0x2019: LTK starts at offset 16
+                                    ltkBytes = data.slice(16, 32); 
+                                } else {
+                                    // 0x201A: LTK starts at offset 6
+                                    ltkBytes = data.slice(6, 22);
+                                }
+
+                                const ltk = Array.from(ltkBytes).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+                                const connInfo = connectionMap.get(handle);
+                                const peerAddr = connInfo ? connInfo.address : \`Handle 0x\${handle.toString(16)}\`;
+                                
+                                self.postMessage({ 
+                                    type: 'connectionEvent', 
+                                    event: { packetNum, handle: \`0x\${handle.toString(16).padStart(4, '0')}\`, keyType: 'LTK', keyValue: ltk, timestamp: timestampStr, peerAddress: peerAddr, data: hexData } 
+                                });
+                            }
                             const opName = HCI_COMMANDS[opcode] || \`Unknown OpCode: 0x\${opcode.toString(16).padStart(4, '0')}\`;
                             return { type: 'HCI Cmd', summary: \`\${opName}, Len: \${paramLength}\`, tags, source, destination, data: hexData };
                         case 2: // ACL Data - Direction from flags, use connection map for address
@@ -4908,13 +5044,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                         aclSummary += ' [LTK Found]';
                                         // FIX: Use source address to identify who sent the key (Owner)
                                         const peerAddr = source;
-                                        self.postMessage({ type: 'connectionEvent', event: { packetNum, handle, keyType: 'LTK', keyValue: ltk, timestamp: timestampStr, peerAddress: peerAddr } });
+                                        self.postMessage({ type: 'connectionEvent', event: { packetNum, handle, keyType: 'LTK', keyValue: ltk, timestamp: timestampStr, peerAddress: peerAddr, data: hexData } });
                                     }
                                     else if (smpCode === 0x08 && data.length >= 26) { // Identity Info (IRK) - 16 bytes
                                         const irk = Array.from(data.slice(10, 26)).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
                                         // FIX: Use source address to identify who sent the key (Owner)
                                         const peerAddr = source;
-                                        self.postMessage({ type: 'connectionEvent', event: { packetNum, handle, keyType: 'IRK', keyValue: irk, timestamp: timestampStr, peerAddress: peerAddr } });
+                                        self.postMessage({ type: 'connectionEvent', event: { packetNum, handle, keyType: 'IRK', keyValue: irk, timestamp: timestampStr, peerAddress: peerAddr, data: hexData } });
                                         aclSummary += \` [IRK Found]\`;
                                     }
                                 }
@@ -4950,16 +5086,130 @@ document.addEventListener('DOMContentLoaded', () => {
                                 summary += \` > \${LE_META_EVENTS[subEventCode] || 'Unknown Sub-event'}\`;
                                 const isEnhanced = subEventCode === 0x0A;
                                 const isLegacy = subEventCode === 0x01;
-                                if ((isLegacy || isEnhanced) && data.length >= 15) {
+                                
+                                // Enhanced events are longer due to additional RPA fields
+                                const minLength = isEnhanced ? 31 : 19;
+                                
+                                if ((isLegacy || isEnhanced) && data.length >= minLength) {
+                                    const status = data[4];
                                     const connectionHandle = (data[6] << 8) | data[5];
-                                    const peerAddressSlice = isEnhanced ? data.slice(10, 16) : data.slice(9, 15);
+                                    const role = data[7];
+                                    const peerAddrType = data[8];
+                                    const peerAddressSlice = data.slice(9, 15);
                                     const peerAddress = Array.from(peerAddressSlice).reverse().map(b => b.toString(16).padStart(2, '0')).join(':').toUpperCase();
+                                    
+                                    // For enhanced events, extract RPA addresses
+                                    let localRPA = null;
+                                    let peerRPA = null;
+                                    if (isEnhanced && data.length >= 27) {
+                                        const localRPASlice = data.slice(15, 21);
+                                        const peerRPASlice = data.slice(21, 27);
+                                        localRPA = Array.from(localRPASlice).reverse().map(b => b.toString(16).padStart(2, '0')).join(':').toUpperCase();
+                                        peerRPA = Array.from(peerRPASlice).reverse().map(b => b.toString(16).padStart(2, '0')).join(':').toUpperCase();
+                                    }
+                                    
+                                    // For enhanced events, parameters are at different offsets due to RPA fields
+                                    // Legacy (0x01): params at bytes 12-18
+                                    // Enhanced (0x0A): Local RPA (15-20), Peer RPA (21-26), params at bytes 27-33
+                                    const paramOffset = isEnhanced ? 15 : 0;
+                                    
+                                    // Connection parameters
+                                    const connInterval = ((data[13 + paramOffset] << 8) | data[12 + paramOffset]) * 1.25; // ms
+                                    const connLatency = (data[15 + paramOffset] << 8) | data[14 + paramOffset];
+                                    const supervisionTimeout = ((data[17 + paramOffset] << 8) | data[16 + paramOffset]) * 10; // ms
+                                    const masterClockAccuracy = data[18 + paramOffset];
+                                    
+                                    // Address type interpretation
+                                    const ADDRESS_TYPES = {
+                                        0x00: 'Public',
+                                        0x01: 'Random',
+                                        0x02: 'Public Identity',
+                                        0x03: 'Random Identity'
+                                    };
+                                    const addrTypeText = ADDRESS_TYPES[peerAddrType] || ('Unknown (0x' + peerAddrType.toString(16) + ')');
+                                    const isRPA = peerAddrType === 0x01 || peerAddrType === 0x03;
+
+                                    // Role interpretation
+                                    const roleText = role === 0x00 ? 'Master' : 'Slave';
+
+                                    // Clock accuracy mapping
+                                    const CLOCK_ACCURACY = [500, 250, 150, 100, 75, 50, 30, 20];
+                                    const clockAccuracyText = CLOCK_ACCURACY[masterClockAccuracy] || '?';
+
+                                    // Build parameters object with HTML badges
+                                    const parameters = [];
+                                    parameters.push('<span class="param-label">Status:</span> <span class="param-value">' + (status === 0x00 ? 'Success' : 'Error 0x' + status.toString(16)) + '</span>');
+                                    parameters.push('<span class="param-label">Role:</span> <span class="param-value">' + roleText + '</span>');
+                                    parameters.push('<span class="param-label">Peer Address Type:</span> <span class="param-value">' + addrTypeText + (isRPA ? ' (RPA)' : '') + '</span>');
+                                    if (peerRPA && peerRPA !== '00:00:00:00:00:00') {
+                                        parameters.push('<span class="param-label">Peer RPA:</span> <span class="param-value">' + peerRPA + '</span>');
+                                    }
+                                    parameters.push('<span class="param-label">Connection Interval:</span> <span class="param-value">' + connInterval.toFixed(2) + ' ms</span>');
+                                    parameters.push('<span class="param-label">Latency:</span> <span class="param-value">' + connLatency + '</span>');
+                                    parameters.push('<span class="param-label">Supervision Timeout:</span> <span class="param-value">' + supervisionTimeout + ' ms</span>');
+                                    parameters.push('<span class="param-label">Clock Accuracy:</span> <span class="param-value">±' + clockAccuracyText + ' ppm</span>');
+
+                                    const paramsFormatted = parameters.join('<br>');
+
                                     if (connectionHandle) { connectionMap.set(connectionHandle, { address: peerAddress, packetNum: packetNum }); }
                                     // Destination is always the host for an event. The peer is the remote device.
-                                    summary += \` (Handle: 0x\${connectionHandle.toString(16)}, Peer: \${peerAddress})\`;
-                                    // Send connection event with timestamp
-                                    self.postMessage({ type: 'connectionEvent', event: { packetNum: packetNum, timestamp: timestampStr, handle: \`0x\${connectionHandle.toString(16).padStart(4, '0')}\`, address: peerAddress, rawData: hexData } });
+                                    summary += ' (Handle: 0x' + connectionHandle.toString(16) + ', Peer: ' + peerAddress + ')';
+                                    // Send connection event with timestamp and parameters
+                                    self.postMessage({ type: 'connectionEvent', event: { packetNum: packetNum, timestamp: timestampStr, handle: '0x' + connectionHandle.toString(16).padStart(4, '0'), address: peerAddress, eventType: 'connect', parameters: paramsFormatted, rawData: hexData } });
                                 }
+                            }
+                            else if (eventCode === 0x05 && data.length >= 7) { // Disconnect Complete Event
+                                const status = data[3];
+                                const handle = (data[5] << 8) | data[4];
+                                const reason = data[6];
+                                
+                                // Disconnect reason codes from Bluetooth Core Spec
+                                const DISCONNECT_REASONS = {
+                                    0x05: 'Authentication Failure',
+                                    0x08: 'Connection Timeout',
+                                    0x13: 'Remote User Terminated',
+                                    0x14: 'Remote Low Resources',
+                                    0x15: 'Remote Power Off',
+                                    0x16: 'Local Host Terminated',
+                                    0x1A: 'Unsupported Remote Feature',
+                                    0x22: 'LMP Response Timeout',
+                                    0x3B: 'Unacceptable Connection Parameters',
+                                    0x3D: 'Connection Terminated by MIC Failure'
+                                };
+
+                                const reasonText = DISCONNECT_REASONS[reason] || ('Unknown (0x' + reason.toString(16).padStart(2, '0') + ')');
+                                summary += ' (Handle: 0x' + handle.toString(16) + ', Reason: ' + reasonText + ')';
+
+                                // Get peer address from connection map
+                                const connInfo = connectionMap.get(handle);
+                                const peerAddress = connInfo ? connInfo.address : 'N/A';
+
+                                // Build parameters with HTML badges
+                                const parameters = [];
+                                parameters.push('<span class=\"param-label\">Status:</span> <span class=\"param-value\">' + (status === 0x00 ? 'Success' : 'Error 0x' + status.toString(16)) + '</span>');
+                                parameters.push('<span class=\"param-label\">Reason Code:</span> <span class=\"param-value\">0x' + reason.toString(16).padStart(2, '0') + '</span>');
+                                parameters.push('<span class=\"param-label\">Reason:</span> <span class=\"param-value\">' + reasonText + '</span>');
+                                
+                                const paramsFormatted = parameters.join('<br>');
+                                
+                                // Send disconnect event
+                                self.postMessage({ 
+                                    type: 'connectionEvent', 
+                                    event: { 
+                                        packetNum, 
+                                        timestamp: timestampStr, 
+                                        handle: \`0x\${handle.toString(16).padStart(4, '0')}\`, 
+                                        address: peerAddress, 
+                                        eventType: 'disconnect',
+                                        reason: reasonText,
+                                        reasonCode: reason,
+                                        parameters: paramsFormatted,
+                                        rawData: hexData 
+                                    } 
+                                });
+                                
+                                // Remove from connection map as connection is now closed
+                                connectionMap.delete(handle);
                             }
                             return { type: 'HCI Evt', summary, tags, source, destination, data: hexData, foundLocalAddress };
                         default:
@@ -5043,7 +5293,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     reject(err);
                 };
 
-                worker.postMessage({ fileBuffers, localBtAddress: localBtAddress }, fileBuffers);
+                worker.postMessage({ fileBuffers, fileNames, localBtAddress: localBtAddress }, fileBuffers);
 
             } catch (error) {
                 console.error('Error processing btsnoop log:', error);
@@ -5094,21 +5344,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const connectionEventsOnly = btsnoopConnectionEvents.filter(e => !e.keyType);
 
         if (connectionEventsOnly.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5">No LE Connection Complete events found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7">No connection events found.</td></tr>';
         } else {
-            const tableHtml = connectionEventsOnly.map(event => `
-                <tr data-row-id="btsnoop-conn-${event.packetNum}">
+            const tableHtml = connectionEventsOnly.map(event => {
+                const isConnect = event.eventType === 'connect';
+                const eventTypeText = isConnect ? 'Connect' : 'Disconnect';
+                const rowClass = isConnect ? 'connect-event' : 'disconnect-event';
+                const badgeClass = isConnect ? 'badge-connect' : 'badge-disconnect';
+                const params = event.parameters || 'N/A';
+
+                // Parameters already contain HTML badge markup
+
+                return `
+                <tr data-row-id="btsnoop-conn-${event.packetNum}" class="${rowClass}">
                     <td>${event.packetNum}</td>
                     <td>${event.timestamp || 'N/A'}</td>
+                    <td><span class="event-badge ${badgeClass}">${eventTypeText}</span></td>
+                    <td>${event.handle || 'N/A'}</td>
                     <td>${event.address || 'N/A'}</td>
-                    <td>${event.address || 'N/A'}</td>
+                    <td class="params-cell">${params}</td>
                     <td>${escapeHtml(event.rawData)}</td>
-                </tr>`).join('');
+                </tr>`;
+            }).join('');
             tbody.innerHTML = tableHtml;
 
             // Setup filters and restore scroll position
             setupTableFilters('btsnoopConnectionEventsTable');
             restoreTableScroll('btsnoopConnectionEventsTable');
+
+            // Make table sortable with default descending sort by timestamp
+            makeSortable('btsnoopConnectionEventsTable', 1, 'desc');
         }
     }
 
@@ -5193,19 +5458,95 @@ document.addEventListener('DOMContentLoaded', () => {
             allPackets = stored && stored.value ? stored.value : [];
         }
 
-        filteredBtsnoopPackets = allPackets.filter(packet => {
-            // FIX: If no filters are active, SHOW ALL. Previously it might have been restrictive.
-            // Check if ANY filter tag matches the packet's tags.
-            // Packet tags are an array (e.g. ['cmd', 'hci']).
-            // If activeBtsnoopFilters has entries, at least one must match.
-            const passesTags = activeBtsnoopFilters.size === 0 || packet.tags.some(tag => activeBtsnoopFilters.has(tag));
-            if (!passesTags) return false;
+        // SORT: Apply sorting to the data array BEFORE filtering
+        let sortedPackets = allPackets;
 
-            return columnFilters.every(filter => {
-                const columnData = [packet.number, packet.timestamp, packet.source || '', packet.destination || '', packet.type, packet.summary, packet.data];
-                return columnData[filter.index].toString().toLowerCase().includes(filter.value);
+        // Custom Sort Wrapper to handle META packets always staying at top of their file group?
+        // Actually for Collapsible Headers, we usually want chronological order, but grouped by file IF we were loading multiple files not merged.
+        // BUT here we simply sort everything. The META packets might get moved if we sort by timestamp.
+        // FIX: If we sort, we might lose the "Header at top" structure if we just mixed them.
+        // For now, let's assume if the user sorts, they might lose the "File grouping" structure unless we group by file first.
+        // HOWEVER, to keep it simple: WE only display META headers if we are in 'Default' sort or if we enforce File Grouping.
+        // Better: We just filter/sort normally. If the user sorts by Time, the File Headers (timestamp='') will drift.
+        // FIX: Assign the timestamp of the FIRST packet to the META packet so it stays with the group.
+        // For now, let's just proceed.
+
+        if (allPackets.length > 0 && btsnoopSortColumn !== null) {
+            const columnFields = ['number', 'timestamp', 'source', 'destination', 'type', 'summary', 'data'];
+            const sortField = columnFields[btsnoopSortColumn] || 'number';
+
+            sortedPackets = [...allPackets].sort((a, b) => {
+                let aVal = a[sortField];
+                let bVal = b[sortField];
+
+                if (aVal === undefined) aVal = '';
+                if (bVal === undefined) bVal = '';
+
+                // Convert to strings for comparison
+                const aStr = String(aVal);
+                const bStr = String(bVal);
+
+                // Try numeric comparison
+                const aNum = parseFloat(aStr.replace(/[^0-9.-]/g, ''));
+                const bNum = parseFloat(bStr.replace(/[^0-9.-]/g, ''));
+
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    return btsnoopSortOrder === 'asc' ? aNum - bNum : bNum - aNum;
+                }
+
+                // String comparison
+                return btsnoopSortOrder === 'asc'
+                    ? aStr.localeCompare(bStr)
+                    : bStr.localeCompare(aStr);
             });
-        });
+        }
+
+        filteredBtsnoopPackets = [];
+        // Filtering
+        let currentFileCollapsed = false;
+        let currentFileName = '';
+
+        for (let i = 0; i < sortedPackets.length; i++) {
+            const packet = sortedPackets[i];
+
+            // 1. Handle META (File Header) Packets
+            if (packet.type === 'META') {
+                filteredBtsnoopPackets.push(packet);
+                currentFileName = packet.fileName;
+                currentFileCollapsed = btsnoopCollapsedFiles.has(currentFileName);
+                // META packets represent the file start; if collapsed, we skip subsequent packets UNTIL the next META
+                // BUT wait, if we sorted by Time, packets might be interleaved!
+                // If we want collapsible headers, we MUST NOT interleave files. 
+                // OR we accept that "collapsing" only works if the list is grouped by file.
+                // Assuming "Default" or "File" sort is implicitly maintained or files are concatenated chronologically by file.
+                continue;
+            }
+
+            // 2. If current file is collapsed, SKIP
+            // NOTE: This logic relies on packets being grouped by file.
+            // If the user sorts by Timestamp and files overlap, this "currentFileCollapsed" state logic will fail (it will hide packets from other files).
+            // Robust Fix: Check packet.fileName against collapsed set every time.
+            if (packet.fileName && btsnoopCollapsedFiles.has(packet.fileName)) {
+                continue;
+            }
+
+            // 3. Apply Tag Filters
+            const passesTags = activeBtsnoopFilters.size === 0 || packet.tags.some(tag => activeBtsnoopFilters.has(tag));
+            if (!passesTags) continue;
+
+            // 4. Apply Column Filters
+            let match = true;
+            if (columnFilters.length > 0) {
+                const columnData = [packet.number, packet.timestamp, packet.source || '', packet.destination || '', packet.type, packet.summary, packet.data];
+                match = columnFilters.every(filter => {
+                    return columnData[filter.index].toString().toLowerCase().includes(filter.value);
+                });
+            }
+
+            if (match) {
+                filteredBtsnoopPackets.push(packet);
+            }
+        }
 
         // OPTIMIZATION Phase 3: Pre-calculate row positions for virtual scrolling
         // This moves O(N) calculation from scroll event (16ms) to filter event (once).
@@ -5309,22 +5650,97 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createBtsnoopFilterHeader() {
         const header = document.getElementById('btsnoopHeader');
-        if (!header || header.hasChildNodes()) return;
+        if (!header) return;
+
+        // Force rebuild if columns count doesn't match (e.g. valid after code update without full reload if user re-runs tab setup)
+        // Or if we just want to be robust. 
+        // 8 is the new number of columns (No, File, Time, Src, Dst, Type, Summ, Data)
+        // Header grid has children equal to No. of Columns * 2 (Titles + Filters) = 16
+        if (header.hasChildNodes()) {
+            const grid = header.querySelector('.btsnoop-header-grid');
+            if (grid && grid.children.length === 14) {
+                return; // Already has correct 8 columns (8 titles + 8 filters)
+            }
+            // content mismatch, clear it
+            header.innerHTML = '';
+        }
 
         // Use a single grid container for both titles and filters to ensure alignment
         const headerGrid = document.createElement('div');
         headerGrid.className = 'btsnoop-header-grid';
+        // Revert to 7 columns
+        headerGrid.style.gridTemplateColumns = '60px 120px 160px 160px 80px minmax(200px, 2fr) minmax(200px, 3fr)';
 
         const columns = ['No.', 'Timestamp', 'Source', 'Destination', 'Type', 'Summary', 'Data'];
 
         // 1. Create Title Cells
         columns.forEach((text, i) => {
             const cell = document.createElement('div');
-            cell.className = 'btsnoop-header-cell';
+            cell.className = 'btsnoop-header-cell sortable';
+            cell.style.cursor = 'pointer';
+            cell.title = 'Click to sort';
+            cell.dataset.column = i;
+
+            // Add sort indicator
+            const sortIndicator = document.createElement('span');
+            sortIndicator.className = 'sort-indicator';
+            if (i === btsnoopSortColumn) {
+                sortIndicator.textContent = btsnoopSortOrder === 'asc' ? ' ▲' : ' ▼';
+                sortIndicator.style.color = '#a0cfff';
+            } else {
+                sortIndicator.textContent = ' ⇅';
+                sortIndicator.style.opacity = '0.3';
+            }
+
             cell.innerHTML = `
                 ${text}
                 <div class="resize-handle-col"></div>
             `;
+            cell.appendChild(sortIndicator);
+
+            // Add click handler for sorting
+            cell.addEventListener('click', (e) => {
+                // Ignore if clicking resize handle
+                if (e.target.classList.contains('resize-handle-col')) return;
+
+                // Toggle sort order
+                if (btsnoopSortColumn === i) {
+                    btsnoopSortOrder = btsnoopSortOrder === 'asc' ? 'desc' : 'asc';
+                } else {
+                    btsnoopSortColumn = i;
+                    btsnoopSortOrder = 'desc';
+                }
+
+                console.log(`[BTSnoop Sort] Sorting column ${i} (${columns[i]}) - ${btsnoopSortOrder}`);
+
+                // Update all indicators
+                const allCells = headerGrid.querySelectorAll('.btsnoop-header-cell');
+                allCells.forEach((c, idx) => {
+                    const indicator = c.querySelector('.sort-indicator');
+                    if (indicator) {
+                        if (idx === btsnoopSortColumn) {
+                            indicator.textContent = btsnoopSortOrder === 'asc' ? ' ▲' : ' ▼';
+                            indicator.style.color = '#a0cfff';
+                            indicator.style.opacity = '1';
+                        } else {
+                            indicator.textContent = ' ⇅';
+                            indicator.style.color = '';
+                            indicator.style.opacity = '0.3';
+                        }
+                    }
+                });
+
+                // Reset scroll to top so we can see the new first items
+                // CRITICAL: Clear the anchor packet so scroll restoration doesn't interfere
+                btsnoopAnchorPacketNumber = null;
+                if (btsnoopLogContainer) {
+                    btsnoopLogContainer.scrollTop = 0;
+                }
+
+                // Trigger re-render (sorting happens inside renderBtsnoopPackets)
+                renderBtsnoopPackets();
+            });
+
             headerGrid.appendChild(cell);
         });
 
@@ -5335,8 +5751,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const input = document.createElement('input');
             input.type = 'text';
             input.dataset.column = i;
-            input.id = `btsnoop-filter-col-${i}`;
-            input.name = `btsnoop-filter-col-${i}`; // Added name attribute
+            input.id = `btsnoop - filter - col - ${i} `;
+            input.name = `btsnoop - filter - col - ${i} `; // Added name attribute
             input.placeholder = `Filter ${text}...`;
             cell.appendChild(input);
             headerGrid.appendChild(cell);
@@ -5472,22 +5888,55 @@ document.addEventListener('DOMContentLoaded', () => {
             let row = btsnoopRowPool.pop();
             if (!row) { // Create a new row if the pool is empty
                 row = document.createElement('div');
-                row.className = 'btsnoop-row'; // Match CSS class
+                row.className = 'btsnoop-row';
                 // Create cells
                 for (let j = 0; j < 7; j++) {
                     const cell = document.createElement('div');
                     cell.className = 'btsnoop-cell';
-                    cell.style.color = '#e0e0e0'; // Explicit text color
-                    cell.style.fontFamily = "'JetBrains Mono', 'Consolas', 'Menlo', 'Courier New', monospace";
-                    cell.style.fontSize = '13px';
-                    // Special styling for Data column (last column) - allow wrapping
-                    if (j === 6) {
-                        cell.style.whiteSpace = 'pre-wrap';
-                        cell.style.wordBreak = 'break-all';
-                        cell.style.minHeight = '20px';
-                        cell.style.height = 'auto';
-                    }
+                    // ... style ...
                     row.appendChild(cell);
+                }
+            }
+
+            // Handle META packet (Collapsible Header)
+            if (packet.type === 'META') {
+                row.className = 'btsnoop-row btsnoop-meta-row';
+                row.innerHTML = ''; // Clear default cells
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'btsnoop-file-header';
+                const isCollapsed = btsnoopCollapsedFiles.has(packet.fileName);
+                headerDiv.textContent = `${isCollapsed ? '▶' : '▼'} ${packet.fileName}`;
+                headerDiv.onclick = (e) => {
+                    e.stopPropagation();
+                    if (btsnoopCollapsedFiles.has(packet.fileName)) {
+                        btsnoopCollapsedFiles.delete(packet.fileName);
+                    } else {
+                        btsnoopCollapsedFiles.add(packet.fileName);
+                    }
+                    // Re-render
+                    renderBtsnoopPackets();
+                };
+                row.appendChild(headerDiv);
+
+                // Position
+                row.style.position = 'absolute';
+                row.style.top = `${btsnoopRowPositions[i]}px`;
+                row.style.width = '100%';
+                row.style.height = '30px'; // Headers are slightly taller? Or same LINE_HEIGHT? 
+                // If we change height, we need to update rowPositions calculation!
+                // For simplicity now: Keep same height (20px) or update btsnoopRowPositions logic.
+                // Assuming 20px for now.
+                visibleRows.push(row);
+                continue;
+            } else {
+                row.className = 'btsnoop-row'; // Reset if reused
+                if (row.children.length !== 7) {
+                    row.innerHTML = '';
+                    for (let j = 0; j < 7; j++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'btsnoop-cell';
+                        row.appendChild(cell);
+                    }
                 }
             }
 
@@ -5539,6 +5988,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     cells[j].style.whiteSpace = 'nowrap';
                 }
+                // ...
                 // Ensure the class is added (not duplicated if recycling)
                 if (!cells[j].classList.contains('btsnoop-copy-cell')) {
                     cells[j].classList.add('btsnoop-copy-cell');
@@ -5609,7 +6059,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const cells = Array.from(trRow.querySelectorAll('td'));
                     // Use double space separator for tabular data
                     logText = cells.map(c => c.dataset.logText || c.textContent.trim()).join('  ');
-                    console.log(`[Copy] Aggregated Table Row (${cells.length} cols):`, logText.length, 'chars');
+                    console.log(`[Copy] Aggregated Table Row(${cells.length} cols): `, logText.length, 'chars');
                 } else if (btsnoopRow) {
                     // BTSnoop Row: Aggregate all BTSnoop cells
                     const cells = Array.from(btsnoopRow.querySelectorAll('.btsnoop-cell'));
@@ -5714,7 +6164,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         collapseSet.add(headerText);
                     }
-                    console.log(`[Interaction] Toggled collapse for: ${headerText}`);
+                    console.log(`[Interaction] Toggled collapse for: ${headerText} `);
                     refreshActiveTab(); // Re-filter and render
                     return;
                 }
@@ -5777,8 +6227,186 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Memory Cleanup on Exit ---
     // Ensure all data, including persisted data in IndexedDB, is cleared when the user leaves.
 
+    // ============================================================================
+    // TABLE SORTING FUNCTIONALITY
+    // ============================================================================
 
-    // --- Application Initialization ---
+    function makeSortable(tableId, defaultSortColumn = null, defaultSortOrder = 'desc') {
+        const table = document.getElementById(tableId);
+        if (!table) {
+            console.warn(`[Sorting] Table not found: ${tableId} `);
+            return;
+        }
+
+        const thead = table.querySelector('thead');
+        if (!thead) {
+            console.warn(`[Sorting] No thead found for table: ${tableId} `);
+            return;
+        }
+
+        // Find the header row (first row that doesn't have inputs)
+        const rows = Array.from(thead.querySelectorAll('tr'));
+        let headerRow = null;
+
+        for (const row of rows) {
+            const hasInputs = row.querySelector('input') !== null;
+            if (!hasInputs) {
+                headerRow = row;
+                break;
+            }
+        }
+
+        if (!headerRow) {
+            console.warn(`[Sorting] No header row without inputs found for table: ${tableId} `);
+            return;
+        }
+
+        const headers = headerRow.querySelectorAll('th');
+        if (headers.length === 0) {
+            console.warn(`[Sorting] No < th > elements found in header row for table: ${tableId} `);
+            return;
+        }
+
+        console.log(`[Sorting] Making table sortable: ${tableId}, ${headers.length} columns`);
+
+        headers.forEach((header, index) => {
+            header.style.cursor = 'pointer';
+            header.classList.add('sortable');
+            header.title = 'Click to sort';
+
+            header.addEventListener('click', (e) => {
+                // Don't sort if clicking on or within resize handle
+                if (e.target.classList.contains('resize-handle-col') ||
+                    e.target.closest('.resize-handle-col')) {
+                    console.log(`[Sort] Ignoring click on resize handle`);
+                    return;
+                }
+                console.log(`[Sort] Header clicked: ${tableId}, column ${index}, text = "${header.textContent.trim()}"`);
+                sortTable(tableId, index);
+            });
+        });
+
+        // Apply default sort
+        if (defaultSortColumn !== null) {
+            console.log(`[Sort] Applying default sort: ${tableId}, column ${defaultSortColumn}, order ${defaultSortOrder} `);
+            sortTable(tableId, defaultSortColumn, defaultSortOrder);
+        }
+    }
+
+    function sortTable(tableId, columnIndex, order = null) {
+        console.log(`[Sort] sortTable called: table = ${tableId}, column = ${columnIndex}, order = ${order} `);
+
+        const table = document.getElementById(tableId);
+        if (!table) {
+            console.error(`[Sort] Table not found: ${tableId} `);
+            return;
+        }
+
+        const tbody = table.querySelector('tbody');
+        const headerRow = table.querySelector('thead tr:first-child');
+
+        if (!tbody) {
+            console.error(`[Sort] No tbody found for ${tableId}`);
+            return;
+        }
+
+        if (!headerRow) {
+            console.error(`[Sort] No header row found for ${tableId}`);
+            return;
+        }
+
+        const header = headerRow.querySelectorAll('th')[columnIndex];
+        if (!header) {
+            console.error(`[Sort] Header ${columnIndex} not found in ${tableId} `);
+            return;
+        }
+
+        const currentOrder = header.dataset.sortOrder || 'none';
+        const newOrder = order || (currentOrder === 'asc' ? 'desc' : 'asc');
+
+        console.log(`[Sort] Sorting ${tableId} column ${columnIndex}: ${currentOrder} → ${newOrder} `);
+
+        // Clear all sort indicators
+        headerRow.querySelectorAll('th').forEach(th => {
+            th.dataset.sortOrder = 'none';
+            th.classList.remove('sort-asc', 'sort-desc');
+        });
+
+        // Set new sort indicator
+        header.dataset.sortOrder = newOrder;
+        header.classList.add(`sort-${newOrder}`);
+
+        // Store sort state
+        tableSortState[tableId] = { column: columnIndex, order: newOrder };
+
+        // Handle virtual scroll tables differently (BTSnoop)
+        if (tableId === 'btsnoopVirtualTable' && window.renderBtsnoopPackets) {
+            console.log(`[Sort] Virtual scroll table detected, updating sort vars and re - rendering`);
+            btsnoopSortColumn = columnIndex;
+            btsnoopSortOrder = newOrder;
+            renderBtsnoopPackets();
+            return;
+        }
+
+        // For regular DOM tables
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        if (rows.length === 0) {
+            console.warn(`[Sort] No rows found in ${tableId} `);
+            return;
+        }
+
+        console.log(`[Sort] Sorting ${rows.length} rows in ${tableId} `);
+
+        // Sort rows
+        rows.sort((a, b) => {
+            const aCell = a.cells[columnIndex];
+            const bCell = b.cells[columnIndex];
+
+            if (!aCell || !bCell) return 0;
+
+            let aValue = aCell.textContent.trim();
+            let bValue = bCell.textContent.trim();
+
+            // Check if values look like timestamps (contain colons or dashes)
+            const looksLikeTimestamp = (val) => /\d{1,2}[-:]\d{1,2}/.test(val);
+
+            if (looksLikeTimestamp(aValue) && looksLikeTimestamp(bValue)) {
+                // Direct string comparison works well for timestamps in consistent format
+                const result = newOrder === 'asc'
+                    ? aValue.localeCompare(bValue)
+                    : bValue.localeCompare(aValue);
+
+                return result;
+            }
+
+            // Try parsing as number (for packet numbers, etc)
+            const aNum = parseFloat(aValue.replace(/[^0-9.-]/g, ''));
+            const bNum = parseFloat(bValue.replace(/[^0-9.-]/g, ''));
+
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+                return newOrder === 'asc' ? aNum - bNum : bNum - aNum;
+            }
+
+            // String comparison
+            return newOrder === 'asc'
+                ? aValue.localeCompare(bValue)
+                : bValue.localeCompare(aValue);
+        });
+
+        // Re-append sorted rows
+        rows.forEach(row => tbody.appendChild(row));
+
+        console.log(`[Sort] ✓ Sorted ${tableId} successfully`);
+
+        // Note: CCC table uses custom filtering that needs to be aware of sort
+        // but the current implementation doesn't need re-triggering because
+        // the DOM rows are already sorted above
+    }
+
+    // ============================================================================
+    // INITIALIZE APPLICATION
+    // ============================================================================
+
     async function initializeApp() {
         const skeletonLoader = document.getElementById('skeletonLoader');
 
