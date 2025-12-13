@@ -595,19 +595,28 @@ const decodePayload = (type, subtype, payload) => {
                 const skewHex = payload.substring(34, 36);
                 const ppmHex = payload.substring(36, 40);
                 const successHex = payload.substring(40, 42);
+                const retryDelayHex = payload.substring(42, 46);
 
                 const eventCount = BigInt('0x' + eventCountHex);
                 const uwbTime = BigInt('0x' + uwbTimeHex);
                 const uncertainty = parseInt(uncertaintyHex, 16);
                 const ppm = parseInt(ppmHex, 16);
                 const success = parseInt(successHex, 16);
+                const retryDelay = parseInt(retryDelayHex, 16);
+
+                // Formula: 2^(Uncertainty/8) µs
+                const uncertaintyUs = Math.pow(2, uncertainty / 8).toFixed(2);
+
+                const successMap = { 0: 'Failed', 1: 'Success', 2: 'Failed (Proc 0 N/A)' };
+                const successText = successMap[success] || 'Unknown';
 
                 params = formatParam('EventCount', `0x${eventCountHex} (${eventCount.toString()})`) +
-                    formatParam('UWB Time', `0x${uwbTimeHex} (${uwbTime.toString()})`) +
-                    formatParam('Uncertainty', `0x${uncertaintyHex} (${uncertainty})`) +
+                    formatParam('UWB Time', `0x${uwbTimeHex} (${uwbTime.toString()} µs)`) +
+                    formatParam('Uncertainty', `0x${uncertaintyHex} (${uncertainty} = ~${uncertaintyUs} µs)`) +
                     formatParam('Skew', `0x${skewHex}`) +
-                    formatParam('PPM', `0x${ppmHex} (${ppm})`) +
-                    formatParam('Success', `0x${successHex} (${success})`);
+                    formatParam('PPM', `0x${ppmHex} (${ppm} ppm)`) +
+                    formatParam('Success', `0x${successHex} (${successText})`) +
+                    formatParam('RetryDelay', `0x${retryDelayHex} (${retryDelay} ms)`);
                 return { innerMsg, params };
             }
         }
