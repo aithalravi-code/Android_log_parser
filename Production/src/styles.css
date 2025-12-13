@@ -1345,6 +1345,19 @@ input[type="file"]:hover {
     padding: 8px 5px;
     border-bottom: 1px solid #ccc;
     border-right: 1px solid #e0e0e0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.filter-row th {
+    background-color: #f9f9f9;
+    padding: 4px 5px;
+    border-bottom: 1px solid #ccc;
+    position: sticky;
+    top: 37px;
+    /* Position below the main header row */
+    z-index: 9;
 }
 
 .ccc-table tbody td {
@@ -2098,4 +2111,16 @@ input[type="file"]::file-selector-button:hover {
     display: block !important;
     z-index: 5;
     /* Ensure headers stay above other content if overlapping occurs */
+}
+/* Global sticky table headers for all tables */
+table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    background-color: inherit;
+}
+
+table thead tr:nth-child(2) th {
+    top: 37px !important;  /* Stack filter row below header row */
+    z-index: 9 !important;
 }
