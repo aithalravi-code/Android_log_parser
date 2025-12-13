@@ -1327,6 +1327,28 @@ input[type="file"]:hover {
     /* Enforce column widths */
 }
 
+.ccc-table,
+.highlight-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #2c2c2c;
+    display: block;
+    /* Make table a block element */
+    overflow-x: auto;
+    /* Allow horizontal scrolling on the table itself */
+    max-height: 600px;
+    /* Set a max height to enable vertical scrolling */
+    overflow-y: auto;
+    /* Enable vertical scrolling */
+}
+
+.ccc-table thead,
+.highlight-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
 .ccc-table th,
 .ccc-table td {
     padding: 8px 12px;
@@ -2112,6 +2134,7 @@ input[type="file"]::file-selector-button:hover {
     z-index: 5;
     /* Ensure headers stay above other content if overlapping occurs */
 }
+
 /* Global sticky table headers for all tables */
 table thead th {
     position: sticky !important;
@@ -2121,6 +2144,7 @@ table thead th {
 }
 
 table thead tr:nth-child(2) th {
-    top: 37px !important;  /* Stack filter row below header row */
+    top: 37px !important;
+    /* Stack filter row below header row */
     z-index: 9 !important;
 }
