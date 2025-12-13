@@ -240,7 +240,7 @@ const parseTLV = (hex, tagMap = COMMON_TAGS) => {
 };
 
 const decodePayload = (type, subtype, payload) => {
-    let innerMsg = "-";
+    let innerMsg = CCC_CONSTANTS.MESSAGE_TYPES[type] || `Type_0x${type.toString(16).padStart(2, '0')}`;
     let params = "";
 
     if (!payload) return { innerMsg, params: "" };
