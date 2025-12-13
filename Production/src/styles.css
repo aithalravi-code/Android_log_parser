@@ -2095,6 +2095,7 @@ input[type="file"]::file-selector-button:hover {
 }
 
 .btsnoop-meta-row {
+    display: block !important;
     z-index: 5;
     /* Ensure headers stay above other content if overlapping occurs */
 }

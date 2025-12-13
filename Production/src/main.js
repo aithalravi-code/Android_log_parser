@@ -4738,6 +4738,34 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('[BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.');
         createBtsnoopFilterHeader(); // Ensure header and filters are created
         attachBtsnoopFilterListeners(); // Attach listeners to the filter buttons (CMD, EVT, etc.)
+
+        // Attach Toggle Collapse/Expand Listener
+        const toggleCollapseBtn = document.getElementById('btsnoopToggleCollapseBtn');
+
+        if (toggleCollapseBtn) {
+            const newBtn = toggleCollapseBtn.cloneNode(true);
+            toggleCollapseBtn.parentNode.replaceChild(newBtn, toggleCollapseBtn);
+            newBtn.addEventListener('click', () => {
+                const metaPackets = btsnoopPackets.filter(p => p.type === 'META');
+                if (metaPackets.length === 0) return;
+
+                const allCollapsed = metaPackets.every(p => btsnoopCollapsedFiles.has(p.fileName));
+
+                if (allCollapsed) {
+                    // Expand All
+                    btsnoopCollapsedFiles.clear();
+                    newBtn.textContent = '⊟';
+                    newBtn.title = 'Collapse All Files';
+                } else {
+                    // Collapse All
+                    metaPackets.forEach(p => btsnoopCollapsedFiles.add(p.fileName));
+                    newBtn.textContent = '⊞';
+                    newBtn.title = 'Expand All Files';
+                }
+                renderBtsnoopPackets();
+            });
+        }
+
         renderBtsnoopPackets();
     }
 
@@ -4842,7 +4870,12 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const bufferPromises = btsnoopTasks.map(task => (task.file || task.blob).arrayBuffer());
                 const fileBuffers = await Promise.all(bufferPromises);
-                const fileNames = btsnoopTasks.map(task => task.file ? task.file.name : task.path.split('/').pop()); // Extract filename
+                // Use full path/relative path if available to prevent name collisions
+                const fileNames = btsnoopTasks.map(task => {
+                    if (task.path) return task.path; // Already relative path from zip/folder
+                    if (task.file && task.file.webkitRelativePath) return task.file.webkitRelativePath;
+                    return task.file ? task.file.name : 'unknown.log';
+                });
 
                 // FIX: Embed the worker script to avoid file:// origin security errors.
                 const btsnoopWorkerScript = `
@@ -5476,6 +5509,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const sortField = columnFields[btsnoopSortColumn] || 'number';
 
             sortedPackets = [...allPackets].sort((a, b) => {
+                // PRIMARY SORT: Group by Filename
+                // We ALWAYS group by filename to support collapsible headers
+                if (a.fileName > b.fileName) return 1;
+                if (a.fileName < b.fileName) return -1;
+
+                // SECONDARY SORT: Packet Order within file
+                // If one is META, it comes first
+                if (a.type === 'META') return -1;
+                if (b.type === 'META') return 1;
+
                 let aVal = a[sortField];
                 let bVal = b[sortField];
 
@@ -5500,6 +5543,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     : bStr.localeCompare(aStr);
             });
         }
+
 
         filteredBtsnoopPackets = [];
         // Filtering
@@ -5556,10 +5600,15 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < filteredBtsnoopPackets.length; i++) {
             btsnoopRowPositions[i] = btsnoopTotalHeight;
             const packet = filteredBtsnoopPackets[i];
-            const dataLength = packet.data?.length || 0;
-            const estimatedLines = Math.max(1, Math.ceil(dataLength / 100));
-            const height = 20 * estimatedLines;
-            btsnoopTotalHeight += height;
+
+            if (packet.type === 'META') {
+                btsnoopTotalHeight += 30; // Match renderer height
+            } else {
+                const dataLength = packet.data?.length || 0;
+                const estimatedLines = Math.max(1, Math.ceil(dataLength / 100));
+                const height = 20 * estimatedLines;
+                btsnoopTotalHeight += height;
+            }
         }
 
         TimeTracker.stop('BTSnoop Filtering');
@@ -5919,17 +5968,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 row.appendChild(headerDiv);
 
                 // Position
+                // Position
                 row.style.position = 'absolute';
-                row.style.top = `${btsnoopRowPositions[i]}px`;
+                row.style.top = '0'; // Use transform for consistent positioning
+                row.style.left = '0';
+                row.style.transform = `translateY(${btsnoopRowPositions[i]}px)`;
                 row.style.width = '100%';
-                row.style.height = '30px'; // Headers are slightly taller? Or same LINE_HEIGHT? 
-                // If we change height, we need to update rowPositions calculation!
-                // For simplicity now: Keep same height (20px) or update btsnoopRowPositions logic.
+                row.style.height = '30px';
+                row.style.display = 'block'; // Override 'grid' if recycled from data row
+
                 // Assuming 20px for now.
                 visibleRows.push(row);
                 continue;
             } else {
                 row.className = 'btsnoop-row'; // Reset if reused
+                row.style.height = ''; // Reset height (let content dictate, or set based on estimatedLines)
+                // Note: We don't strictly set height for data rows, we let them grow. 
+                // However, we position them absolutely. 
+                row.style.position = 'absolute';
+                row.style.top = `${btsnoopRowPositions[i]}px`;
+                row.style.width = '100%';
+
                 if (row.children.length !== 7) {
                     row.innerHTML = '';
                     for (let j = 0; j < 7; j++) {
