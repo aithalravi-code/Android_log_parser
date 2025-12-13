@@ -286,6 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Application State ---
     let originalLogLines = []; // Holds all lines from all files, with metadata
+    let consolidatedBatteryDataPoints = []; // Battery data points from all workers
     let filterKeywords = []; // Array of {text: string, active: boolean}
     let liveSearchQuery = ''; // For live filtering as the user types
     let currentZipFileName = ''; // To store the name of the loaded ZIP
@@ -2023,7 +2024,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const finalBleKeys = new Map();
         let finalLocalBtAddress = null;
         const consolidatedAppVersions = new Map();
-        let consolidatedBatteryDataPoints = [];
+        // Reset battery data points for new file load
+        consolidatedBatteryDataPoints = [];
         const finalCccMessages = [];
 
         let resultIndex = 0;
