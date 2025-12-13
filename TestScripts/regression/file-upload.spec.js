@@ -15,7 +15,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('UI Elements', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
         await page.waitForLoadState('domcontentloaded');
     });
 
@@ -51,7 +51,7 @@ test.describe('UI Elements', () => {
     test('should load page within 3 seconds', async ({ page }) => {
         const startTime = Date.now();
 
-        await page.goto('/');
+        await page.goto('/log_parser.html');
         await page.waitForLoadState('domcontentloaded');
 
         const loadTime = Date.now() - startTime;
@@ -63,7 +63,7 @@ test.describe('UI Elements', () => {
 
 test.describe('Tab Navigation', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
         await page.waitForLoadState('domcontentloaded');
     });
 
@@ -97,7 +97,7 @@ test.describe('Tab Navigation', () => {
 
 test.describe('Filter Controls', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
         await page.waitForLoadState('domcontentloaded');
     });
 
@@ -154,7 +154,7 @@ test.describe('Filter Controls', () => {
 
 test.describe('Performance Tracker', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
         await page.waitForLoadState('domcontentloaded');
     });
 
@@ -172,7 +172,7 @@ test.describe('Performance Tracker', () => {
 
 test.describe('Accessibility', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
         await page.waitForLoadState('domcontentloaded');
     });
 

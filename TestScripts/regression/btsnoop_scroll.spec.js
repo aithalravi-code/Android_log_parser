@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('BTSnoop Scroll Restoration on Filter Clear', async ({ page }) => {
     // 1. Load Page
-    await page.goto('/');
+    await page.goto('/log_parser.html');
     await page.waitForLoadState('domcontentloaded');
 
     // 2. Inject Mock BTSnoop Data via window._debug

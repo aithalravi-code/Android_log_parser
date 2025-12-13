@@ -1,144 +1,110 @@
-<testsuites id="" name="" tests="3" failures="3" skipped="0" errors="0" time="24.854936">
-<testsuite name="ccc_stress_test.spec.js" timestamp="2025-12-13T16:42:58.411Z" hostname="chromium" tests="1" failures="1" skipped="0" time="12.627" errors="0">
-<testcase name="CCC Tab Stress Test › should handle large CCC dataset without hanging" classname="ccc_stress_test.spec.js" time="12.627">
-<failure message="ccc_stress_test.spec.js:18:5 should handle large CCC dataset without hanging" type="FAILURE">
-<![CDATA[  [chromium] › ccc_stress_test.spec.js:18:5 › CCC Tab Stress Test › should handle large CCC dataset without hanging 
-
-    Error: expect(locator).toBeVisible() failed
-
-    Locator: locator('input[data-col="0"]')
-    Expected: visible
-    Error: strict mode violation: locator('input[data-col="0"]') resolved to 4 elements:
-        1) <input type="text" data-col="0" placeholder="Filter..."/> aka getByRole('textbox', { name: 'Filter...' }).first()
-        2) <input type="text" data-col="0" name="bleKeysFilter0" placeholder="Filter..."/> aka locator('input[name="bleKeysFilter0"]')
-        3) <input type="text" data-col="0" placeholder="Filter..." name="btsnoopConnFilter0"/> aka locator('input[name="btsnoopConnFilter0"]')
-        4) <input type="text" data-col="0" placeholder="Filter..." name="deviceEventsFilter0"/> aka locator('input[name="deviceEventsFilter0"]')
-
-    Call log:
-      - Expect "toBeVisible" with timeout 5000ms
-      - waiting for locator('input[data-col="0"]')
-
-        at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/ccc_stress_test.spec.js:69:35)
-        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
-        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
-        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    ../../.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-chromium/test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    ../../.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-chromium/video.webm
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: ../../.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-chromium/error-context.md
-]]>
-</failure>
+<testsuites id="" name="" tests="39" failures="0" skipped="0" errors="0" time="33.154781">
+<testsuite name="file-upload.spec.js" timestamp="2025-12-13T20:42:33.887Z" hostname="chromium" tests="13" failures="0" skipped="0" time="33.855" errors="0">
+<testcase name="UI Elements › should display initial UI correctly" classname="file-upload.spec.js" time="2.634">
+</testcase>
+<testcase name="UI Elements › should have all required UI elements" classname="file-upload.spec.js" time="2.553">
+</testcase>
+<testcase name="UI Elements › should load page within 3 seconds" classname="file-upload.spec.js" time="3.049">
 <system-out>
-<![CDATA[Injecting large CCC dataset...
-Waiting for table to populate...
-Rendered 5000 rows so far.
-
-[[ATTACHMENT|artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-chromium/test-failed-1.png]]
-
-[[ATTACHMENT|artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-chromium/video.webm]]
-
-[[ATTACHMENT|artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-chromium/error-context.md]]
+<![CDATA[✅ Page loaded in 432ms
 ]]>
 </system-out>
 </testcase>
-</testsuite>
-<testsuite name="ccc_stress_test.spec.js" timestamp="2025-12-13T16:42:58.411Z" hostname="firefox" tests="1" failures="1" skipped="0" time="19.323" errors="0">
-<testcase name="CCC Tab Stress Test › should handle large CCC dataset without hanging" classname="ccc_stress_test.spec.js" time="19.323">
-<failure message="ccc_stress_test.spec.js:18:5 should handle large CCC dataset without hanging" type="FAILURE">
-<![CDATA[  [firefox] › ccc_stress_test.spec.js:18:5 › CCC Tab Stress Test › should handle large CCC dataset without hanging 
-
-    Error: expect(locator).toBeVisible() failed
-
-    Locator: locator('input[data-col="0"]')
-    Expected: visible
-    Error: strict mode violation: locator('input[data-col="0"]') resolved to 4 elements:
-        1) <input type="text" data-col="0" placeholder="Filter..."/> aka getByRole('textbox', { name: 'Filter...' }).first()
-        2) <input type="text" data-col="0" name="bleKeysFilter0" placeholder="Filter..."/> aka locator('input[name="bleKeysFilter0"]')
-        ...
-
-    Call log:
-      - Expect "toBeVisible" with timeout 5000ms
-      - waiting for locator('input[data-col="0"]')
-
-        at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/ccc_stress_test.spec.js:69:35)
-        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
-        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
-        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    ../../.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-firefox/test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    ../../.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-firefox/video.webm
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-]]>
-</failure>
+<testcase name="Tab Navigation › should switch between tabs" classname="file-upload.spec.js" time="2.584">
+</testcase>
+<testcase name="Tab Navigation › should have connectivity tab" classname="file-upload.spec.js" time="4.037">
+</testcase>
+<testcase name="Tab Navigation › should have stats tab" classname="file-upload.spec.js" time="4.678">
+</testcase>
+<testcase name="Filter Controls › should have log level filter buttons" classname="file-upload.spec.js" time="1.73">
+</testcase>
+<testcase name="Filter Controls › should have AND/OR logic toggle" classname="file-upload.spec.js" time="2.354">
+</testcase>
+<testcase name="Filter Controls › should toggle between AND/OR logic" classname="file-upload.spec.js" time="2.813">
+</testcase>
+<testcase name="Filter Controls › should have search input" classname="file-upload.spec.js" time="2.279">
+</testcase>
+<testcase name="Performance Tracker › should have performance tracker available in console" classname="file-upload.spec.js" time="1.891">
 <system-out>
-<![CDATA[Injecting large CCC dataset...
-Waiting for table to populate...
-Rendered 5000 rows so far.
-
-[[ATTACHMENT|artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-firefox/test-failed-1.png]]
-
-[[ATTACHMENT|artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-firefox/video.webm]]
+<![CDATA[Performance tracker available: false
 ]]>
 </system-out>
 </testcase>
+<testcase name="Accessibility › should be keyboard navigable" classname="file-upload.spec.js" time="1.682">
+</testcase>
+<testcase name="Accessibility › should have proper document title" classname="file-upload.spec.js" time="1.571">
+</testcase>
 </testsuite>
-<testsuite name="ccc_stress_test.spec.js" timestamp="2025-12-13T16:42:58.411Z" hostname="webkit" tests="1" failures="1" skipped="0" time="14.655" errors="0">
-<testcase name="CCC Tab Stress Test › should handle large CCC dataset without hanging" classname="ccc_stress_test.spec.js" time="14.655">
-<failure message="ccc_stress_test.spec.js:18:5 should handle large CCC dataset without hanging" type="FAILURE">
-<![CDATA[  [webkit] › ccc_stress_test.spec.js:18:5 › CCC Tab Stress Test › should handle large CCC dataset without hanging 
-
-    Error: expect(locator).toBeVisible() failed
-
-    Locator: locator('input[data-col="0"]')
-    Expected: visible
-    Error: strict mode violation: locator('input[data-col="0"]') resolved to 4 elements:
-        1) <input type="text" data-col="0" placeholder="Filter..."/> aka getByRole('textbox', { name: 'Filter...' }).first()
-        2) <input type="text" data-col="0" name="bleKeysFilter0" placeholder="Filter..."/> aka locator('input[name="bleKeysFilter0"]')
-        3) <input type="text" data-col="0" placeholder="Filter..." name="btsnoopConnFilter0"/> aka locator('input[name="btsnoopConnFilter0"]')
-        4) <input type="text" data-col="0" placeholder="Filter..." name="deviceEventsFilter0"/> aka locator('input[name="deviceEventsFilter0"]')
-
-    Call log:
-      - Expect "toBeVisible" with timeout 5000ms
-      - waiting for locator('input[data-col="0"]')
-
-        at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/ccc_stress_test.spec.js:69:35)
-        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
-        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
-        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    ../../.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-webkit/test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    ../../.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-webkit/video.webm
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: ../../.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-webkit/error-context.md
-]]>
-</failure>
+<testsuite name="file-upload.spec.js" timestamp="2025-12-13T20:42:33.887Z" hostname="firefox" tests="13" failures="0" skipped="0" time="50.182" errors="0">
+<testcase name="UI Elements › should display initial UI correctly" classname="file-upload.spec.js" time="4.367">
+</testcase>
+<testcase name="UI Elements › should have all required UI elements" classname="file-upload.spec.js" time="4.914">
+</testcase>
+<testcase name="UI Elements › should load page within 3 seconds" classname="file-upload.spec.js" time="3.068">
 <system-out>
-<![CDATA[Injecting large CCC dataset...
-Waiting for table to populate...
-Rendered 4996 rows so far.
-
-[[ATTACHMENT|artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-webkit/test-failed-1.png]]
-
-[[ATTACHMENT|artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-webkit/video.webm]]
-
-[[ATTACHMENT|artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-webkit/error-context.md]]
+<![CDATA[✅ Page loaded in 639ms
 ]]>
 </system-out>
+</testcase>
+<testcase name="Tab Navigation › should switch between tabs" classname="file-upload.spec.js" time="6.064">
+</testcase>
+<testcase name="Tab Navigation › should have connectivity tab" classname="file-upload.spec.js" time="2.725">
+</testcase>
+<testcase name="Tab Navigation › should have stats tab" classname="file-upload.spec.js" time="5.847">
+</testcase>
+<testcase name="Filter Controls › should have log level filter buttons" classname="file-upload.spec.js" time="2.76">
+</testcase>
+<testcase name="Filter Controls › should have AND/OR logic toggle" classname="file-upload.spec.js" time="2.652">
+</testcase>
+<testcase name="Filter Controls › should toggle between AND/OR logic" classname="file-upload.spec.js" time="4.657">
+</testcase>
+<testcase name="Filter Controls › should have search input" classname="file-upload.spec.js" time="3.598">
+</testcase>
+<testcase name="Performance Tracker › should have performance tracker available in console" classname="file-upload.spec.js" time="4.426">
+<system-out>
+<![CDATA[Performance tracker available: false
+]]>
+</system-out>
+</testcase>
+<testcase name="Accessibility › should be keyboard navigable" classname="file-upload.spec.js" time="3.216">
+</testcase>
+<testcase name="Accessibility › should have proper document title" classname="file-upload.spec.js" time="1.888">
+</testcase>
+</testsuite>
+<testsuite name="file-upload.spec.js" timestamp="2025-12-13T20:42:33.887Z" hostname="webkit" tests="13" failures="0" skipped="0" time="44.467" errors="0">
+<testcase name="UI Elements › should display initial UI correctly" classname="file-upload.spec.js" time="3.023">
+</testcase>
+<testcase name="UI Elements › should have all required UI elements" classname="file-upload.spec.js" time="3.624">
+</testcase>
+<testcase name="UI Elements › should load page within 3 seconds" classname="file-upload.spec.js" time="4.248">
+<system-out>
+<![CDATA[✅ Page loaded in 905ms
+]]>
+</system-out>
+</testcase>
+<testcase name="Tab Navigation › should switch between tabs" classname="file-upload.spec.js" time="3.831">
+</testcase>
+<testcase name="Tab Navigation › should have connectivity tab" classname="file-upload.spec.js" time="3.031">
+</testcase>
+<testcase name="Tab Navigation › should have stats tab" classname="file-upload.spec.js" time="4.867">
+</testcase>
+<testcase name="Filter Controls › should have log level filter buttons" classname="file-upload.spec.js" time="3.45">
+</testcase>
+<testcase name="Filter Controls › should have AND/OR logic toggle" classname="file-upload.spec.js" time="2.968">
+</testcase>
+<testcase name="Filter Controls › should toggle between AND/OR logic" classname="file-upload.spec.js" time="4.12">
+</testcase>
+<testcase name="Filter Controls › should have search input" classname="file-upload.spec.js" time="2.994">
+</testcase>
+<testcase name="Performance Tracker › should have performance tracker available in console" classname="file-upload.spec.js" time="3.148">
+<system-out>
+<![CDATA[Performance tracker available: false
+]]>
+</system-out>
+</testcase>
+<testcase name="Accessibility › should be keyboard navigable" classname="file-upload.spec.js" time="3.125">
+</testcase>
+<testcase name="Accessibility › should have proper document title" classname="file-upload.spec.js" time="2.038">
 </testcase>
 </testsuite>
 </testsuites>

@@ -11,7 +11,7 @@
     "grepInvert": null,
     "maxFailures": 0,
     "metadata": {
-      "actualWorkers": 3
+      "actualWorkers": 6
     },
     "preserveOutput": "always",
     "reporter": [
@@ -56,7 +56,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 3
+          "actualWorkers": 6
         },
         "id": "chromium",
         "name": "chromium",
@@ -72,7 +72,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 3
+          "actualWorkers": 6
         },
         "id": "firefox",
         "name": "firefox",
@@ -88,7 +88,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 3
+          "actualWorkers": 6
         },
         "id": "webkit",
         "name": "webkit",
@@ -115,25 +115,25 @@
   },
   "suites": [
     {
-      "title": "ccc_stress_test.spec.js",
-      "file": "ccc_stress_test.spec.js",
+      "title": "file-upload.spec.js",
+      "file": "file-upload.spec.js",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "CCC Tab Stress Test",
-          "file": "ccc_stress_test.spec.js",
-          "line": 3,
+          "title": "UI Elements",
+          "file": "file-upload.spec.js",
+          "line": 16,
           "column": 6,
           "specs": [
             {
-              "title": "should handle large CCC dataset without hanging",
-              "ok": false,
+              "title": "should display initial UI correctly",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
-                  "timeout": 60000,
+                  "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
                   "projectId": "chromium",
@@ -142,233 +142,1371 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 12627,
-                      "error": {
-                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('input[data-col=\"0\"]')\nExpected: visible\nError: strict mode violation: locator('input[data-col=\"0\"]') resolved to 4 elements:\n    1) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\"/> aka getByRole('textbox', { name: 'Filter...' }).first()\n    2) <input type=\"text\" data-col=\"0\" name=\"bleKeysFilter0\" placeholder=\"Filter...\"/> aka locator('input[name=\"bleKeysFilter0\"]')\n    3) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\" name=\"btsnoopConnFilter0\"/> aka locator('input[name=\"btsnoopConnFilter0\"]')\n    4) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\" name=\"deviceEventsFilter0\"/> aka locator('input[name=\"deviceEventsFilter0\"]')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[data-col=\"0\"]')\u001b[22m\n",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('input[data-col=\"0\"]')\nExpected: visible\nError: strict mode violation: locator('input[data-col=\"0\"]') resolved to 4 elements:\n    1) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\"/> aka getByRole('textbox', { name: 'Filter...' }).first()\n    2) <input type=\"text\" data-col=\"0\" name=\"bleKeysFilter0\" placeholder=\"Filter...\"/> aka locator('input[name=\"bleKeysFilter0\"]')\n    3) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\" name=\"btsnoopConnFilter0\"/> aka locator('input[name=\"btsnoopConnFilter0\"]')\n    4) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\" name=\"deviceEventsFilter0\"/> aka locator('input[name=\"deviceEventsFilter0\"]')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[data-col=\"0\"]')\u001b[22m\n\n    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/ccc_stress_test.spec.js:69:35)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)",
-                        "location": {
-                          "file": "copy)/TestScripts/regression/ccc_stress_test.spec.js",
-                          "column": 35,
-                          "line": 69
-                        }
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "copy)/TestScripts/regression/ccc_stress_test.spec.js",
-                            "column": 35,
-                            "line": 69
-                          },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('input[data-col=\"0\"]')\nExpected: visible\nError: strict mode violation: locator('input[data-col=\"0\"]') resolved to 4 elements:\n    1) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\"/> aka getByRole('textbox', { name: 'Filter...' }).first()\n    2) <input type=\"text\" data-col=\"0\" name=\"bleKeysFilter0\" placeholder=\"Filter...\"/> aka locator('input[name=\"bleKeysFilter0\"]')\n    3) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\" name=\"btsnoopConnFilter0\"/> aka locator('input[name=\"btsnoopConnFilter0\"]')\n    4) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\" name=\"deviceEventsFilter0\"/> aka locator('input[name=\"deviceEventsFilter0\"]')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[data-col=\"0\"]')\u001b[22m\n\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/ccc_stress_test.spec.js:69:35)\u001b[22m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\u001b[22m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\u001b[22m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)\u001b[22m"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 2634,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:35.357Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-2fbf0eb616a9050ca99f",
+              "file": "file-upload.spec.js",
+              "line": 22,
+              "column": 5
+            },
+            {
+              "title": "should have all required UI elements",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2553,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:35.311Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-77e271bf8ba64d50e936",
+              "file": "file-upload.spec.js",
+              "line": 37,
+              "column": 5
+            },
+            {
+              "title": "should load page within 3 seconds",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 3049,
+                      "errors": [],
                       "stdout": [
                         {
-                          "text": "Injecting large CCC dataset...\n"
-                        },
-                        {
-                          "text": "Waiting for table to populate...\n"
-                        },
-                        {
-                          "text": "Rendered 5000 rows so far.\n"
+                          "text": "✅ Page loaded in 432ms\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-13T16:42:59.582Z",
+                      "startTime": "2025-12-13T20:42:35.360Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-chromium/test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-chromium/video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-chromium/error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "copy)/TestScripts/regression/ccc_stress_test.spec.js",
-                        "column": 35,
-                        "line": 69
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
-              "id": "146ab6a1f7ad160507e2-9dc4007ad0d156bd9839",
-              "file": "ccc_stress_test.spec.js",
-              "line": 18,
+              "id": "ffdc48538a45b9f85f2e-0b6dd63df475a529354c",
+              "file": "file-upload.spec.js",
+              "line": 51,
               "column": 5
             },
             {
-              "title": "should handle large CCC dataset without hanging",
-              "ok": false,
+              "title": "should display initial UI correctly",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
-                  "timeout": 60000,
+                  "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
                   "projectId": "firefox",
                   "projectName": "firefox",
                   "results": [
                     {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
-                      "status": "failed",
-                      "duration": 19323,
-                      "error": {
-                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('input[data-col=\"0\"]')\nExpected: visible\nError: strict mode violation: locator('input[data-col=\"0\"]') resolved to 4 elements:\n    1) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\"/> aka getByRole('textbox', { name: 'Filter...' }).first()\n    2) <input type=\"text\" data-col=\"0\" name=\"bleKeysFilter0\" placeholder=\"Filter...\"/> aka locator('input[name=\"bleKeysFilter0\"]')\n    ...\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[data-col=\"0\"]')\u001b[22m\n",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('input[data-col=\"0\"]')\nExpected: visible\nError: strict mode violation: locator('input[data-col=\"0\"]') resolved to 4 elements:\n    1) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\"/> aka getByRole('textbox', { name: 'Filter...' }).first()\n    2) <input type=\"text\" data-col=\"0\" name=\"bleKeysFilter0\" placeholder=\"Filter...\"/> aka locator('input[name=\"bleKeysFilter0\"]')\n    ...\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[data-col=\"0\"]')\u001b[22m\n\n    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/ccc_stress_test.spec.js:69:35)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)",
-                        "location": {
-                          "file": "copy)/TestScripts/regression/ccc_stress_test.spec.js",
-                          "column": 35,
-                          "line": 69
-                        }
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "copy)/TestScripts/regression/ccc_stress_test.spec.js",
-                            "column": 35,
-                            "line": 69
-                          },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('input[data-col=\"0\"]')\nExpected: visible\nError: strict mode violation: locator('input[data-col=\"0\"]') resolved to 4 elements:\n    1) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\"/> aka getByRole('textbox', { name: 'Filter...' }).first()\n    2) <input type=\"text\" data-col=\"0\" name=\"bleKeysFilter0\" placeholder=\"Filter...\"/> aka locator('input[name=\"bleKeysFilter0\"]')\n    ...\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[data-col=\"0\"]')\u001b[22m\n\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/ccc_stress_test.spec.js:69:35)\u001b[22m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\u001b[22m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\u001b[22m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)\u001b[22m"
-                        }
-                      ],
+                      "workerIndex": 6,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 4367,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:43.284Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-bb1aa174fd423e50990c",
+              "file": "file-upload.spec.js",
+              "line": 22,
+              "column": 5
+            },
+            {
+              "title": "should have all required UI elements",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 4914,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:43.347Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-4231920e928849c7905f",
+              "file": "file-upload.spec.js",
+              "line": 37,
+              "column": 5
+            },
+            {
+              "title": "should load page within 3 seconds",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3068,
+                      "errors": [],
                       "stdout": [
                         {
-                          "text": "Injecting large CCC dataset...\n"
-                        },
-                        {
-                          "text": "Waiting for table to populate...\n"
-                        },
-                        {
-                          "text": "Rendered 5000 rows so far.\n"
+                          "text": "✅ Page loaded in 639ms\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-13T16:42:59.573Z",
+                      "startTime": "2025-12-13T20:42:43.309Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-firefox/test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-firefox/video.webm"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "copy)/TestScripts/regression/ccc_stress_test.spec.js",
-                        "column": 35,
-                        "line": 69
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
-              "id": "146ab6a1f7ad160507e2-ac3fb28b2daa0bfd3367",
-              "file": "ccc_stress_test.spec.js",
-              "line": 18,
+              "id": "ffdc48538a45b9f85f2e-bbb5bfbe61f0d3fec212",
+              "file": "file-upload.spec.js",
+              "line": 51,
               "column": 5
             },
             {
-              "title": "should handle large CCC dataset without hanging",
-              "ok": false,
+              "title": "should display initial UI correctly",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
-                  "timeout": 60000,
+                  "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
                   "projectId": "webkit",
                   "projectName": "webkit",
                   "results": [
                     {
-                      "workerIndex": 2,
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3023,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:57.374Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-e0e12455647eb68af639",
+              "file": "file-upload.spec.js",
+              "line": 22,
+              "column": 5
+            },
+            {
+              "title": "should have all required UI elements",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 13,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 3624,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:57.534Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-f6921ec062a4536e76ad",
+              "file": "file-upload.spec.js",
+              "line": 37,
+              "column": 5
+            },
+            {
+              "title": "should load page within 3 seconds",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 14,
                       "parallelIndex": 2,
-                      "status": "failed",
-                      "duration": 14655,
-                      "error": {
-                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('input[data-col=\"0\"]')\nExpected: visible\nError: strict mode violation: locator('input[data-col=\"0\"]') resolved to 4 elements:\n    1) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\"/> aka getByRole('textbox', { name: 'Filter...' }).first()\n    2) <input type=\"text\" data-col=\"0\" name=\"bleKeysFilter0\" placeholder=\"Filter...\"/> aka locator('input[name=\"bleKeysFilter0\"]')\n    3) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\" name=\"btsnoopConnFilter0\"/> aka locator('input[name=\"btsnoopConnFilter0\"]')\n    4) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\" name=\"deviceEventsFilter0\"/> aka locator('input[name=\"deviceEventsFilter0\"]')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[data-col=\"0\"]')\u001b[22m\n",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('input[data-col=\"0\"]')\nExpected: visible\nError: strict mode violation: locator('input[data-col=\"0\"]') resolved to 4 elements:\n    1) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\"/> aka getByRole('textbox', { name: 'Filter...' }).first()\n    2) <input type=\"text\" data-col=\"0\" name=\"bleKeysFilter0\" placeholder=\"Filter...\"/> aka locator('input[name=\"bleKeysFilter0\"]')\n    3) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\" name=\"btsnoopConnFilter0\"/> aka locator('input[name=\"btsnoopConnFilter0\"]')\n    4) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\" name=\"deviceEventsFilter0\"/> aka locator('input[name=\"deviceEventsFilter0\"]')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[data-col=\"0\"]')\u001b[22m\n\n    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/ccc_stress_test.spec.js:69:35)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)",
-                        "location": {
-                          "file": "copy)/TestScripts/regression/ccc_stress_test.spec.js",
-                          "column": 35,
-                          "line": 69
-                        }
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "copy)/TestScripts/regression/ccc_stress_test.spec.js",
-                            "column": 35,
-                            "line": 69
-                          },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('input[data-col=\"0\"]')\nExpected: visible\nError: strict mode violation: locator('input[data-col=\"0\"]') resolved to 4 elements:\n    1) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\"/> aka getByRole('textbox', { name: 'Filter...' }).first()\n    2) <input type=\"text\" data-col=\"0\" name=\"bleKeysFilter0\" placeholder=\"Filter...\"/> aka locator('input[name=\"bleKeysFilter0\"]')\n    3) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\" name=\"btsnoopConnFilter0\"/> aka locator('input[name=\"btsnoopConnFilter0\"]')\n    4) <input type=\"text\" data-col=\"0\" placeholder=\"Filter...\" name=\"deviceEventsFilter0\"/> aka locator('input[name=\"deviceEventsFilter0\"]')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[data-col=\"0\"]')\u001b[22m\n\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/ccc_stress_test.spec.js:69:35)\u001b[22m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\u001b[22m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\u001b[22m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)\u001b[22m"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 4248,
+                      "errors": [],
                       "stdout": [
                         {
-                          "text": "Injecting large CCC dataset...\n"
-                        },
-                        {
-                          "text": "Waiting for table to populate...\n"
-                        },
-                        {
-                          "text": "Rendered 4996 rows so far.\n"
+                          "text": "✅ Page loaded in 905ms\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-13T16:42:59.587Z",
+                      "startTime": "2025-12-13T20:42:57.508Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-webkit/test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-webkit/video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-webkit/error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "copy)/TestScripts/regression/ccc_stress_test.spec.js",
-                        "column": 35,
-                        "line": 69
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
-              "id": "146ab6a1f7ad160507e2-4bf7161dc3cd47c8d451",
-              "file": "ccc_stress_test.spec.js",
-              "line": 18,
+              "id": "ffdc48538a45b9f85f2e-89a42d4d6984276c5bef",
+              "file": "file-upload.spec.js",
+              "line": 51,
+              "column": 5
+            }
+          ]
+        },
+        {
+          "title": "Tab Navigation",
+          "file": "file-upload.spec.js",
+          "line": 64,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should switch between tabs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 2584,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:35.290Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-187856a89ed6bda1ad14",
+              "file": "file-upload.spec.js",
+              "line": 70,
+              "column": 5
+            },
+            {
+              "title": "should have connectivity tab",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 4037,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:35.398Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-1b7931bd2e1e0d807096",
+              "file": "file-upload.spec.js",
+              "line": 87,
+              "column": 5
+            },
+            {
+              "title": "should have stats tab",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 4678,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:35.346Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-9811a46fdf987d51c2f3",
+              "file": "file-upload.spec.js",
+              "line": 92,
+              "column": 5
+            },
+            {
+              "title": "should switch between tabs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 6064,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:43.573Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-1b6b3942d8bb31310baf",
+              "file": "file-upload.spec.js",
+              "line": 70,
+              "column": 5
+            },
+            {
+              "title": "should have connectivity tab",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2725,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:43.657Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-8b56de2675c3b56c49e0",
+              "file": "file-upload.spec.js",
+              "line": 87,
+              "column": 5
+            },
+            {
+              "title": "should have stats tab",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 11,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 5847,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:43.805Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-6c1a06df563945d3ad6f",
+              "file": "file-upload.spec.js",
+              "line": 92,
+              "column": 5
+            },
+            {
+              "title": "should switch between tabs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 15,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 3831,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:57.516Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-b080cfad53d03b857f8a",
+              "file": "file-upload.spec.js",
+              "line": 70,
+              "column": 5
+            },
+            {
+              "title": "should have connectivity tab",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 16,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 3031,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:58.071Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-6e3d03368705c0a9561e",
+              "file": "file-upload.spec.js",
+              "line": 87,
+              "column": 5
+            },
+            {
+              "title": "should have stats tab",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 17,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 4867,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:58.136Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-5b816657898661ab736c",
+              "file": "file-upload.spec.js",
+              "line": 92,
+              "column": 5
+            }
+          ]
+        },
+        {
+          "title": "Filter Controls",
+          "file": "file-upload.spec.js",
+          "line": 98,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should have log level filter buttons",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 1730,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:38.413Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-06a71ccd04362867d7b0",
+              "file": "file-upload.spec.js",
+              "line": 104,
+              "column": 5
+            },
+            {
+              "title": "should have AND/OR logic toggle",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 2354,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:38.441Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-00130da28e529c554c55",
+              "file": "file-upload.spec.js",
+              "line": 115,
+              "column": 5
+            },
+            {
+              "title": "should toggle between AND/OR logic",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2813,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:38.486Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-9f0ae6ec80c0ff73e301",
+              "file": "file-upload.spec.js",
+              "line": 123,
+              "column": 5
+            },
+            {
+              "title": "should have search input",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 2279,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:38.908Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-7761dcc8c2e8ecb1b4d9",
+              "file": "file-upload.spec.js",
+              "line": 144,
+              "column": 5
+            },
+            {
+              "title": "should have log level filter buttons",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2760,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:47.425Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-dde669b31d5e8d318cd2",
+              "file": "file-upload.spec.js",
+              "line": 104,
+              "column": 5
+            },
+            {
+              "title": "should have AND/OR logic toggle",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2652,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:47.638Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-00988d5d5bef2c60b73d",
+              "file": "file-upload.spec.js",
+              "line": 115,
+              "column": 5
+            },
+            {
+              "title": "should toggle between AND/OR logic",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 4657,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:50.042Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-52a4b3f5f32ef1c152b4",
+              "file": "file-upload.spec.js",
+              "line": 123,
+              "column": 5
+            },
+            {
+              "title": "should have search input",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3598,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:50.271Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-959d4eaa16bb895695d5",
+              "file": "file-upload.spec.js",
+              "line": 144,
+              "column": 5
+            },
+            {
+              "title": "should have log level filter buttons",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3450,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:43:00.752Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-a64ebeb16a684236b931",
+              "file": "file-upload.spec.js",
+              "line": 104,
+              "column": 5
+            },
+            {
+              "title": "should have AND/OR logic toggle",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 13,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 2968,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:43:01.372Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-6c7e6e12c6cf8795349d",
+              "file": "file-upload.spec.js",
+              "line": 115,
+              "column": 5
+            },
+            {
+              "title": "should toggle between AND/OR logic",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 16,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 4120,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:43:01.403Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-918943493d3a6d518f63",
+              "file": "file-upload.spec.js",
+              "line": 123,
+              "column": 5
+            },
+            {
+              "title": "should have search input",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 15,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2994,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:43:01.557Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-b87312184b6dfdf0fd1f",
+              "file": "file-upload.spec.js",
+              "line": 144,
+              "column": 5
+            }
+          ]
+        },
+        {
+          "title": "Performance Tracker",
+          "file": "file-upload.spec.js",
+          "line": 155,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should have performance tracker available in console",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 1891,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Performance tracker available: false\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:39.927Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-1531420574add953f863",
+              "file": "file-upload.spec.js",
+              "line": 161,
+              "column": 5
+            },
+            {
+              "title": "should have performance tracker available in console",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 4426,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Performance tracker available: false\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:50.370Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-b3798ab1cf08c7fd46b8",
+              "file": "file-upload.spec.js",
+              "line": 161,
+              "column": 5
+            },
+            {
+              "title": "should have performance tracker available in console",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 14,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 3148,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Performance tracker available: false\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:43:01.971Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-eb6ed81b4d60514910b4",
+              "file": "file-upload.spec.js",
+              "line": 161,
+              "column": 5
+            }
+          ]
+        },
+        {
+          "title": "Accessibility",
+          "file": "file-upload.spec.js",
+          "line": 173,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should be keyboard navigable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 1682,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:40.259Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-97f65d0770029bd28acf",
+              "file": "file-upload.spec.js",
+              "line": 179,
+              "column": 5
+            },
+            {
+              "title": "should have proper document title",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 1571,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:40.554Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-57af8649122e0126a743",
+              "file": "file-upload.spec.js",
+              "line": 193,
+              "column": 5
+            },
+            {
+              "title": "should be keyboard navigable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 3216,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:51.587Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-11a3769d4b6f290c061d",
+              "file": "file-upload.spec.js",
+              "line": 179,
+              "column": 5
+            },
+            {
+              "title": "should have proper document title",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 11,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 1888,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:42:53.790Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-ee881e8f6e3f78334720",
+              "file": "file-upload.spec.js",
+              "line": 193,
+              "column": 5
+            },
+            {
+              "title": "should be keyboard navigable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 17,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 3125,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:43:03.369Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-682d0d1f7c3e9e07138f",
+              "file": "file-upload.spec.js",
+              "line": 179,
+              "column": 5
+            },
+            {
+              "title": "should have proper document title",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2038,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-13T20:43:04.317Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ffdc48538a45b9f85f2e-34e07715e4e9b9d76adf",
+              "file": "file-upload.spec.js",
+              "line": 193,
               "column": 5
             }
           ]
@@ -378,11 +1516,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-12-13T16:42:56.242Z",
-    "duration": 24854.935999999998,
-    "expected": 0,
+    "startTime": "2025-12-13T20:42:33.553Z",
+    "duration": 33154.781,
+    "expected": 39,
     "skipped": 0,
-    "unexpected": 3,
+    "unexpected": 0,
     "flaky": 0
   }
 }
