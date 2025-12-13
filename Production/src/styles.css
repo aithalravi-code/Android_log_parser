@@ -1353,6 +1353,12 @@ input[type="file"]:hover {
     /* Shadow for visual separation */
 }
 
+/* Ensure thead rows also have background */
+.ccc-table thead tr,
+.highlight-table thead tr {
+    background-color: #f2f2f2 !important;
+}
+
 .ccc-table th,
 .ccc-table td {
     padding: 8px 12px;
@@ -1374,7 +1380,13 @@ input[type="file"]:hover {
     border-right: 1px solid #e0e0e0;
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 11;
+    /* Higher than thead container */
+}
+
+/* Filter row - second row in thead */
+.filter-row {
+    background-color: #e8e8e8 !important;
 }
 
 .filter-row th {
@@ -1385,7 +1397,14 @@ input[type="file"]:hover {
     position: sticky;
     top: 37px;
     /* Position below the main header row */
-    z-index: 9;
+    z-index: 11;
+    /* Higher than thead container */
+}
+
+.ccc-table tbody {
+    position: relative;
+    z-index: 1;
+    /* Lower than thead */
 }
 
 .ccc-table tbody td {
