@@ -1,4 +1,8 @@
 // Import dependencies
+import { escapeHtml } from './utils/html.js';
+import { getColorForPid } from './ui/colors.js';
+import { wildcardToRegex } from './utils/regex.js';
+import { renderVirtualList } from './ui/components/VirtualList.js';
 import './styles.css';
 import noUiSlider from 'nouislider';
 import 'nouislider/dist/nouislider.css';
@@ -8,6 +12,9 @@ import { Chart, registerables } from 'chart.js';
 import { makeTableResizable } from './table-resize.js';
 import * as BtsnoopTab from './ui/tabs/BtsnoopTab.js';
 import * as StatsTab from './ui/tabs/StatsTab.js';
+import * as CccTab from './ui/tabs/CccTab.js';
+import { makeSortable } from './table-sort.js';
+import { formatParam } from './utils/html.js';
 
 // Register Chart.js components
 Chart.register(...registerables);
@@ -87,6 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterWorkerCode = `
     let storedLogLines = [];
 
+    // NOTE: wildcardToRegex is duplicated here because Web Workers cannot use ES6 imports.
+    // This version MUST match the implementation in utils/regex.js to ensure consistent behavior.
     function wildcardToRegex(wildcard) {
         const escapedPattern = wildcard.replace(/([.+?^\\$\\{\\}()|[\\]\\\\])/g, "\\\\\\$1");
         // If no wildcard, do a whole-word search, which is faster and more precise.
@@ -286,6 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Application State ---
     let originalLogLines = []; // Holds all lines from all files, with metadata
+    let cccMessages = []; // CCC messages extracted from log lines by filter workerfiles, with metadata
     let consolidatedBatteryDataPoints = []; // Battery data points from all workers
     let filterKeywords = []; // Array of {text: string, active: boolean}
     let liveSearchQuery = ''; // For live filtering as the user types
@@ -320,11 +330,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let filteredBtsnoopPackets = []; // Holds the filtered set of btsnoop packets
     let btsnoopConnectionEvents = []; // Holds LE Connection Complete events
     let btsnoopConnectionMap = new Map(); // Maps connection handle to BT address
-    let cccStatsData = []; // Holds the filtered set of CCC packets
+
     let allAppVersions = []; // Holds all found app versions
     let filteredLogLines = []; // The currently filtered set of lines
     // Global state for standard table selection persistence (Table ID -> Selected Row ID)
     const selectedTableRows = new Map();
+    window.selectedTableRows = selectedTableRows; // Expose for CccTab scroll restoration
+
     // OPTIMIZATION Phase 3: Cache BTSnoop row positions
     let btsnoopRowPositions = [];
     let btsnoopTotalHeight = 0;
@@ -366,7 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- OPTIMIZATION Phase 1: CCC Stats Memoization ---
     let cccStatsRenderedHTML = null;
-    let cccStatsDataHash = null;
+
 
     // --- OPTIMIZATION Phase 1: Debounced Save Timer ---
     let saveDebounceTimer = null;
@@ -414,7 +426,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!mainScrollThrottleTimer) {
             mainScrollThrottleTimer = setTimeout(() => {
                 // Pass the correct elements for the main log view
-                renderVirtualLogs(logContainer, logSizer, logViewport, filteredLogLines, logViewCollapseState);
+                const activeKeywords = filterKeywords.filter(kw => kw.active).map(kw => kw.text);
+                const keywordRegexes = activeKeywords.length > 0 ? activeKeywords.map(wildcardToRegex) : null;
+                const liveSearchRegex = liveSearchQuery ? wildcardToRegex(liveSearchQuery) : null;
+
+                renderVirtualList(logContainer, logSizer, logViewport, filteredLogLines, logViewCollapseState, {
+                    keywordRegexes,
+                    liveSearchRegex,
+                    selectedLine: userAnchorLine
+                });
                 mainScrollThrottleTimer = null;
             }, 100); // OPTIMIZATION: Increased from 50ms to 100ms for better performance
         }
@@ -817,14 +837,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Calculate and render dashboard stats (CPU, temp, battery)
                     const dashboardStats = StatsTab.processForDashboardStats(originalLogLines, consolidatedBatteryDataPoints);
-                    StatsTab.renderDashboardStats(dashboardStats, { cpuLoadStats, temperatureStats, batteryStats });
+                    console.log('[Perf Phase2] Lazy loading stats tab...');
+                    const statsStart = performance.now();
 
-                    // Render Charts
-                    if (cpuLoadPlotContainer) StatsTab.renderCpuPlot(dashboardStats.cpuDataPoints, cpuLoadPlotContainer);
-                    if (temperatureStats) StatsTab.renderTemperaturePlot(dashboardStats.temperatureDataPoints, document.getElementById('temperaturePlotContainer'));
-                    if (batteryStats) StatsTab.renderBatteryPlot(consolidatedBatteryDataPoints, batteryPlotContainer);
+                    // Process BTSnoop if needed (Stats tab shows BTSnoop Connection Events)
+                    console.log('[Stats Debug] isBtsnoopProcessed:', isBtsnoopProcessed);
+                    console.log('[Stats Debug] fileTasks.length:', fileTasks.length);
+                    const btsnoopTasks = fileTasks.filter(task => task.path && task.path.includes('btsnoop_hci.log'));
+                    console.log('[Stats Debug] BTSnoop tasks found:', btsnoopTasks.length);
 
-                    console.log(`[Perf Phase2] ${tabId} tab ready`);
+                    if (!isBtsnoopProcessed && btsnoopTasks.length > 0) {
+                        console.log('[Stats] Processing BTSnoop data for Connection Events table...');
+                        await processForBtsnoop();
+                    } else {
+                        console.log('[Stats] Skipping BTSnoop processing. Processed:', isBtsnoopProcessed, 'Tasks:', btsnoopTasks.length);
+                    }
+
+                    await StatsTab.setupStatsTab(originalLogLines, getDashboardElements(), batteryDataPoints);
+                    console.log(`[Perf Phase2] stats tab loaded in ${(performance.now() - statsStart).toFixed(2)}ms`);
                     break;
             }
 
@@ -1348,7 +1378,8 @@ document.addEventListener('DOMContentLoaded', () => {
         btsnoopPackets = null;
         filteredBtsnoopPackets = null;
         btsnoopConnectionEvents = null;
-        cccStatsData = null;
+        cccMessages = null;
+
 
         // Now reinitialize as empty arrays
         originalLogLines = [];
@@ -1367,7 +1398,8 @@ document.addEventListener('DOMContentLoaded', () => {
         btsnoopPackets = [];
         filteredBtsnoopPackets = [];
         btsnoopConnectionEvents = [];
-        cccStatsData = [];
+        cccMessages = [];
+
 
         // Clear other data structures
         filterKeywords = [];
@@ -1406,8 +1438,13 @@ document.addEventListener('DOMContentLoaded', () => {
         cachedFilteredResults = {
             logs: null,
             connectivity: null,
-            btsnoop: null
+            btsnoop: null,
+            ccc: null,
+            stats: null
         };
+
+        // Reset CCC Tab State
+        CccTab.reset();
 
         // Reset state flags
         localBtAddress = 'Host';
@@ -1958,6 +1995,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     // This is the final message for this file. Merge summary data.
                     Object.assign(resultForFile, data);
                     resultForFile.status = 'success'; // Mark as complete
+
+                    // Aggregate CCC messages from this file
+                    if (data.cccMessages && data.cccMessages.length > 0) {
+                        cccMessages.push(...data.cccMessages);
+                        console.log(`[CCC] Extracted ${data.cccMessages.length} CCC messages from ${data.filePath}`);
+                    }
+
                     tasksCompleted++;
 
                     const progress = (tasksCompleted / totalTasks) * 100;
@@ -2026,7 +2070,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const consolidatedAppVersions = new Map();
         // Reset battery data points for new file load
         consolidatedBatteryDataPoints = [];
-        const finalCccMessages = [];
+
 
         let resultIndex = 0;
         for (const result of allResults) {
@@ -2108,10 +2152,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         finalBleKeys.set(addr, keyInfo);
                     });
                 }
-                // Consolidate CCC messages from worker
-                if (result.cccMessages) {
-                    cccStatsData.push(...result.cccMessages);
-                }
+
                 // Consolidate battery data from worker
                 if (result.batteryDataPoints) {
                     // FIX: Use push with spread syntax to avoid creating new large arrays.
@@ -2119,10 +2160,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         consolidatedBatteryDataPoints.push(point);
                     }
                 }
-                // Consolidate CCC messages from worker
-                if (result.cccMessages) {
-                    finalCccMessages.push(...result.cccMessages);
-                }
+
             }
         }
         allAppVersions = Array.from(consolidatedAppVersions).sort((a, b) => a[0].localeCompare(b[0]));
@@ -2172,7 +2210,7 @@ document.addEventListener('DOMContentLoaded', () => {
         StatsTab.renderTemperaturePlot(dashboardStats.temperatureDataPoints, document.getElementById('temperaturePlotContainer'));
         StatsTab.renderCpuPlot(dashboardStats.cpuDataPoints, cpuLoadPlotContainer);
         StatsTab.renderBatteryPlot(consolidatedBatteryDataPoints, batteryPlotContainer);
-        renderCccStats(finalCccMessages);
+
 
         // Reset the processing flag BEFORE refreshing the active tab,
         // otherwise applyFilters (called by refreshActiveTab) will abort.
@@ -2295,7 +2333,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 cacheFilteredResults('btsnoop', btsnoopPackets);
                 break;
             case 'ccc':
-                setupCccTab();
+                await CccTab.setup(cccMessages, btsnoopConnectionMap, processForBtsnoop, isBtsnoopProcessed);
+                cacheFilteredResults('ccc', true); // Mark as cached so needsRefiltering works correctly next time
                 break;
             case 'stats':
                 cacheFilteredResults('stats', null);
@@ -2659,16 +2698,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('No saved filter configuration found.');
         }
     }
-    function wildcardToRegex(pattern) {
-        const escapedPattern = pattern.replace(/([.+?^${}()|\[\]\/\\])/g, "\\$1");
-        // Revert to the faster, whole-word search by default.
-        // The user can use asterisks for a "contains" search (e.g., *NFC*).
-        if (!pattern.includes('*')) {
-            return new RegExp(`\\b${escapedPattern}\\b`, 'i');
-        }
-        const regexPattern = escapedPattern.replace(/\*/g, '.*');
-        return new RegExp(regexPattern, 'i');
-    }
+    // wildcardToRegex removed (imported from utils)
 
     function initializeTimeFilterFromLines() {
         let minTimestamp, maxTimestamp;
@@ -2792,29 +2822,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return isNaN(date) ? null : date;
     }
 
-    function escapeHtml(unsafe = '') {
-        return unsafe
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
-
-    // --- PID Color Hashing ---
-    const pidColorCache = new Map();
-    const pidColors = ['#4CAF50', '#2196F3', '#9C27B0', '#FF9800', '#F44336', '#009688', '#673AB7', '#E91E63', '#03A9F4', '#8BC34A'];
-    function getColorForPid(pid) {
-        if (!pid) return '#E0E0E0'; // Default color for lines without a PID
-        if (pidColorCache.has(pid)) {
-            return pidColorCache.get(pid);
-        }
-        // Simple hash function to pick a color
-        const colorIndex = parseInt(pid, 10) % pidColors.length;
-        const color = pidColors[colorIndex];
-        pidColorCache.set(pid, color);
-        return color;
-    }
+    // Helper functions removed (imported from utils)
     // --- Helper for Standard Table Scroll Restoration ---
     function restoreTableScroll(tableId) {
         const table = document.getElementById(tableId);
@@ -2836,94 +2844,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderVirtualLogs(container, sizer, viewport, lines, activeCollapseSet) {
-        if (!container || !sizer || !viewport || !lines) return;
+    // renderVirtualLogs removed (replaced by VirtualList component)
 
-        const scrollTop = container.scrollTop;
-        const containerHeight = container.clientHeight;
-
-        // Get active keyword regexes for highlighting
-        const activeKeywords = filterKeywords.filter(kw => kw.active).map(kw => kw.text);
-        const keywordRegexes = activeKeywords.length > 0 ? activeKeywords.map(wildcardToRegex) : null;
-        const liveSearchRegex = liveSearchQuery ? wildcardToRegex(liveSearchQuery) : null;
-
-        // Set the total height of the scrollable area
-        // FIX: This line was missing. It's critical for creating the scrollbar and preventing overlap.
-        sizer.style.height = `${lines.length * LINE_HEIGHT}px`;
-
-        // Calculate the range of lines to render
-        let startIndex = Math.floor(scrollTop / LINE_HEIGHT) - BUFFER_LINES;
-        startIndex = Math.max(0, startIndex); // Don't go below 0
-        let endIndex = Math.ceil((scrollTop + containerHeight) / LINE_HEIGHT) + BUFFER_LINES;
-        endIndex = Math.min(lines.length, endIndex); // Don't go past the end
-        // Create the HTML for the visible lines
-        let visibleHtml = '';
-
-        for (let i = startIndex; i < endIndex; i++) {
-            const line = lines[i];
-            if (!line) continue; // Safety check
-
-            let lineContent;
-            let lineClass = 'log-line';
-
-            if (line.isMeta) {
-                lineClass += ' log-line-meta';
-                const indicator = activeCollapseSet.has(line.originalText) ? '[+] ' : '[-] ';
-                lineContent = indicator + escapeHtml(line.text);
-            } else {
-                // --- New Android Studio Style Rendering ---
-                const levelHtml = `<span class="log-level-box log-level-${line.level}">${line.level}</span>`;
-                // USER REQUEST: Color by TID instead of PID
-                const pidColor = getColorForPid(line.tid || line.pid);
-
-                let messageText = escapeHtml(line.message || line.originalText);
-                let tagText = escapeHtml(line.tag || '');
-
-                // Apply keyword highlighting to tag and message
-                if (keywordRegexes) {
-                    keywordRegexes.forEach(regex => {
-                        messageText = messageText.replace(regex, (match) => `<mark>${match}</mark>`);
-                        tagText = tagText.replace(regex, (match) => `<mark>${match}</mark>`);
-                    });
-                }
-                if (liveSearchRegex) {
-                    messageText = messageText.replace(liveSearchRegex, (match) => `<mark class="live-search">${match}</mark>`);
-                    tagText = tagText.replace(liveSearchRegex, (match) => `<mark class="live-search">${match}</mark>`);
-                }
-
-                // Update Regex for UID to be more permissive (alphanumeric) in case of 'root' etc.
-                // Note: The worker script string needs to be updated for the regex change to persist.
-                // Here we update the render logic to visual differences.
-
-                lineContent = `
-                    <div class="log-line-content">
-                        <span class="log-meta copy-cell" data-log-text="${line.timestamp || (line.date + ' ' + line.time)}">${line.timestamp || (line.date + ' ' + line.time)}</span>
-                        <span class="log-pid-tid copy-cell" data-log-text="${line.pid || ''}${line.tid ? '-' + line.tid : ''}${line.uid ? ' ' + line.uid : ''}" style="color: ${pidColor};">
-                            <span class="copy-cell" data-log-text="${line.pid || ''}" style="font-weight: bold;">${line.pid || ''}</span>
-                            ${line.tid ? '<span class="copy-cell" data-log-text="' + line.tid + '" style="opacity: 0.8; font-size: 0.9em;">-' + line.tid + '</span>' : ''}
-                            ${line.uid ? '<span class="copy-cell" data-log-text="' + line.uid + '" style="opacity: 0.6; font-size: 0.8em; margin-left: 2px;"> ' + line.uid + '</span>' : ''}
-                        </span>
-                        ${levelHtml}
-                        <span class="log-tag copy-cell" data-log-text="${escapeHtml(line.tag || '')}" title="${escapeHtml(line.tag || '')}">${tagText}</span>
-                        <span class="log-message copy-cell" data-log-text="${escapeHtml(line.message || line.originalText)}" title="${escapeHtml(line.message || line.originalText)}">${messageText}</span>
-                    </div>
-                `;
-            }
-            const copyButtonHtml = line.isMeta ? '' : `<button class="copy-log-btn" data-log-text="${escapeHtml(line.originalText || line.text)}">📋</button>`;
-            if (userAnchorLine === line) {
-                lineClass += ' selected selected-anchor'; // Add standard selected class
-            }
-
-            let lineNumberHtml = '';
-            if (!line.isMeta && line.lineNumber) {
-                lineNumberHtml = `<span class="line-number">${line.lineNumber}</span>`;
-            }
-            visibleHtml += `<div class="${lineClass}" data-line-index="${i}">${lineNumberHtml}${lineContent}${copyButtonHtml}</div>`;
-        }
-
-        viewport.innerHTML = visibleHtml;
-        viewport.style.transform = `translateY(${startIndex * LINE_HEIGHT}px)`;
-    }
+    // Orphaned code removed (cleanup)
 
     function renderFilterChips() {
         keywordChipsContainer.innerHTML = '';
@@ -3197,900 +3120,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Stats rendering functions moved to StatsTab.js module
 
 
-    const CONTROL_FLOW_P1_MAP = {
-        '00': 'Finished with Failure',
-        '01': 'Finished with Success',
-        '10': 'Continue',
-        '12': 'Abort',
-        '40': 'Application Specific'
-    };
-
-    const CONTROL_FLOW_P2_MAP = {
-        '00': 'Success / No Info',
-        '01': 'Public Key Not Found / No Matching SPAKE2+',
-        '02': 'Public Key Expired / Cert Chain Received',
-        '03': 'Public Key Not Trusted / User Confirm',
-        '04': 'Invalid Signature',
-        '05': 'Invalid Channel',
-        '06': 'Invalid Data Format',
-        '07': 'Invalid Data Content',
-        '08': 'Preconditions Not Fulfilled',
-        '0B': 'Cert Verify Failed',
-        '0F': 'Time Extension',
-        '11': 'Key Creation/Verification Success',
-        '7F': 'Data/Format Error',
-        'A0': 'Key deleted / Not known',
-        'B0': 'Doors/Trunk not closed',
-        'B1': 'Vehicle not in parking state'
-    };
-
-    const AUTH_P1_MAP = {
-        '00': 'Standard Authentication',
-        '01': 'Fast Authentication',
-        '02': 'Transaction Authentication',
-        '03': 'Reserved',
-        '04': 'Reserved'
-    };
-
-    const AUTH_P2_MAP = {
-        '00': 'No specific info',
-        '01': 'First message',
-        '02': 'Subsequent message',
-        '03': 'Last message',
-        '04': 'Single message',
-        '05': 'Chaining',
-        '06': 'Reserved',
-        '07': 'Reserved'
-    };
-
-    const formatParam = (key, value) => `<span class="ccc-pair"><span class="ccc-param">${key}:</span><span class="ccc-value">${value}</span></span>`;
-
-    const COMMON_TAGS = {
-        '30': 'Sequence',
-        'A0': 'Status_Object',
-        '83': 'Status'
-    };
-
-    const APDU_TAGS = {
-        ...COMMON_TAGS,
-        '86': 'Endpoint_ePK',
-        '87': 'Vehicle_ePK',
-        '4D': 'Vehicle_Identifier',
-        '4C': 'Transaction_Identifier',
-        '9E': 'Signature',
-        '5C': 'Protocol_Version',
-        '4E': 'Key_Slot',
-        '57': 'Counter_Value',
-        '4A': 'Confidential_Mailbox',
-        '4B': 'Private_Mailbox',
-        '93': 'Usage'
-    };
-
-    const RKE_TAGS = {
-        ...COMMON_TAGS,
-        '7F70': 'Request_RKE_Action',
-        '7F72': 'Function_Status_Response',
-        '7F73': 'Subscribe_Vehicle_Function',
-        '7F74': 'Get_Function_Status',
-        '7F76': 'Continue_RKE_Action',
-        '7F77': 'Stop_RKE_Action',
-        '80': 'Function_ID',
-        '81': 'Action_ID',
-        '84': 'From_Function_ID',
-        '85': 'To_Function_ID',
-        '86': 'Full_Update_Flag', // Context specific: in RKE it's a flag
-        '88': 'Arbitrary_Data'
-    };
-
-    const FUNCTION_IDS = {
-        '0001': 'Central_Locking',
-        '0010': 'Driving_Readiness'
-    };
-
-    const APDU_COMMANDS = {
-        '00A4': 'SELECT',
-        '8080': 'AUTH0',
-        '8081': 'AUTH1',
-        '803C': 'CONTROL_FLOW',
-        '8071': 'CREATE_RANGING_KEY',
-        '8072': 'TERMINATE_RANGING_SESSION',
-        '8073': 'EXCHANGE_RANGING_DATA'
-    };
-
-    const RKE_STATUS_MAP = {
-        '0001': { '00': 'Unlocked', '01': 'Locked', '02': 'Selective Unlocked', '03': 'Locked Safe' },
-        '0002': { '00': 'Closed', '01': 'Open', '02': 'Intermediate' }, // Window
-        '0010': { '00': 'Not Ready', '01': 'Ready', '02': 'Engine Running', '03': 'Engine Cranking' },
-        '0012': { '00': 'Off', '01': 'On' },
-        'default': { '00': 'Ok/Inactive', '01': 'Fail/Active' }
-    };
-
-    const UWB_TAGS = {
-        // Placeholder for UWB specific tags
-    };
-
-    // Simple BER-TLV Parser with Context and Formatting
-    const parseTLV = (hex, tagMap = COMMON_TAGS) => {
-        let result = "";
-        let i = 0;
-        let maxIter = 100;
-        let currentFunctionId = null; // Track Function ID in current context
-
-        while (i < hex.length && maxIter-- > 0) {
-            // Skip padding/invalid tags
-            let nextByte = hex.substring(i, i + 2).toUpperCase();
-            if (nextByte === '00' || nextByte === 'FF') {
-                i += 2;
-                continue;
-            }
-
-            // Parse Tag
-            let tag = nextByte;
-            if (!/^[0-9A-F]{2}$/.test(tag)) break;
-
-            i += 2;
-            if ((parseInt(tag, 16) & 0x1F) === 0x1F) {
-                tag += hex.substring(i, i + 2).toUpperCase();
-                i += 2;
-            }
-
-            // Parse Length
-            if (i + 2 > hex.length) break;
-            let lenHex = hex.substring(i, i + 2);
-            let len = parseInt(lenHex, 16);
-            i += 2;
-
-            if (len > 127) {
-                if (len === 0x81) {
-                    if (i + 2 > hex.length) break;
-                    len = parseInt(hex.substring(i, i + 2), 16);
-                    i += 2;
-                } else if (len === 0x82) {
-                    if (i + 4 > hex.length) break;
-                    len = parseInt(hex.substring(i, i + 4), 16);
-                    i += 4;
-                }
-            }
-
-            if (i + (len * 2) > hex.length) {
-                result += `<div class="tlv-block">${formatParam(`Tag_${tag}`, '[Truncated]')}</div>`;
-                break;
-            }
-
-            let val = hex.substring(i, i + (len * 2));
-            i += (len * 2);
-
-            const tagName = tagMap[tag] || `Tag_${tag}`;
-
-            if (tag.startsWith('7F') || tag === '30' || tag === 'A0') {
-                // Container: Render as block with indentation
-                const nested = parseTLV(val, tagMap);
-                result += `<div class="tlv-block"><span class="ccc-param">${tagName}:</span><div class="tlv-indent">${nested}</div></div>`;
-            } else {
-                // Leaf: Render as block param-value pair
-                let displayVal = val;
-
-                if (tagMap === RKE_TAGS) {
-                    // Capture Function ID
-                    if (tag === '80') {
-                        currentFunctionId = val;
-                        if (FUNCTION_IDS[val]) {
-                            displayVal = `${val} (${FUNCTION_IDS[val]})`;
-                        }
-                    }
-                    // Interpret Status based on Function ID
-                    if (tag === '83') {
-                        const map = RKE_STATUS_MAP[currentFunctionId] || RKE_STATUS_MAP['default'];
-                        const statusText = map[val] || map['default'];
-                        if (statusText) {
-                            displayVal = `${val} (${statusText})`;
-                        }
-                    }
-                    // True flag
-                    if (tag === '86' && len === 0) {
-                        displayVal = "True";
-                    }
-                }
-
-                result += `<div class="tlv-block">${formatParam(tagName, displayVal)}</div>`;
-            }
-        }
-        return result;
-    };
-
-    // Helper to decode payload based on message type
-    const decodePayload = (type, subtype, payload) => {
-        let innerMsg = "-";
-        let params = "";
-
-        if (!payload) return { innerMsg, params: "" };
-
-        // Framework Decoding
-        if (type === 0x00) {
-            if (subtype === 0x04) {
-                innerMsg = "Data PDU";
-                params = formatParam('Data', payload.match(/.{1,2}/g).join(' '));
-                return { innerMsg, params };
-            }
-            if (subtype === 0x18) {
-                innerMsg = "Encrypted PDU";
-                let info = "";
-                if (payload.includes('a0')) info = formatParam('Info', '[Contains TLV Data]') + " ";
-                params = info + formatParam('Data', payload.match(/.{1,2}/g).join(' '));
-                return { innerMsg, params };
-            }
-        }
-
-        // SE (Secure Element) Decoding
-        if (type === 0x01) {
-            // DK_APDU_RQ (0x0B)
-            if (subtype === 0x0B) {
-                if (payload.length >= 4) {
-                    let apdu = payload.substring(4);
-                    const cla = apdu.substring(0, 2).toUpperCase();
-                    const ins = apdu.substring(2, 4).toUpperCase();
-                    const claIns = cla + ins;
-
-                    // Check for C9 (Exchange) CLA first as it overrides specific command mapping
-                    if (cla === 'C9') {
-                        innerMsg = "EXCHANGE_APDU"; // Generic name for C9 class
-                        // Treat the whole body (minus header) as data/TLV?
-                        // Usually C9 indicates secure/exchange context. 
-                        // We will assume standard APDU structure: CLA INS P1 P2 Lc Data
-                        if (apdu.length >= 10) {
-                            const dataStart = 10;
-                            const data = apdu.substring(dataStart);
-                            params = parseTLV(data, APDU_TAGS);
-                        } else {
-                            params = formatParam('Data', apdu.match(/.{1,2}/g).join(' '));
-                        }
-                    } else if (APDU_COMMANDS[claIns]) {
-                        const cmdName = APDU_COMMANDS[claIns];
-                        const p1 = apdu.substring(4, 6);
-                        const p2 = apdu.substring(6, 8);
-                        const dataStart = 10;
-                        const data = apdu.substring(dataStart); // Rest of APDU
-
-                        innerMsg = cmdName;
-                        let p1Text = p1;
-                        let p2Text = p2;
-
-                        if (cmdName === 'SELECT') {
-                            if (p1 === '04' && data.length > 0) {
-                                if (data.toLowerCase().includes('a000000809434343444b417631')) {
-                                    params = formatParam('Applet', 'Digital Key') + formatParam('AID', data);
-                                } else {
-                                    params = formatParam('AID', data);
-                                }
-                            }
-                            // Return immediately for SELECT to avoid adding P1/P2 or parsing TLV
-                            return { innerMsg, params };
-
-                        } else if (cmdName === 'CONTROL_FLOW') {
-                            p1Text = CONTROL_FLOW_P1_MAP[p1] || p1;
-                            p2Text = CONTROL_FLOW_P2_MAP[p2] || p2;
-                        } else if (cmdName === 'AUTH0' || cmdName === 'AUTH1') {
-                            p1Text = AUTH_P1_MAP[p1] || p1;
-                            p2Text = AUTH_P2_MAP[p2] || p2;
-                        }
-
-                        // Generic Parameter formatting
-                        const commonParams = formatParam('P1', `${p1Text} (0x${p1})`) +
-                            formatParam('P2', `${p2Text} (0x${p2})`);
-
-                        if (!params) params = "";
-                        params = commonParams + params;
-
-                        if (data.length > 0) {
-                            const tlv = parseTLV(data, APDU_TAGS);
-                            if (tlv) {
-                                params += formatParam('Data (TLV)', tlv);
-                            } else {
-                                params += formatParam('Data', data.match(/.{1,2}/g).join(' '));
-                            }
-                        }
-                    } else if (apdu.startsWith('8080')) {
-                        // Fallback legacy check
-                        innerMsg = "AUTH0";
-                        params = parseTLV(apdu.substring(10), APDU_TAGS);
-                    } else {
-                        innerMsg = "APDU";
-                        if (claIns === '8071') {
-                            innerMsg = "CREATE_RANGING_KEY";
-                            const data = apdu.substring(10);
-                            params = parseTLV(data, APDU_TAGS);
-                        } else if (claIns === '8072') {
-                            innerMsg = "TERMINATE_RANGING_SESSION";
-                            const data = apdu.substring(10);
-                            params = parseTLV(data, APDU_TAGS);
-                        } else if (claIns === '8073') {
-                            innerMsg = "EXCHANGE_RANGING_DATA";
-                            const data = apdu.substring(10);
-                            params = parseTLV(data, APDU_TAGS);
-                        } else {
-                            params = formatParam('Data', apdu.match(/.{1,2}/g).join(' '));
-                        }
-                    }
-                    return { innerMsg, params };
-                }
-            }
-            // DK_APDU_RS (0x0C)
-            if (subtype === 0x0C) {
-                // FIX: Support case where payload starts with length (00xx)
-                if (payload.length >= 4) {
-                    // Check if the first 2 bytes are a length field logic check
-                    // If payload is "006a..." (from text log which strips type/subtype 010c)
-                    // The code below assumes payload starts with LENGTH (4 hex chars).
-                    // This matches the DK_APDU_RQ structure logic.
-                    // We assume payload = Length(2B) + APDU(var)
-
-                    const lenVal = parseInt(payload.substring(0, 4), 16); // e.g. 006a = 106
-                    // Validate length to ensure it's not garbage
-                    // If lenVal + 4 (header) == payload.length, it's definitely a length field.
-                    // User log: 010c006a... -> payload passed is 006a... (212 chars + 4 = 216?)
-                    // If 106 bytes -> 212 hex chars.
-                    // payload.length should be roughly 216 chars (4 chars len + 212 chars data).
-
-                    // Proceed with parsing
-                    const apdu = payload.substring(4);
-                    // Standard APDU response: Data + SW(2B)
-                    if (apdu.length >= 4) {
-                        const sw = apdu.substring(apdu.length - 4);
-                        const data = apdu.substring(0, apdu.length - 4);
-                        let statusText = sw;
-                        if (sw === '9000') statusText = 'Success (9000)';
-
-                        innerMsg = "Response"; // Cannot infer request type context-free
-
-                        const swHtml = formatParam('SW', statusText);
-                        let tlvHtml = "";
-
-                        // Heuristic: If data starts with '7F' or '6F' etc it might be TLV.
-                        // But standard processing is safe enough.
-                        if (data.length > 0) {
-                            const tlv = parseTLV(data, APDU_TAGS);
-                            // FIX: improved check to show TLV if valid, else raw
-                            if (tlv && !tlv.includes('[Truncated') && !data.startsWith('04')) {
-                                tlvHtml = formatParam('Data', tlv);
-                            } else {
-                                tlvHtml = formatParam('Data', data.match(/.{1,2}/g).join(' '));
-                            }
-                        }
-                        return { innerMsg, params: tlvHtml + swHtml };
-                    }
-                }
-            }
-        }
-
-        // UWB Ranging Service Decoding
-        if (type === 0x02) {
-            innerMsg = "-";
-
-            // Ranging_Session_RQ (0x03)
-            if (subtype === 0x03) {
-                if (payload.length >= 24) { // Length(2) + 10 bytes = 12 bytes total (24 hex chars)
-                    const len = parseInt(payload.substring(0, 4), 16);
-                    params = formatParam('Length', '0x' + payload.substring(0, 4)) +
-                        formatParam('Protocol', '0x' + payload.substring(4, 8)) +
-                        formatParam('ConfigID', '0x' + payload.substring(8, 12)) +
-                        formatParam('SessionID', '0x' + payload.substring(12, 20)) +
-                        formatParam('PulseShape', '0x' + payload.substring(20, 22)) +
-                        formatParam('Channel', '0x' + payload.substring(22, 24));
-
-                    if (payload.length > 24) {
-                        params += formatParam('Data (Remaining)', payload.substring(24).match(/.{1,2}/g).join(' '));
-                    }
-                } else {
-                    // Fallback if short, might be legacy or error
-                    params = formatParam('Data', payload.match(/.{1,2}/g).join(' '));
-                }
-            }
-            // Ranging_Session_RS (0x04)
-            if (subtype === 0x04) {
-                if (payload.length >= 4) {
-                    const len = parseInt(payload.substring(0, 4), 16);
-                    params = formatParam('Length', '0x' + payload.substring(0, 4));
-
-                    const content = payload.substring(4);
-                    // Data: RAN_Multiplier (1B) + Slot_BitMask (1B) + SYNC_Code_Index_BitMask (4B) + Selected_UWB_Channel (1B) + Hopping_Config_Bitmask (1B)
-                    if (content.length >= 16) { // 8 bytes minimum
-                        const ranMult = parseInt(content.substring(0, 2), 16);
-                        const slotMask = content.substring(2, 4);
-                        const syncMask = content.substring(4, 12);
-
-                        // Corrected Swapped Fields
-                        const channelHex = content.substring(12, 14);
-                        const hoppingHex = content.substring(14, 16);
-
-                        const channelVal = parseInt(channelHex, 16);
-                        let channelText = `Channel ${channelVal}`;
-                        if (channelVal === 5) channelText = "Channel 5";
-                        if (channelVal === 9) channelText = "Channel 9";
-
-                        params += formatParam('RAN_Multiplier', ranMult) +
-                            formatParam('Slot_BitMask', '0x' + slotMask) +
-                            formatParam('SYNC_Code_Index_BitMask', '0x' + syncMask) +
-                            formatParam('Selected_UWB_Channel', `${channelText} (0x${channelHex})`) +
-                            formatParam('Hopping_Config_Bitmask', `0x${hoppingHex}`);
-
-                        if (content.length > 16) {
-                            params += formatParam('Data (Remaining)', content.substring(16).match(/.{1,2}/g).join(' '));
-                        }
-                    } else {
-                        // Fallback to TLV or raw if short
-                        const tlv = parseTLV(content, UWB_TAGS);
-                        if (tlv) params += tlv;
-                        else params += formatParam('Data', content.match(/.{1,2}/g)?.join(' ') || '');
-                    }
-                }
-            }
-            // Ranging_Session_Setup_RQ (0x05)
-            if (subtype === 0x05) {
-                if (payload.length >= 4) {
-                    const len = parseInt(payload.substring(0, 4), 16);
-                    params = formatParam('Length', '0x' + payload.substring(0, 4));
-                    const content = payload.substring(4);
-
-                    // User Specified Parameters:
-                    // 1. Session_RAN_Multiplier (1B)
-                    // 2. Number_Chaps_per_Slot (1B)
-                    // 3. Number_Responders_Nodes (1B)
-                    // 4. Number_Slots_per_Round (1B)
-                    // 5. SYNC_Code_Index (4B)
-                    // 6. Selected_Hopping_Config_Bitmask (1B)
-                    if (content.length >= 18) { // 9 bytes minimum
-                        params += formatParam('Session_RAN_Multiplier', parseInt(content.substring(0, 2), 16)) +
-                            formatParam('Number_Chaps_per_Slot', parseInt(content.substring(2, 4), 16)) +
-                            formatParam('Number_Responders_Nodes', parseInt(content.substring(4, 6), 16)) +
-                            formatParam('Number_Slots_per_Round', parseInt(content.substring(6, 8), 16)) +
-                            formatParam('SYNC_Code_Index', parseInt(content.substring(8, 16), 16)) +
-                            formatParam('Selected_Hopping_Config_Bitmask', '0x' + content.substring(16, 18));
-
-                        if (content.length > 18) {
-                            params += formatParam('Data (Remaining)', content.substring(18).match(/.{1,2}/g).join(' '));
-                        }
-                    } else {
-                        params += formatParam('Data', content.match(/.{1,2}/g)?.join(' ') || '');
-                    }
-                }
-            }
-            // Ranging_Session_Setup_RS (0x06)
-            if (subtype === 0x06) {
-                if (payload.length >= 4) {
-                    const len = parseInt(payload.substring(0, 4), 16);
-                    params = formatParam('Length', '0x' + payload.substring(0, 4));
-                    const content = payload.substring(4);
-
-                    if (content.length >= 34) {
-                        params += formatParam('STS_Index0', '0x' + content.substring(0, 8)) +
-                            formatParam('UWB_Time0', '0x' + content.substring(8, 24)) +
-                            formatParam('HOP_Key', '0x' + content.substring(24, 32)) +
-                            formatParam('SYNC_Index', parseInt(content.substring(32, 34), 16));
-
-                        if (content.length > 34) {
-                            params += formatParam('Data (Remaining)', content.substring(34).match(/.{1,2}/g).join(' '));
-                        }
-                    } else {
-                        params += formatParam('Data', content.match(/.{1,2}/g)?.join(' ') || '');
-                    }
-                }
-            }
-            // Ranging_Suspend_RQ (0x07)
-            if (subtype === 0x07) {
-                if (payload.startsWith('0004') && payload.length >= 12) {
-                    params = formatParam('UWB Session ID', '0x' + payload.substring(4, 12));
-                    if (payload.length > 12) {
-                        params += formatParam('Data (Remaining)', payload.substring(12).match(/.{1,2}/g).join(' '));
-                    }
-                }
-            }
-            // Ranging_Suspend_RS (0x08)
-            if (subtype === 0x08) {
-                const status = payload.length >= 2 ? payload.substring(payload.length - 2) : payload;
-                const statusText = status === '00' ? 'Accepted' : status === '01' ? 'Delayed' : 'Unknown (0x' + status + ')';
-                params = formatParam('Suspend Response', statusText);
-            }
-            // Ranging_Recovery_RQ (0x09)
-            if (subtype === 0x09) {
-                if (payload.startsWith('0004') && payload.length >= 12) {
-                    params = formatParam('UWB Session ID', '0x' + payload.substring(4, 12));
-                    if (payload.length > 12) {
-                        params += formatParam('Data (Remaining)', payload.substring(12).match(/.{1,2}/g).join(' '));
-                    }
-                }
-            }
-            // Ranging_Recovery_RS (0x0A)
-            if (subtype === 0x0A) {
-                if (payload.length >= 24) {
-                    params = formatParam('STS_Index0', '0x' + payload.substring(0, 8)) +
-                        formatParam('UWB_Time0', '0x' + payload.substring(8, 24));
-
-                    if (payload.length > 24) {
-                        params += formatParam('Data (Remaining)', payload.substring(24).match(/.{1,2}/g).join(' '));
-                    }
-                }
-            }
-
-            // If we decoded specific params, return them.
-            if (params && params !== "") return { innerMsg, params };
-        }
-
-        // DK Event Notification Decoding
-        if (type === 0x03) {
-            if (subtype === 0x11) {
-                if (payload.length > 4) {
-                    const actualPayload = payload.substring(4);
-                    const category = actualPayload.substring(0, 2);
-                    const data = actualPayload.substring(2);
-
-                    const CATEGORIES = {
-                        '01': 'Command Complete',
-                        '02': 'Ranging Session Status',
-                        '03': 'Device Ranging Intent',
-                        '04': 'Vehicle Status',
-                        '05': 'RKE Request',
-                        '06': 'RKE Acknowledge'
-                    };
-
-                    innerMsg = CATEGORIES[category] || `Category_0x${category}`;
-
-                    // Default
-                    params = formatParam('Data', data);
-
-                    // Category 01: Command Complete
-                    if (category === '01') {
-                        const code = data.length >= 2 ? data.substring(0, 2) : '';
-                        let codeDesc = 'Unknown';
-                        if (code === '80') codeDesc = 'General Error';
-                        if (code === '00') codeDesc = 'Deselect_SE';
-                        params = formatParam('Status', codeDesc) + formatParam('Code', '0x' + code);
-                    }
-
-                    // Category 02: Ranging Session Status
-                    if (category === '02') {
-                        const code = data.length >= 2 ? data.substring(0, 2) : '';
-                        const statusMap = {
-                            '00': 'URSK Refresh',
-                            '01': 'URSK Not Found',
-                            '02': 'Not Required',
-                            '03': 'Secure Ranging Failed',
-                            '04': 'Terminated',
-                            '06': 'Recovery Failed', // Typo fix
-                            '07': 'Suspended'
-                        };
-                        params = formatParam('Status', statusMap[code] || '0x' + code);
-                    }
-
-                    // Category 03: Device Ranging Intent
-                    if (category === '03') {
-                        const code = data.length >= 2 ? data.substring(0, 2) : '';
-                        const levelMap = {
-                            '00': 'Low Confidence',
-                            '01': 'Medium Confidence',
-                            '02': 'High Confidence'
-                        };
-                        params = formatParam('Level', levelMap[code] || '0x' + code);
-                    }
-
-                    // Category 04: Vehicle Status & 05: RKE Request
-                    if (category === '04' || category === '05') {
-                        params = parseTLV(data, RKE_TAGS);
-                    }
-
-                    // Default logic fallback using TLV check
-                    const upperData = data.toUpperCase();
-                    if ((category !== '04' && category !== '05') && (upperData.startsWith('7F') || upperData.startsWith('30'))) {
-                        params = parseTLV(data, RKE_TAGS);
-                    }
-                    return { innerMsg, params };
-                }
-            }
-            if (subtype === 0x03) return { innerMsg: "Legacy Intent", params: formatParam('Data', payload) };
-        }
-
-        if (type === 0x05) {
-            // Supplementary
-            if (subtype === 0x0D) {
-                innerMsg = "Time_Sync";
-                if (payload.length >= 46) {
-                    const eventCount = BigInt('0x' + payload.substring(0, 16));
-                    const uwbTime = BigInt('0x' + payload.substring(16, 32));
-                    // ... decodes ...
-                    const uncertainty = parseInt(payload.substring(32, 34), 16);
-                    const skewAvail = parseInt(payload.substring(34, 36), 16);
-                    const ppm = parseInt(payload.substring(36, 40), 16);
-                    const success = parseInt(payload.substring(40, 42), 16);
-
-                    params = formatParam('EventCount', eventCount) +
-                        formatParam('UWB Time', uwbTime) +
-                        formatParam('Uncertainty', '0x' + uncertainty.toString(16)) +
-                        formatParam('Skew', skewAvail) +
-                        formatParam('PPM', ppm) +
-                        formatParam('Success', success);
-                    return { innerMsg, params };
-                }
-            }
-        }
-        return { innerMsg, params: formatParam('Payload', payload.match(/.{1,2}/g).join(' ')) };
-    };
-
-
-    function renderCccStats(messages) {
-        const CCC_CONSTANTS = {
-            MESSAGE_TYPES: {
-                0x00: "Framework",
-                0x01: "SE",
-                0x02: "UWB Ranging Service",
-                0x03: "DK Event Notification",
-                0x04: "Vehicle OEM App",
-                0x05: "Supplementary Service",
-                0x06: "Head Unit Pairing"
-            },
-            UWB_RANGING_MSGS: {
-                0x01: "Ranging_Capability_RQ",
-                0x02: "Ranging_Capability_RS",
-                0x03: "Ranging_Session_RQ",
-                0x04: "Ranging_Session_RS",
-                0x05: "Ranging_Session_Setup_RQ",
-                0x06: "Ranging_Session_Setup_RS",
-                0x07: "Ranging_Suspend_RQ",
-                0x08: "Ranging_Suspend_RS",
-                0x09: "Ranging_Recovery_RQ",
-                0x0A: "Ranging_Recovery_RS",
-                0x0B: "Configurable_Ranging_Recovery_RQ",
-                0x0C: "Configurable_Ranging_Recovery_RS"
-            },
-            DK_EVENT_CATEGORIES: {
-                0x01: "Command Complete",
-                0x02: "Ranging Session Status Changed",
-                0x03: "Device Ranging Intent",
-                0x04: "Vehicle Status Change",
-                0x05: "RKE Request",
-                0x11: "DK Event Notification"
-            },
-            SUPPLEMENTARY_MSGS: {
-                0x0D: "Time_Sync"
-            },
-            FRAMEWORK_MSGS: {
-                0x04: "OP_CONTROL_FLOW",
-                0x18: "Proprietary / Unknown"
-            },
-            SE_MSGS: {
-                0x0B: "DK_APDU_RQ",
-                0x0C: "DK_APDU_RS"
-            }
-        };
-
-        let cccStatsData = messages || [];
-        let cccColumnFilters = new Map();
-
-        const container = document.getElementById('cccStatsContainer');
-        if (!container) return;
-
-        // Setup Static Header
-        if (!container.querySelector('table')) {
-            container.innerHTML = `
-            <div class="table-container" style="overflow-x: auto;">
-                <table class="log-table ccc-table" id="cccStatsTable">
-                    <thead>
-                        <tr id="cccHeaderRow">
-                            <th style="width: 140px;">Time</th>
-                            <th style="width: 150px;">BLE Address</th>
-                            <th style="width: 60px;">Dir</th>
-                            <th style="width: 150px;">Message Category</th>
-                            <th style="width: 125px;">Message Type</th>
-                            <th style="width: 90px;">Message</th>
-                            <th style="width: 400px;">Parameters</th>
-                            <th style="width: 200px;">Raw Data</th>
-                        </tr>
-                        <tr class="filter-row">
-                            <th style="width: 140px;"><input type="text" placeholder="Filter..." data-col="0"></th>
-                            <th style="width: 150px;"><input type="text" placeholder="Filter..." data-col="1"></th>
-                            <th style="width: 60px;"><input type="text" placeholder="Filter..." data-col="2"></th>
-                            <th style="width: 150px;"><input type="text" placeholder="Filter..." data-col="3"></th>
-                            <th style="width: 125px;"><input type="text" placeholder="Filter..." data-col="4"></th>
-                            <th style="width: 90px;"><input type="text" placeholder="Filter..." data-col="5"></th>
-                            <th style="width: 400px;"><input type="text" placeholder="Filter..." data-col="6"></th>
-                            <th style="width: 200px;"><input type="text" placeholder="Filter..." data-col="7"></th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>`;
-
-            // Attach filter listeners
-            const inputs = container.querySelectorAll('.filter-row input');
-            inputs.forEach(input => {
-                input.addEventListener('input', (e) => {
-                    const colIndex = parseInt(e.target.dataset.col, 10);
-                    const value = e.target.value.toLowerCase();
-                    if (value) {
-                        cccColumnFilters.set(colIndex, value);
-                    } else {
-                        cccColumnFilters.delete(colIndex);
-                    }
-                    updateCccTableBody();
-                });
-            });
-
-
-            // Add column resize functionality using the utility
-            if (typeof makeTableResizable === 'function') {
-                makeTableResizable('cccStatsTable');
-            }
-
-
-            // Add Excel export functionality
-            const exportCccBtn = document.getElementById('exportCccBtn');
-            if (exportCccBtn) {
-                exportCccBtn.addEventListener('click', () => {
-                    if (!cccStatsData || cccStatsData.length === 0) {
-                        alert('No CCC data to export.');
-                        return;
-                    }
-
-                    // Prepare data for export
-                    const exportData = cccStatsData.map(msg => {
-                        const categoryName = CCC_CONSTANTS.MESSAGE_TYPES[msg.type] || `Unknown (0x${msg.type.toString(16).padStart(2, '0').toUpperCase()})`;
-                        let typeName = `Unknown`;
-                        if (msg.type === 0x02) typeName = CCC_CONSTANTS.UWB_RANGING_MSGS[msg.subtype] || typeName;
-                        else if (msg.type === 0x03) typeName = CCC_CONSTANTS.DK_EVENT_CATEGORIES[msg.subtype] || typeName;
-                        else if (msg.type === 0x01 && CCC_CONSTANTS.SE_MSGS && CCC_CONSTANTS.SE_MSGS[msg.subtype]) typeName = CCC_CONSTANTS.SE_MSGS[msg.subtype];
-                        else if (msg.type === 0x05) typeName = CCC_CONSTANTS.SUPPLEMENTARY_MSGS[msg.subtype] || typeName;
-                        else if (msg.type === 0x00 && CCC_CONSTANTS.FRAMEWORK_MSGS && CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype]) typeName = CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype];
-
-                        const innerMessage = msg._decoded ? (msg._decoded.innerMsg || "-") : "-";
-                        const params = msg._decoded ? (msg._decoded.params || "") : "";
-                        const paramsText = params.replace(/<[^>]*>/g, '');
-
-                        // FIX: Use robust address resolution
-                        let handleNumber = -1;
-                        if (msg.handle !== undefined && msg.handle !== null) {
-                            if (typeof msg.handle === 'string' && msg.handle.startsWith('0x')) {
-                                handleNumber = parseInt(msg.handle, 16);
-                            } else {
-                                handleNumber = Number(msg.handle);
-                            }
-                        }
-                        const peerAddress = msg.peerAddress || btsnoopConnectionMap.get(handleNumber)?.address || 'N/A';
-
-                        return {
-                            Time: msg.timestamp,
-                            'BLE Address': peerAddress,
-                            Dir: msg.direction,
-                            'Category': categoryName,
-                            'Type': typeName,
-                            'Message': innerMessage,
-                            'Parameters': paramsText,
-                            'Raw Data': msg.fullHex
-                        };
-                    });
-
-                    const ws = XLSX.utils.json_to_sheet(exportData);
-                    const wb = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(wb, ws, "CCC_Analysis");
-                    XLSX.writeFile(wb, "ccc_analysis.xlsx");
-                });
-            }
-        }
-
-        // --- Helper: Update Table Body ---
-        function updateCccTableBody() {
-            const tbody = container.querySelector('tbody');
-            if (!tbody) return;
-
-            const filtered = cccStatsData.filter(msg => {
-                if (cccColumnFilters.size === 0) return true;
-
-                const categoryName = CCC_CONSTANTS.MESSAGE_TYPES[msg.type] || `Unknown (0x${msg.type.toString(16).padStart(2, '0').toUpperCase()})`;
-                let typeName = `Unknown`;
-                if (msg.type === 0x02) typeName = CCC_CONSTANTS.UWB_RANGING_MSGS[msg.subtype] || typeName;
-                else if (msg.type === 0x03) typeName = CCC_CONSTANTS.DK_EVENT_CATEGORIES[msg.subtype] || typeName;
-                else if (msg.type === 0x01 && CCC_CONSTANTS.SE_MSGS && CCC_CONSTANTS.SE_MSGS[msg.subtype]) typeName = CCC_CONSTANTS.SE_MSGS[msg.subtype];
-                else if (msg.type === 0x05) typeName = CCC_CONSTANTS.SUPPLEMENTARY_MSGS[msg.subtype] || typeName;
-                else if (msg.type === 0x00 && CCC_CONSTANTS.FRAMEWORK_MSGS && CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype]) typeName = CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype];
-
-                const subtypeHex = `0x${msg.subtype.toString(16).padStart(2, '0').toUpperCase()}`;
-                let displayType = typeName;
-                if (typeName === 'Unknown') displayType = subtypeHex;
-                else displayType = `${typeName} (${subtypeHex})`; // Plain text for filtering
-
-                if (!msg._decoded) {
-                    msg._decoded = decodePayload(msg.type, msg.subtype, msg.payload);
-                }
-                const innerMessage = msg._decoded.innerMsg || "-";
-                const params = msg._decoded.params || "";
-                const paramsText = params.replace(/<[^>]*>/g, '');
-
-                // FIX: Resolve address for filtering
-                let handleNumber = -1;
-                if (msg.handle !== undefined && msg.handle !== null) {
-                    if (typeof msg.handle === 'string' && msg.handle.startsWith('0x')) {
-                        handleNumber = parseInt(msg.handle, 16);
-                    } else {
-                        handleNumber = Number(msg.handle);
-                    }
-                }
-                const peerAddress = msg.peerAddress || btsnoopConnectionMap.get(handleNumber)?.address || 'N/A';
-
-                const columns = [
-                    msg.timestamp,
-                    peerAddress,
-                    msg.direction,
-                    categoryName,
-                    displayType,
-                    innerMessage,
-                    paramsText,
-                    msg.fullHex
-                ];
-
-                return Array.from(cccColumnFilters.entries()).every(([colIndex, filterValue]) => {
-                    const cellValue = String(columns[colIndex]).toLowerCase();
-                    return cellValue.includes(filterValue);
-                });
-            });
-
-            let html = '';
-            filtered.forEach(msg => {
-                const categoryName = CCC_CONSTANTS.MESSAGE_TYPES[msg.type] || `Unknown (0x${msg.type.toString(16).padStart(2, '0').toUpperCase()})`;
-                let typeName = `Unknown`;
-                if (msg.type === 0x02) typeName = CCC_CONSTANTS.UWB_RANGING_MSGS[msg.subtype] || typeName;
-                else if (msg.type === 0x03) typeName = CCC_CONSTANTS.DK_EVENT_CATEGORIES[msg.subtype] || typeName;
-                else if (msg.type === 0x01 && CCC_CONSTANTS.SE_MSGS && CCC_CONSTANTS.SE_MSGS[msg.subtype]) typeName = CCC_CONSTANTS.SE_MSGS[msg.subtype];
-                else if (msg.type === 0x05) typeName = CCC_CONSTANTS.SUPPLEMENTARY_MSGS[msg.subtype] || typeName;
-                else if (msg.type === 0x00 && CCC_CONSTANTS.FRAMEWORK_MSGS && CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype]) typeName = CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype];
-
-                const subtypeHex = `0x${msg.subtype.toString(16).padStart(2, '0').toUpperCase()}`;
-                let displayType = typeName;
-                if (typeName === 'Unknown') displayType = subtypeHex;
-                else displayType = `${typeName} <span style="font-size: 0.85em; color: #888;">(${subtypeHex})</span>`;
-
-                if (!msg._decoded) msg._decoded = decodePayload(msg.type, msg.subtype, msg.payload);
-                const innerMessage = msg._decoded.innerMsg || "-";
-                const params = msg._decoded.params || "";
-
-                // FIX: Resolve address for display
-                let handleNumber = -1;
-                if (msg.handle !== undefined && msg.handle !== null) {
-                    if (typeof msg.handle === 'string' && msg.handle.startsWith('0x')) {
-                        handleNumber = parseInt(msg.handle, 16);
-                    } else {
-                        handleNumber = Number(msg.handle);
-                    }
-                }
-                const peerAddress = msg.peerAddress || btsnoopConnectionMap.get(handleNumber)?.address || 'N/A';
-
-                // Generate unique row ID for scroll restoration
-                // Using timestamp + type + subtype + mostly-unique suffix if needed
-                const rowId = `ccc-${msg.timestamp.replace(/[^a-zA-Z0-9]/g, '')}-${msg.type}-${msg.subtype}`;
-
-                html += `<tr data-row-id="${rowId}">
-                    <td class="copy-cell" data-log-text="${msg.timestamp}">${msg.timestamp}</td>
-                    <td class="copy-cell" data-log-text="${peerAddress}">${peerAddress}</td>
-                    <td><span class="badge ${msg.direction === 'Sending' ? 'badge-out' : 'badge-in'}">${msg.direction}</span></td>
-                    <td class="copy-cell" data-log-text="${categoryName}">${categoryName}</td>
-                    <td class="copy-cell" data-log-text="${displayType.replace(/<[^>]*>/g, '')}">${displayType}</td>
-                    <td class="copy-cell" data-log-text="${innerMessage}">${innerMessage}</td>
-                    <td class="copy-cell params-cell" data-log-text="${params.replace(/<[^>]*>/g, '')}" style="overflow-wrap: anywhere; word-break: break-all;">${params}</td>
-                    <td class="copy-cell" data-log-text="${msg.fullHex}" style="color: #999;">${msg.fullHex}</td>
-                </tr>`;
-            });
-
-            if (filtered.length === 0) {
-                html = '<tr><td colspan="8">No matching messages found.</td></tr>';
-            }
-            tbody.innerHTML = html;
-        }
-
-        // Initial render
-        updateCccTableBody();
-
-        // Make table sortable with default descending sort by time
-        makeSortable('cccStatsTable', 0, 'desc');
-
-        // Restore selection/scroll for CCC Table
-        restoreTableScroll('cccTable');
-    }
+    // CCC Logic moved to ui/tabs/CccTab.js
 
     // --- Highlights Processing ---
     function renderHighlights(highlights) {
@@ -4207,13 +3237,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Make tables sortable with default descending sort
         makeSortable('deviceEventsTable', 0, 'desc'); // Sort by Timestamp
         makeSortable('bleKeysTable', 0, 'desc'); // Sort by Packet No
+        makeSortable('btsnoopConnectionEventsTable', 1, 'desc'); // Sort by timestamp column
 
         // Make tables resizable
-
-        // Make tables resizable
-        if (typeof makeTableResizable === 'function') {
+        if (document.getElementById('deviceEventsTable')) {
             makeTableResizable('deviceEventsTable');
+        }
+        if (document.getElementById('bleKeysTable')) {
             makeTableResizable('bleKeysTable');
+        }
+        if (document.getElementById('btsnoopConnectionEventsTable')) {
             makeTableResizable('btsnoopConnectionEventsTable');
         }
     }
@@ -4256,6 +3289,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     row.style.display = visible ? '' : 'none';
                 });
+
+                // Restore scroll position after filtering
+                restoreTableScroll(tableId);
             });
         });
     }
@@ -4287,13 +3323,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderConnectivityVirtualLogs() {
+        const activeKeywords = filterKeywords.filter(kw => kw.active).map(kw => kw.text);
+        const keywordRegexes = activeKeywords.length > 0 ? activeKeywords.map(wildcardToRegex) : null;
+        const liveSearchRegex = liveSearchQuery ? wildcardToRegex(liveSearchQuery) : null;
+
         // Re-use the generic virtual logger but targeting the connectivity container
-        renderVirtualLogs(
+        renderVirtualList(
             document.getElementById('connectivityLogContainer'),
             document.getElementById('connectivityLogSizer'),
             document.getElementById('connectivityLogViewport'),
             filteredConnectivityLogLines,
-            connectivityViewCollapseState
+            connectivityViewCollapseState,
+            {
+                keywordRegexes,
+                liveSearchRegex,
+                selectedLine: userAnchorLine
+            }
         );
     }
 
@@ -4441,33 +3486,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function setupCccTab() {
-        // Ensure BTSnoop processing is done, as CCC stats depend on it
-        if (!isBtsnoopProcessed && fileTasks.length > 0) {
-            await processForBtsnoop();
-        }
-
-        // Populate cccStatsData if empty
-        // Populate cccStatsData if empty
-        if ((!cccStatsData || cccStatsData.length === 0) && btsnoopPackets && btsnoopPackets.length > 0) {
-            // Filter for packets that have numeric 'type' (indicating decoded CCC message)
-            cccStatsData = btsnoopPackets.filter(p => typeof p.type === 'number');
-        } else if (btsnoopPackets && btsnoopPackets.length > 0) {
-            // Merge strategy: Append unique btsnoop packets if not already present
-            const btsnoopCcc = btsnoopPackets.filter(p => typeof p.type === 'number');
-            // Simple append for now to ensure visibility
-            // cccStatsData.push(...btsnoopCcc); 
-            // Logic: If text logs exist, we might have exact duplicates if we assume logs cover same events. 
-            // But usually they are disjoint (text vs binary). 
-            // Safest: Don't overwrite. Append if needed.
-            // For now, I'll assume users want to see everything.
-            const existingCount = cccStatsData.length;
-            // Check if we already merged? 
-        }
-
-        // Render the CCC stats to the new container
-        renderCccStats(cccStatsData);
-    }
+    // setupCccTab moved to ui/tabs/CccTab.js
 
     async function setupBtsnoopTab() {
         console.log('[BTSnoop Debug] 1. setupBtsnoopTab called.');
@@ -4570,7 +3589,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- BTSnoop Log Processing ---
     async function processForBtsnoop() {
-        console.log('[BTSnoop Debug] processForBtsnoop called');
+        console.log('[BTSnoop Debug] [MAIN.JS] 1. Starting processForBtsnoop in main.js.');
+
+        // OPTIMIZATION Phase 3: Cache check first
+        // If we've already processed and have cached data, skip the worker entirely.
+        if (isBtsnoopProcessed && btsnoopPackets.length > 0) {
+            console.log(`[BTSnoop Debug] [MAIN.JS] Already processed, skipping. Packets: ${btsnoopPackets.length}`);
+            // But ensure the UI is set up:
+            setupBtsnoopTab();
+            return;
+        }
+
+        console.log('[BTSnoop Debug] [MAIN.JS] 2. No cached data, starting worker.');
+        TimeTracker.start('BTSnoop Processing');
+
         return new Promise(async (resolve, reject) => {
             const exportXlsxBtn = document.getElementById('exportBtsnoopXlsxBtn');
 
@@ -5028,6 +4060,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const { type, packets, message, stack, connectionMap } = event.data;
 
                     if (type === 'chunk') {
+                        console.log(`[BTSnoop Debug] Received chunk with ${packets.length} packets`);
                         // OPTIMIZATION Phase 3: Accumulate in memory, save once at end
                         for (const packet of packets) {
                             btsnoopPackets.push(packet);
@@ -5037,6 +4070,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (type === 'connectionEvent') {
                         // The worker sends the complete event object with the correct timestamp. Simply push it.
                         btsnoopConnectionEvents.push(event.data.event);
+                        console.log(`[BTSnoop Debug] [MAIN.JS] Connection event added. Total: ${btsnoopConnectionEvents.length}`);
                     } else if (type === 'localAddressFound') {
                         // Update the global localBtAddress
                         localBtAddress = event.data.address;
@@ -5073,9 +4107,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (storedHighlights) {
                             renderHighlights(storedHighlights);
                         }
-                        renderBtsnoopConnectionEvents();
+                        console.log(`[BTSnoop Debug] [MAIN.JS] About to render connection events. Count: ${btsnoopConnectionEvents.length}`);
+                        BtsnoopTab.renderBtsnoopConnectionEvents(btsnoopConnectionEvents);
                         // The setupBtsnoopTab function will now handle the initial render correctly.
                         setupBtsnoopTab();
+
+                        // FIX: Ensure CCC tab gets updated data if it's active or cached
+                        if (cachedFilteredResults && cachedFilteredResults.ccc !== null) {
+                            cachedFilteredResults.ccc = null; // Invalidate cache
+                        }
+                        // Refresh the current tab if it depends on this data (e.g., CCC or BTSnoop)
+                        const activeTab = document.querySelector('.tab-btn.active');
+                        if (activeTab && (activeTab.dataset.tab === 'ccc' || activeTab.dataset.tab === 'btsnoop')) {
+                            refreshActiveTab();
+                        }
+
                         worker.terminate();
                         URL.revokeObjectURL(workerURL); // Clean up the blob URL
                         resolve();
@@ -5135,80 +4181,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(`[Perf] Resolved handles for ${updates} packets in ${(performance.now() - start).toFixed(2)}ms`);
     }
 
-    function renderBtsnoopConnectionEvents() {
-        const tbody = document.getElementById('btsnoopConnectionEventsTable')?.querySelector('tbody');
-        if (!tbody) return;
-
-        // FIX: Filter out key events, as they are now shown in their own table.
-        const connectionEventsOnly = btsnoopConnectionEvents.filter(e => !e.keyType);
-
-        if (connectionEventsOnly.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7">No connection events found.</td></tr>';
-        } else {
-            const tableHtml = connectionEventsOnly.map(event => {
-                const isConnect = event.eventType === 'connect';
-                const eventTypeText = isConnect ? 'Connect' : 'Disconnect';
-                const rowClass = isConnect ? 'connect-event' : 'disconnect-event';
-                const badgeClass = isConnect ? 'badge-connect' : 'badge-disconnect';
-                let params = event.parameters || 'N/A';
-
-                // Format parameters with CCC-style badges
-                if (event.parameters) {
-                    const paramList = event.parameters.split(' | ');
-                    params = paramList.map(p => {
-                        const [label, ...valueParts] = p.split(': ');
-                        const value = valueParts.join(': ');
-                        return `<span class="ccc-pair"><span class="ccc-param">${label}:</span><span class="ccc-value">${value}</span></span>`;
-                    }).join(' ');
-                }
-
-                return `
-                <tr data-row-id="btsnoop-conn-${event.packetNum}" class="${rowClass}">
-                    <td>${event.packetNum}</td>
-                    <td>${event.timestamp || 'N/A'}</td>
-                    <td><span class="event-badge ${badgeClass}">${eventTypeText}</span></td>
-                    <td>${event.handle || 'N/A'}</td>
-                    <td>${event.address || 'N/A'}</td>
-                    <td class="params-cell">${params}</td>
-                    <td>${escapeHtml(event.rawData)}</td>
-                </tr>`;
-            }).join('');
-            tbody.innerHTML = tableHtml;
-
-            // Setup filters and restore scroll position
-            setupTableFilters('btsnoopConnectionEventsTable');
-            restoreTableScroll('btsnoopConnectionEventsTable');
-
-            // Make table sortable with default descending sort by timestamp
-            makeSortable('btsnoopConnectionEventsTable', 1, 'desc');
-        }
-    }
-
-    function exportBtsnoopToXlsx() {
-        if (filteredBtsnoopPackets.length === 0) {
-            alert("No filtered BTSnoop packets to export.");
-            return;
-        }
-
-        // Convert packet objects to an array of arrays for the worksheet
-        const dataForSheet = filteredBtsnoopPackets.map(p => [
-            p.number,
-            p.timestamp,
-            p.source || (p.direction === 'Controller -> Host' ? 'Controller' : 'Host'),
-            p.destination || (p.direction === 'Host -> Controller' ? 'Controller' : 'Host'),
-            p.type,
-            p.summary,
-            p.data
-        ]);
-
-        const ws = XLSX.utils.aoa_to_sheet([
-            ['No.', 'Timestamp', 'Source', 'Destination', 'Type', 'Summary', 'Data'], // Header row
-            ...dataForSheet
-        ]);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'BTSnoop Packets');
-        XLSX.writeFile(wb, 'btsnoop_packets.xlsx');
-    }
+    // renderBtsnoopConnectionEvents and exportBtsnoopToXlsx moved to BtsnoopTab.js
 
     let currentBtsnoopRequest = null; // To manage batched loading
 
@@ -5273,7 +4246,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // BUT here we simply sort everything. The META packets might get moved if we sort by timestamp.
         // FIX: If we sort, we might lose the "Header at top" structure if we just mixed them.
         // For now, let's assume if the user sorts, they might lose the "File grouping" structure unless we group by file first.
-        // HOWEVER, to keep it simple: WE only display META headers if we are in 'Default' sort or if we enforce File Grouping.
         // Better: We just filter/sort normally. If the user sorts by Time, the File Headers (timestamp='') will drift.
         // FIX: Assign the timestamp of the FIRST packet to the META packet so it stays with the group.
         // For now, let's just proceed.
@@ -5940,7 +4912,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Check if this is an interactive table (by class or specific ID)
             const isInteractive = parentTable.classList.contains('ccc-table') ||
                 parentTable.classList.contains('highlight-table') ||
-                ['cccTable', 'deviceEventsTable', 'bleKeysTable', 'btsnoopConnectionEventsTable'].includes(parentTable.id);
+                ['cccStatsTable', 'deviceEventsTable', 'bleKeysTable', 'btsnoopConnectionEventsTable'].includes(parentTable.id);
 
             if (isInteractive) {
                 const row = target.closest('tr');
@@ -6064,177 +5036,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // TABLE SORTING FUNCTIONALITY
     // ============================================================================
 
-    function makeSortable(tableId, defaultSortColumn = null, defaultSortOrder = 'desc') {
-        const table = document.getElementById(tableId);
-        if (!table) {
-            console.warn(`[Sorting] Table not found: ${tableId} `);
-            return;
-        }
-
-        const thead = table.querySelector('thead');
-        if (!thead) {
-            console.warn(`[Sorting] No thead found for table: ${tableId} `);
-            return;
-        }
-
-        // Find the header row (first row that doesn't have inputs)
-        const rows = Array.from(thead.querySelectorAll('tr'));
-        let headerRow = null;
-
-        for (const row of rows) {
-            const hasInputs = row.querySelector('input') !== null;
-            if (!hasInputs) {
-                headerRow = row;
-                break;
-            }
-        }
-
-        if (!headerRow) {
-            console.warn(`[Sorting] No header row without inputs found for table: ${tableId} `);
-            return;
-        }
-
-        const headers = headerRow.querySelectorAll('th');
-        if (headers.length === 0) {
-            console.warn(`[Sorting] No < th > elements found in header row for table: ${tableId} `);
-            return;
-        }
-
-        console.log(`[Sorting] Making table sortable: ${tableId}, ${headers.length} columns`);
-
-        headers.forEach((header, index) => {
-            header.style.cursor = 'pointer';
-            header.classList.add('sortable');
-            header.title = 'Click to sort';
-
-            header.addEventListener('click', (e) => {
-                // Don't sort if clicking on or within resize handle
-                if (e.target.classList.contains('resize-handle-col') ||
-                    e.target.closest('.resize-handle-col')) {
-                    console.log(`[Sort] Ignoring click on resize handle`);
-                    return;
-                }
-                console.log(`[Sort] Header clicked: ${tableId}, column ${index}, text = "${header.textContent.trim()}"`);
-                sortTable(tableId, index);
-            });
-        });
-
-        // Apply default sort
-        if (defaultSortColumn !== null) {
-            console.log(`[Sort] Applying default sort: ${tableId}, column ${defaultSortColumn}, order ${defaultSortOrder} `);
-            sortTable(tableId, defaultSortColumn, defaultSortOrder);
-        }
-    }
-
-    function sortTable(tableId, columnIndex, order = null) {
-        console.log(`[Sort] sortTable called: table = ${tableId}, column = ${columnIndex}, order = ${order} `);
-
-        const table = document.getElementById(tableId);
-        if (!table) {
-            console.error(`[Sort] Table not found: ${tableId} `);
-            return;
-        }
-
-        const tbody = table.querySelector('tbody');
-        const headerRow = table.querySelector('thead tr:first-child');
-
-        if (!tbody) {
-            console.error(`[Sort] No tbody found for ${tableId}`);
-            return;
-        }
-
-        if (!headerRow) {
-            console.error(`[Sort] No header row found for ${tableId}`);
-            return;
-        }
-
-        const header = headerRow.querySelectorAll('th')[columnIndex];
-        if (!header) {
-            console.error(`[Sort] Header ${columnIndex} not found in ${tableId} `);
-            return;
-        }
-
-        const currentOrder = header.dataset.sortOrder || 'none';
-        const newOrder = order || (currentOrder === 'asc' ? 'desc' : 'asc');
-
-        console.log(`[Sort] Sorting ${tableId} column ${columnIndex}: ${currentOrder} → ${newOrder} `);
-
-        // Clear all sort indicators
-        headerRow.querySelectorAll('th').forEach(th => {
-            th.dataset.sortOrder = 'none';
-            th.classList.remove('sort-asc', 'sort-desc');
-        });
-
-        // Set new sort indicator
-        header.dataset.sortOrder = newOrder;
-        header.classList.add(`sort-${newOrder}`);
-
-        // Store sort state
-        tableSortState[tableId] = { column: columnIndex, order: newOrder };
-
-        // Handle virtual scroll tables differently (BTSnoop)
-        if (tableId === 'btsnoopVirtualTable' && window.renderBtsnoopPackets) {
-            console.log(`[Sort] Virtual scroll table detected, updating sort vars and re - rendering`);
-            btsnoopSortColumn = columnIndex;
-            btsnoopSortOrder = newOrder;
-            renderBtsnoopPackets();
-            return;
-        }
-
-        // For regular DOM tables
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-        if (rows.length === 0) {
-            console.warn(`[Sort] No rows found in ${tableId} `);
-            return;
-        }
-
-        console.log(`[Sort] Sorting ${rows.length} rows in ${tableId} `);
-
-        // Sort rows
-        rows.sort((a, b) => {
-            const aCell = a.cells[columnIndex];
-            const bCell = b.cells[columnIndex];
-
-            if (!aCell || !bCell) return 0;
-
-            let aValue = aCell.textContent.trim();
-            let bValue = bCell.textContent.trim();
-
-            // Check if values look like timestamps (contain colons or dashes)
-            const looksLikeTimestamp = (val) => /\d{1,2}[-:]\d{1,2}/.test(val);
-
-            if (looksLikeTimestamp(aValue) && looksLikeTimestamp(bValue)) {
-                // Direct string comparison works well for timestamps in consistent format
-                const result = newOrder === 'asc'
-                    ? aValue.localeCompare(bValue)
-                    : bValue.localeCompare(aValue);
-
-                return result;
-            }
-
-            // Try parsing as number (for packet numbers, etc)
-            const aNum = parseFloat(aValue.replace(/[^0-9.-]/g, ''));
-            const bNum = parseFloat(bValue.replace(/[^0-9.-]/g, ''));
-
-            if (!isNaN(aNum) && !isNaN(bNum)) {
-                return newOrder === 'asc' ? aNum - bNum : bNum - aNum;
-            }
-
-            // String comparison
-            return newOrder === 'asc'
-                ? aValue.localeCompare(bValue)
-                : bValue.localeCompare(aValue);
-        });
-
-        // Re-append sorted rows
-        rows.forEach(row => tbody.appendChild(row));
-
-        console.log(`[Sort] ✓ Sorted ${tableId} successfully`);
-
-        // Note: CCC table uses custom filtering that needs to be aware of sort
-        // but the current implementation doesn't need re-triggering because
-        // the DOM rows are already sorted above
-    }
+    // makeSortable logic moved to table-sort.js
 
     // ============================================================================
     // INITIALIZE APPLICATION
