@@ -439,14 +439,22 @@ const decodePayload = (type, subtype, payload) => {
             }
         }
         if (subtype === 0x06) {
+            // Ranging_Session_Setup_RS - CCC Spec Table 19-35
+            // Format: [Length:4 hex chars][Data...]
+            // Data params are in little-endian byte order  
             if (payload.length >= 4) {
                 params = formatParam('Length', '0x' + payload.substring(0, 4));
                 const content = payload.substring(4);
                 if (content.length >= 34) {
-                    params += formatParam('STS_Index0', '0x' + content.substring(0, 8)) +
-                        formatParam('UWB_Time0', '0x' + content.substring(8, 24)) +
-                        formatParam('HOP_Key', '0x' + content.substring(24, 32)) +
-                        formatParam('SYNC_Index', parseInt(content.substring(32, 34), 16));
+                    const stsIndex = content.substring(0, 8);    // STS_Index0: 4 bytes
+                    const uwbTime = content.substring(8, 24);   // UWB_Time0: 8 bytes
+                    const hopKey = content.substring(24, 32);
+                    const syncIdx = content.substring(32, 34);
+
+                    params += formatParam('STS_Index0', '0x' + stsIndex) +
+                        formatParam('UWB_Time0', '0x' + uwbTime) +
+                        formatParam('HOP_Key', '0x' + hopKey) +
+                        formatParam('SYNC_Index', parseInt(syncIdx, 16));
                     if (content.length > 34) {
                         params += formatParam('Data (Remaining)', content.substring(34).match(/.{1,2}/g).join(' '));
                     }
@@ -477,11 +485,20 @@ const decodePayload = (type, subtype, payload) => {
             }
         }
         if (subtype === 0x0A) {
-            if (payload.length >= 24) {
-                params = formatParam('STS_Index0', '0x' + payload.substring(0, 8)) +
-                    formatParam('UWB_Time0', '0x' + payload.substring(8, 24));
-                if (payload.length > 24) {
-                    params += formatParam('Data (Remaining)', payload.substring(24).match(/.{1,2}/g).join(' '));
+            // Ranging_Recovery_RS - CCC Spec Table 19-43
+            // Format: [Length:4 hex chars][Data...]
+            if (payload.length >= 28) {  // Need at least 4 (length) + 24 (data)
+                const length = payload.substring(0, 4);  // Length field
+                const data = payload.substring(4);        // Actual data starts here
+
+                const stsIndex = data.substring(0, 8);    // STS_Index0: 4 bytes
+                const uwbTime = data.substring(8, 24);    // UWB_Time0: 8 bytes
+
+                params = formatParam('Length', '0x' + length) +
+                    formatParam('STS_Index0', '0x' + stsIndex) +
+                    formatParam('UWB_Time0', '0x' + uwbTime);
+                if (data.length > 24) {
+                    params += formatParam('Data (Remaining)', data.substring(24).match(/.{1,2}/g).join(' '));
                 }
             }
         }

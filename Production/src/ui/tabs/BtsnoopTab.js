@@ -121,11 +121,25 @@ export async function setupBtsnoopTab(deps) {
  * @param {Object} deps - Dependencies { db, getDb, saveData, loadData, TimeTracker, btsnoopInitialView, btsnoopContentView, btsnoopFilterContainer }
  */
 export async function processForBtsnoop(fileTasks, { db, getDb, saveData, loadData, TimeTracker, btsnoopInitialView, btsnoopContentView, btsnoopFilterContainer }) {
-    console.log('[BTSnoop Debug] processForBtsnoop called');
+    console.log('[BTSnoop Debug] [BTSNOOPTAB.JS] processForBtsnoop called in BtsnoopTab with', fileTasks.length, 'tasks');
+    if (!fileTasks || fileTasks.length === 0) {
+        console.log('[BTSnoop Debug] [BTSNOOPTAB.JS] No btsnoop_hci.log files found.');
+        return;
+    }
+
+    // Check if already processed (to avoid redundant worker calls)
+    if (isBtsnoopProcessed && btsnoopPackets.length > 0) {
+        console.log('[BTSnoop Debug] [BTSNOOPTAB.JS] Already processed, skipping worker. Packets:', btsnoopPackets.length);
+        return;
+    }
+
+    console.log('[BTSnoop] [BTSNOOPTAB.JS] Starting BTSnoop Worker...');
+    TimeTracker?.start('BTSnoop Processing');
+
     return new Promise(async (resolve, reject) => {
         const exportXlsxBtn = document.getElementById('exportBtsnoopXlsxBtn');
 
-        const database = getDb ? getDb() : db;
+        const database = db || await getDb(); // Get DB ref
 
         // FIX: Ensure the database is open before proceeding.
         if (!database) {
@@ -202,6 +216,7 @@ export async function processForBtsnoop(fileTasks, { db, getDb, saveData, loadDa
                     progressDiv.textContent = `Parsed ${totalPacketsStored.toLocaleString()} packets...`;
                 } else if (type === 'connectionEvent') {
                     btsnoopConnectionEvents.push(event.data.event);
+                    console.log(`[BTSnoop Debug] [BTSNOOPTAB.JS] Connection event added. Total: ${btsnoopConnectionEvents.length}`);
                 } else if (type === 'localAddressFound') {
                     localBtAddress = event.data.address;
                     // Note: We might need to expose this boostrap info back or use it locally
@@ -374,7 +389,6 @@ function getBtsnoopWorkerScript() {
                     // In a real refactor we should bundle this properly. For now we stringify the logic.
                     // For the sake of this tool step, I'm omitting the full interpretHciPacket function body recursion 
                     // to save space, but it essentially matches the one in main.js.
-                    // ... interpretHciPacket logic would go here ... 
                     
                      const interpretation = interpretHciPacket(packetData, connectionMap, packetNumber, direction, timestampStr, localBtAddress);
                      if (interpretation.foundLocalAddress) {
@@ -616,10 +630,19 @@ async function resolveBtsnoopHandles(connectionMap) {
     }
 }
 
-function renderBtsnoopConnectionEvents() {
+export function renderBtsnoopConnectionEvents(events = null) {
+    console.log(`[BTSnoop Debug] [RENDER] renderBtsnoopConnectionEvents called. Events param: ${events?.length || 'null'}, Module local: ${btsnoopConnectionEvents.length}`);
     const tbody = document.getElementById('btsnoopConnectionEventsTable')?.querySelector('tbody');
-    if (!tbody) return;
-    const connectionEventsOnly = btsnoopConnectionEvents.filter(e => !e.keyType);
+    if (!tbody) {
+        console.log('[BTSnoop Debug] [RENDER] No tbody found!');
+        return;
+    }
+
+    // Use provided events or fall back to module-local array
+    const eventsToRender = events || btsnoopConnectionEvents;
+    console.log(`[BTSnoop Debug] [RENDER] Events to render: ${eventsToRender.length}`);
+    const connectionEventsOnly = eventsToRender.filter(e => !e.keyType);
+    console.log(`[BTSnoop Debug] [RENDER] After filtering (no keyType): ${connectionEventsOnly.length}`);
     if (connectionEventsOnly.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7">No connection events found.</td></tr>';
     } else {
@@ -636,7 +659,7 @@ function renderBtsnoopConnectionEvents() {
             }
 
             return `
-            <tr class="${event.eventType === 'connect' ? 'connect-event' : 'disconnect-event'}">
+            <tr data-row-id="btsnoop-conn-${event.packetNum}" class="${event.eventType === 'connect' ? 'connect-event' : 'disconnect-event'}">
                 <td>${event.packetNum}</td>
                 <td>${event.timestamp}</td>
                 <td><span class="event-badge ${event.eventType === 'connect' ? 'badge-connect' : 'badge-disconnect'}">${event.eventType}</span></td>
@@ -646,6 +669,20 @@ function renderBtsnoopConnectionEvents() {
                 <td>${event.rawData}</td>
             </tr>
         `}).join('');
+
+        // Restore scroll position after rendering
+        const table = document.getElementById('btsnoopConnectionEventsTable');
+        if (table && window.selectedTableRows) {
+            const selectedRowId = window.selectedTableRows.get('btsnoopConnectionEventsTable');
+            if (selectedRowId) {
+                const row = table.querySelector(`tr[data-row-id="${selectedRowId}"]`);
+                if (row) {
+                    row.classList.add('selected');
+                    row.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                    console.log(`[BTSnoop] Restored selection for btsnoopConnectionEventsTable -> ${selectedRowId}`);
+                }
+            }
+        }
     }
 }
 

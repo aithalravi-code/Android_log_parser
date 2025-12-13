@@ -1,163 +1,142 @@
-<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="6.334608">
-<testsuite name="btsnoop_collapsible_headers.spec.js" timestamp="2025-12-12T19:42:16.960Z" hostname="chromium" tests="1" failures="0" skipped="0" time="2.709" errors="0">
-<testcase name="BTSnoop Collapsible Headers › Should display collapsible file headers for multiple BTSnoop logs" classname="btsnoop_collapsible_headers.spec.js" time="2.709">
+<testsuites id="" name="" tests="3" failures="3" skipped="0" errors="0" time="24.854936">
+<testsuite name="ccc_stress_test.spec.js" timestamp="2025-12-13T16:42:58.411Z" hostname="chromium" tests="1" failures="1" skipped="0" time="12.627" errors="0">
+<testcase name="CCC Tab Stress Test › should handle large CCC dataset without hanging" classname="ccc_stress_test.spec.js" time="12.627">
+<failure message="ccc_stress_test.spec.js:18:5 should handle large CCC dataset without hanging" type="FAILURE">
+<![CDATA[  [chromium] › ccc_stress_test.spec.js:18:5 › CCC Tab Stress Test › should handle large CCC dataset without hanging 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('input[data-col="0"]')
+    Expected: visible
+    Error: strict mode violation: locator('input[data-col="0"]') resolved to 4 elements:
+        1) <input type="text" data-col="0" placeholder="Filter..."/> aka getByRole('textbox', { name: 'Filter...' }).first()
+        2) <input type="text" data-col="0" name="bleKeysFilter0" placeholder="Filter..."/> aka locator('input[name="bleKeysFilter0"]')
+        3) <input type="text" data-col="0" placeholder="Filter..." name="btsnoopConnFilter0"/> aka locator('input[name="btsnoopConnFilter0"]')
+        4) <input type="text" data-col="0" placeholder="Filter..." name="deviceEventsFilter0"/> aka locator('input[name="deviceEventsFilter0"]')
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('input[data-col="0"]')
+
+        at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/ccc_stress_test.spec.js:69:35)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-chromium/error-context.md
+]]>
+</failure>
 <system-out>
-<![CDATA[Uploading created ZIP file...
-[Browser] [Worker] Syncing data...
-[Browser] [Time Range Debug] consolidatedMinTimestamp: undefined
-[Browser] [Time Range Debug] consolidatedMaxTimestamp: undefined
-[Browser] [Time Range Debug] minLogDate: null
-[Browser] [Time Range Debug] maxLogDate: null
-[Browser] [Sorting] Making table sortable: deviceEventsTable, 6 columns
-[Browser] [Sort] Applying default sort: deviceEventsTable, column 0, order desc 
-[Browser] [Sort] sortTable called: table = deviceEventsTable, column = 0, order = desc 
-[Browser] [Sort] Sorting deviceEventsTable column 0: none → desc 
-[Browser] [Sort] Sorting 1 rows in deviceEventsTable 
-[Browser] [Sort] ✓ Sorted deviceEventsTable successfully
-[Browser] [Sorting] Making table sortable: bleKeysTable, 6 columns
-[Browser] [Sort] Applying default sort: bleKeysTable, column 0, order desc 
-[Browser] [Sort] sortTable called: table = bleKeysTable, column = 0, order = desc 
-[Browser] [Sort] Sorting bleKeysTable column 0: none → desc 
-[Browser] [Sort] Sorting 1 rows in bleKeysTable 
-[Browser] [Sort] ✓ Sorted bleKeysTable successfully
-[Browser] [makeTableResizable] Called for table: deviceEventsTable
-[Browser] [makeTableResizable] Table element found: JSHandle@node
-[Browser] [makeTableResizable] thead found: JSHandle@node
-[Browser] [makeTableResizable] headerRow found: JSHandle@node
-[Browser] [makeTableResizable] Found 6 header cells
-[Browser] [makeTableResizable] Added resize handle to column 0
-[Browser] [makeTableResizable] Added resize handle to column 1
-[Browser] [makeTableResizable] Added resize handle to column 2
-[Browser] [makeTableResizable] Added resize handle to column 3
-[Browser] [makeTableResizable] Added resize handle to column 4
-[Browser] [makeTableResizable] Added resize handle to column 5
-[Browser] Table "deviceEventsTable" is now resizable
-[Browser] [makeTableResizable] Called for table: bleKeysTable
-[Browser] [makeTableResizable] Table element found: JSHandle@node
-[Browser] [makeTableResizable] thead found: JSHandle@node
-[Browser] [makeTableResizable] headerRow found: JSHandle@node
-[Browser] [makeTableResizable] Found 6 header cells
-[Browser] [makeTableResizable] Added resize handle to column 0
-[Browser] [makeTableResizable] Added resize handle to column 1
-[Browser] [makeTableResizable] Added resize handle to column 2
-[Browser] [makeTableResizable] Added resize handle to column 3
-[Browser] [makeTableResizable] Added resize handle to column 4
-[Browser] [makeTableResizable] Added resize handle to column 5
-[Browser] Table "bleKeysTable" is now resizable
-[Browser] [makeTableResizable] Called for table: btsnoopConnectionEventsTable
-[Browser] [makeTableResizable] Table element found: JSHandle@node
-[Browser] [makeTableResizable] thead found: JSHandle@node
-[Browser] [makeTableResizable] headerRow found: JSHandle@node
-[Browser] [makeTableResizable] Found 7 header cells
-[Browser] [makeTableResizable] Added resize handle to column 0
-[Browser] [makeTableResizable] Added resize handle to column 1
-[Browser] [makeTableResizable] Added resize handle to column 2
-[Browser] [makeTableResizable] Added resize handle to column 3
-[Browser] [makeTableResizable] Added resize handle to column 4
-[Browser] [makeTableResizable] Added resize handle to column 5
-[Browser] [makeTableResizable] Added resize handle to column 6
-[Browser] Table "btsnoopConnectionEventsTable" is now resizable
-[Browser] [makeTableResizable] Called for table: cccStatsTable
-[Browser] [makeTableResizable] Table element found: JSHandle@node
-[Browser] [makeTableResizable] thead found: JSHandle@node
-[Browser] [makeTableResizable] headerRow found: JSHandle@node
-[Browser] [makeTableResizable] Found 8 header cells
-[Browser] [makeTableResizable] Added resize handle to column 0
-[Browser] [makeTableResizable] Added resize handle to column 1
-[Browser] [makeTableResizable] Added resize handle to column 2
-[Browser] [makeTableResizable] Added resize handle to column 3
-[Browser] [makeTableResizable] Added resize handle to column 4
-[Browser] [makeTableResizable] Added resize handle to column 5
-[Browser] [makeTableResizable] Added resize handle to column 6
-[Browser] [makeTableResizable] Added resize handle to column 7
-[Browser] Table "cccStatsTable" is now resizable
-[Browser] [Sorting] Making table sortable: cccStatsTable, 8 columns
-[Browser] [Sort] Applying default sort: cccStatsTable, column 0, order desc 
-[Browser] [Sort] sortTable called: table = cccStatsTable, column = 0, order = desc 
-[Browser] [Sort] Sorting cccStatsTable column 0: none → desc 
-[Browser] [Sort] Sorting 1 rows in cccStatsTable 
-[Browser] [Sort] ✓ Sorted cccStatsTable successfully
-[Browser] [Perf] Filter state changed - re-filtering logs tab
-[Browser] [Worker] Data loaded: 0 lines
-[Browser] [UI] Auto-collapsed left panel after file loading
-Switching to BTSnoop tab...
-[Browser] [Click Debug] Target: BUTTON Classes: tab-btn active ParentTable: undefined
-[Browser] [Perf Phase2] Lazy loading btsnoop tab...
-[Browser] [BTSnoop Debug] processForBtsnoop called
-[Browser] [BTSnoop] Worker code changed (v2025-12-07-21:50), clearing ALL cache...
-[Browser] [BTSnoop] All cache cleared (including logStore), will force re-process
-[Browser] [Perf] Resolving btsnoop handles in memory...
-[Browser] [Perf] Resolved handles for 0 packets in 0.00ms
-[Browser] [Sorting] Making table sortable: deviceEventsTable, 6 columns
-[Browser] [Sort] Applying default sort: deviceEventsTable, column 0, order desc 
-[Browser] [Sort] sortTable called: table = deviceEventsTable, column = 0, order = desc 
-[Browser] [Sort] Sorting deviceEventsTable column 0: desc → desc 
-[Browser] [Sort] Sorting 1 rows in deviceEventsTable 
-[Browser] [Sort] ✓ Sorted deviceEventsTable successfully
-[Browser] [Sorting] Making table sortable: bleKeysTable, 6 columns
-[Browser] [Sort] Applying default sort: bleKeysTable, column 0, order desc 
-[Browser] [Sort] sortTable called: table = bleKeysTable, column = 0, order = desc 
-[Browser] [Sort] Sorting bleKeysTable column 0: desc → desc 
-[Browser] [Sort] Sorting 1 rows in bleKeysTable 
-[Browser] [Sort] ✓ Sorted bleKeysTable successfully
-[Browser] [makeTableResizable] Called for table: deviceEventsTable
-[Browser] [makeTableResizable] Table element found: JSHandle@node
-[Browser] [makeTableResizable] thead found: JSHandle@node
-[Browser] [makeTableResizable] headerRow found: JSHandle@node
-[Browser] [makeTableResizable] Found 6 header cells
-[Browser] [makeTableResizable] Column 0 already has resize handle, skipping
-[Browser] [makeTableResizable] Column 1 already has resize handle, skipping
-[Browser] [makeTableResizable] Column 2 already has resize handle, skipping
-[Browser] [makeTableResizable] Column 3 already has resize handle, skipping
-[Browser] [makeTableResizable] Column 4 already has resize handle, skipping
-[Browser] [makeTableResizable] Column 5 already has resize handle, skipping
-[Browser] Table "deviceEventsTable" is now resizable
-[Browser] [makeTableResizable] Called for table: bleKeysTable
-[Browser] [makeTableResizable] Table element found: JSHandle@node
-[Browser] [makeTableResizable] thead found: JSHandle@node
-[Browser] [makeTableResizable] headerRow found: JSHandle@node
-[Browser] [makeTableResizable] Found 6 header cells
-[Browser] [makeTableResizable] Column 0 already has resize handle, skipping
-[Browser] [makeTableResizable] Column 1 already has resize handle, skipping
-[Browser] [makeTableResizable] Column 2 already has resize handle, skipping
-[Browser] [makeTableResizable] Column 3 already has resize handle, skipping
-[Browser] [makeTableResizable] Column 4 already has resize handle, skipping
-[Browser] [makeTableResizable] Column 5 already has resize handle, skipping
-[Browser] Table "bleKeysTable" is now resizable
-[Browser] [makeTableResizable] Called for table: btsnoopConnectionEventsTable
-[Browser] [makeTableResizable] Table element found: JSHandle@node
-[Browser] [makeTableResizable] thead found: JSHandle@node
-[Browser] [makeTableResizable] headerRow found: JSHandle@node
-[Browser] [makeTableResizable] Found 7 header cells
-[Browser] [makeTableResizable] Column 0 already has resize handle, skipping
-[Browser] [makeTableResizable] Column 1 already has resize handle, skipping
-[Browser] [makeTableResizable] Column 2 already has resize handle, skipping
-[Browser] [makeTableResizable] Column 3 already has resize handle, skipping
-[Browser] [makeTableResizable] Column 4 already has resize handle, skipping
-[Browser] [makeTableResizable] Column 5 already has resize handle, skipping
-[Browser] [makeTableResizable] Column 6 already has resize handle, skipping
-[Browser] Table "btsnoopConnectionEventsTable" is now resizable
-[Browser] [BTSnoop Debug] 1. setupBtsnoopTab called.
-[Browser] [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
-[Browser] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
-[Browser] [BTSnoop Debug] 6. Created 2 visible rows
-[Browser] [BTSnoop Debug] 7. Viewport now has 2 children
-[Browser] [Perf Phase2] BTSnoop tab loaded. Total packets: 2
-[Browser] [Perf Phase2] btsnoop tab loaded in 64.60ms
-[Browser] [Perf] Filter state changed - re-filtering btsnoop tab
-[Browser] [BTSnoop Debug] 1. setupBtsnoopTab called.
-[Browser] [BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.
-[Browser] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
-[Browser] [BTSnoop Debug] 6. Created 2 visible rows
-[Browser] [BTSnoop Debug] 7. Viewport now has 2 children
-Found 2 file headers.
-Header texts: [ [32m'▼ btsnoop_hci.log'[39m, [32m'▼ btsnoop_hci.log'[39m ]
-[Browser] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
-[Browser] [BTSnoop Debug] 6. Created 2 visible rows
-[Browser] [BTSnoop Debug] 7. Viewport now has 2 children
-[Browser] [BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).
-[Browser] [BTSnoop Debug] 6. Created 2 visible rows
-[Browser] [BTSnoop Debug] 7. Viewport now has 2 children
+<![CDATA[Injecting large CCC dataset...
+Waiting for table to populate...
+Rendered 5000 rows so far.
+
+[[ATTACHMENT|artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-chromium/video.webm]]
+
+[[ATTACHMENT|artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+<testsuite name="ccc_stress_test.spec.js" timestamp="2025-12-13T16:42:58.411Z" hostname="firefox" tests="1" failures="1" skipped="0" time="19.323" errors="0">
+<testcase name="CCC Tab Stress Test › should handle large CCC dataset without hanging" classname="ccc_stress_test.spec.js" time="19.323">
+<failure message="ccc_stress_test.spec.js:18:5 should handle large CCC dataset without hanging" type="FAILURE">
+<![CDATA[  [firefox] › ccc_stress_test.spec.js:18:5 › CCC Tab Stress Test › should handle large CCC dataset without hanging 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('input[data-col="0"]')
+    Expected: visible
+    Error: strict mode violation: locator('input[data-col="0"]') resolved to 4 elements:
+        1) <input type="text" data-col="0" placeholder="Filter..."/> aka getByRole('textbox', { name: 'Filter...' }).first()
+        2) <input type="text" data-col="0" name="bleKeysFilter0" placeholder="Filter..."/> aka locator('input[name="bleKeysFilter0"]')
+        ...
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('input[data-col="0"]')
+
+        at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/ccc_stress_test.spec.js:69:35)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[Injecting large CCC dataset...
+Waiting for table to populate...
+Rendered 5000 rows so far.
+
+[[ATTACHMENT|artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-firefox/test-failed-1.png]]
+
+[[ATTACHMENT|artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-firefox/video.webm]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+<testsuite name="ccc_stress_test.spec.js" timestamp="2025-12-13T16:42:58.411Z" hostname="webkit" tests="1" failures="1" skipped="0" time="14.655" errors="0">
+<testcase name="CCC Tab Stress Test › should handle large CCC dataset without hanging" classname="ccc_stress_test.spec.js" time="14.655">
+<failure message="ccc_stress_test.spec.js:18:5 should handle large CCC dataset without hanging" type="FAILURE">
+<![CDATA[  [webkit] › ccc_stress_test.spec.js:18:5 › CCC Tab Stress Test › should handle large CCC dataset without hanging 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('input[data-col="0"]')
+    Expected: visible
+    Error: strict mode violation: locator('input[data-col="0"]') resolved to 4 elements:
+        1) <input type="text" data-col="0" placeholder="Filter..."/> aka getByRole('textbox', { name: 'Filter...' }).first()
+        2) <input type="text" data-col="0" name="bleKeysFilter0" placeholder="Filter..."/> aka locator('input[name="bleKeysFilter0"]')
+        3) <input type="text" data-col="0" placeholder="Filter..." name="btsnoopConnFilter0"/> aka locator('input[name="btsnoopConnFilter0"]')
+        4) <input type="text" data-col="0" placeholder="Filter..." name="deviceEventsFilter0"/> aka locator('input[name="deviceEventsFilter0"]')
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('input[data-col="0"]')
+
+        at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/ccc_stress_test.spec.js:69:35)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../.config/TestReports/regression/artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-webkit/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[Injecting large CCC dataset...
+Waiting for table to populate...
+Rendered 4996 rows so far.
+
+[[ATTACHMENT|artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-webkit/test-failed-1.png]]
+
+[[ATTACHMENT|artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-webkit/video.webm]]
+
+[[ATTACHMENT|artifacts/ccc_stress_test-CCC-Tab-St-905ad-CCC-dataset-without-hanging-webkit/error-context.md]]
 ]]>
 </system-out>
 </testcase>
