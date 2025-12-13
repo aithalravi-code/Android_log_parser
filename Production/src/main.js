@@ -6,6 +6,8 @@ import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import { Chart, registerables } from 'chart.js';
 import { makeTableResizable } from './table-resize.js';
+import * as BtsnoopTab from './ui/tabs/BtsnoopTab.js';
+import * as StatsTab from './ui/tabs/StatsTab.js';
 
 // Register Chart.js components
 Chart.register(...registerables);
