@@ -588,14 +588,19 @@ const decodePayload = (type, subtype, payload) => {
     if (type === 0x05) {
         if (subtype === 0x0D) {
             innerMsg = "Time_Sync";
-            if (payload.length >= 46) {
-                const eventCountHex = payload.substring(0, 16);
-                const uwbTimeHex = payload.substring(16, 32);
-                const uncertaintyHex = payload.substring(32, 34);
-                const skewHex = payload.substring(34, 36);
-                const ppmHex = payload.substring(36, 40);
-                const successHex = payload.substring(40, 42);
-                const retryDelayHex = payload.substring(42, 46);
+            // Payload should be Length(2 bytes) + 23 bytes data = 25 bytes (50 hex chars)
+            // But we accept if it has at least the data length (46 chars) + length (4 chars) = 50
+            if (payload.length >= 50) {
+                const lengthHex = payload.substring(0, 4);
+                const data = payload.substring(4);
+
+                const eventCountHex = data.substring(0, 16);
+                const uwbTimeHex = data.substring(16, 32);
+                const uncertaintyHex = data.substring(32, 34);
+                const skewHex = data.substring(34, 36);
+                const ppmHex = data.substring(36, 40);
+                const successHex = data.substring(40, 42);
+                const retryDelayHex = data.substring(42, 46);
 
                 const eventCount = BigInt('0x' + eventCountHex);
                 const uwbTime = BigInt('0x' + uwbTimeHex);
@@ -610,13 +615,19 @@ const decodePayload = (type, subtype, payload) => {
                 const successMap = { 0: 'Failed', 1: 'Success', 2: 'Failed (Proc 0 N/A)' };
                 const successText = successMap[success] || 'Unknown';
 
-                params = formatParam('EventCount', `0x${eventCountHex} (${eventCount.toString()})`) +
+                params = formatParam('Length', '0x' + lengthHex) +
+                    formatParam('EventCount', `0x${eventCountHex} (${eventCount.toString()})`) +
                     formatParam('UWB Time', `0x${uwbTimeHex} (${uwbTime.toString()} µs)`) +
                     formatParam('Uncertainty', `0x${uncertaintyHex} (${uncertainty} = ~${uncertaintyUs} µs)`) +
                     formatParam('Skew', `0x${skewHex}`) +
                     formatParam('PPM', `0x${ppmHex} (${ppm} ppm)`) +
                     formatParam('Success', `0x${successHex} (${successText})`) +
                     formatParam('RetryDelay', `0x${retryDelayHex} (${retryDelay} ms)`);
+
+                if (data.length > 46) {
+                    params += formatParam('Data (Remaining)', data.substring(46).match(/.{1,2}/g).join(' '));
+                }
+
                 return { innerMsg, params };
             }
         }
