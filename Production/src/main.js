@@ -4071,7 +4071,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td class="copy-cell" data-log-text="${categoryName}">${categoryName}</td>
                     <td class="copy-cell" data-log-text="${displayType.replace(/<[^>]*>/g, '')}">${displayType}</td>
                     <td class="copy-cell" data-log-text="${innerMessage}">${innerMessage}</td>
-                    <td class="copy-cell" data-log-text="${params.replace(/<[^>]*>/g, '')}" style="overflow-wrap: anywhere; word-break: break-all;">${params}</td>
+                    <td class="copy-cell params-cell" data-log-text="${params.replace(/<[^>]*>/g, '')}" style="overflow-wrap: anywhere; word-break: break-all;">${params}</td>
                     <td class="copy-cell" data-log-text="${msg.fullHex}" style="color: #999;">${msg.fullHex}</td>
                 </tr>`;
             });
@@ -4937,18 +4937,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
                                     // Build parameters object with HTML badges
                                     const parameters = [];
-                                    parameters.push('<span class="param-label">Status:</span> <span class="param-value">' + (status === 0x00 ? 'Success' : 'Error 0x' + status.toString(16)) + '</span>');
-                                    parameters.push('<span class="param-label">Role:</span> <span class="param-value">' + roleText + '</span>');
-                                    parameters.push('<span class="param-label">Peer Address Type:</span> <span class="param-value">' + addrTypeText + (isRPA ? ' (RPA)' : '') + '</span>');
+                                    parameters.push('Status: ' + (status === 0x00 ? 'Success' : 'Error 0x' + status.toString(16)));
+                                    parameters.push('Role: ' + roleText);
+                                    parameters.push('Peer Address Type: ' + addrTypeText + (isRPA ? ' (RPA)' : ''));
                                     if (peerRPA && peerRPA !== '00:00:00:00:00:00') {
-                                        parameters.push('<span class="param-label">Peer RPA:</span> <span class="param-value">' + peerRPA + '</span>');
+                                        parameters.push('Peer RPA: ' + peerRPA);
                                     }
-                                    parameters.push('<span class="param-label">Connection Interval:</span> <span class="param-value">' + connInterval.toFixed(2) + ' ms</span>');
-                                    parameters.push('<span class="param-label">Latency:</span> <span class="param-value">' + connLatency + '</span>');
-                                    parameters.push('<span class="param-label">Supervision Timeout:</span> <span class="param-value">' + supervisionTimeout + ' ms</span>');
-                                    parameters.push('<span class="param-label">Clock Accuracy:</span> <span class="param-value">±' + clockAccuracyText + ' ppm</span>');
+                                    parameters.push('Connection Interval: ' + connInterval.toFixed(2) + ' ms');
+                                    parameters.push('Latency: ' + connLatency);
+                                    parameters.push('Supervision Timeout: ' + supervisionTimeout + ' ms');
+                                    parameters.push('Clock Accuracy: ±' + clockAccuracyText + ' ppm');
 
-                                    const paramsFormatted = parameters.join('<br>');
+                                    const paramsFormatted = parameters.join(' | ');
 
                                     if (connectionHandle) { connectionMap.set(connectionHandle, { address: peerAddress, packetNum: packetNum }); }
                                     // Destination is always the host for an event. The peer is the remote device.
@@ -4985,11 +4985,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                                 // Build parameters with HTML badges
                                 const parameters = [];
-                                parameters.push('<span class=\"param-label\">Status:</span> <span class=\"param-value\">' + (status === 0x00 ? 'Success' : 'Error 0x' + status.toString(16)) + '</span>');
-                                parameters.push('<span class=\"param-label\">Reason Code:</span> <span class=\"param-value\">0x' + reason.toString(16).padStart(2, '0') + '</span>');
-                                parameters.push('<span class=\"param-label\">Reason:</span> <span class=\"param-value\">' + reasonText + '</span>');
+                                parameters.push('Status: ' + (status === 0x00 ? 'Success' : 'Error 0x' + status.toString(16)));
+                                parameters.push('Reason Code: 0x' + reason.toString(16).padStart(2, '0'));
+                                parameters.push('Reason: ' + reasonText);
                                 
-                                const paramsFormatted = parameters.join('<br>');
+                                const paramsFormatted = parameters.join(' | ');
                                 
                                 // Send disconnect event
                                 self.postMessage({ 
@@ -5150,9 +5150,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const eventTypeText = isConnect ? 'Connect' : 'Disconnect';
                 const rowClass = isConnect ? 'connect-event' : 'disconnect-event';
                 const badgeClass = isConnect ? 'badge-connect' : 'badge-disconnect';
-                const params = event.parameters || 'N/A';
+                let params = event.parameters || 'N/A';
 
-                // Parameters already contain HTML badge markup
+                // Format parameters with CCC-style badges
+                if (event.parameters) {
+                    const paramList = event.parameters.split(' | ');
+                    params = paramList.map(p => {
+                        const [label, ...valueParts] = p.split(': ');
+                        const value = valueParts.join(': ');
+                        return `<span class="ccc-pair"><span class="ccc-param">${label}:</span><span class="ccc-value">${value}</span></span>`;
+                    }).join(' ');
+                }
 
                 return `
                 <tr data-row-id="btsnoop-conn-${event.packetNum}" class="${rowClass}">
