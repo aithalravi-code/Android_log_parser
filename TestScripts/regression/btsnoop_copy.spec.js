@@ -31,7 +31,7 @@ test.describe('BTSnoop Layout & Interaction', () => {
         });
 
         // 1. Prepare File Path
-        const relativePath = 'TestFiles/bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57/FS/data/misc/bluetooth/logs/btsnoop_hci.log';
+        const relativePath = 'TestData/fixtures/bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57/FS/data/misc/bluetooth/logs/btsnoop_hci.log';
         const absolutePath = path.resolve(process.cwd(), relativePath);
 
         if (!fs.existsSync(absolutePath)) {

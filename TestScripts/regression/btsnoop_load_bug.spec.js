@@ -16,8 +16,8 @@ test.describe('BTSnoop Reload Behavior', () => {
     test('Should reload BTSnoop logs when uploading ZIP while already on BTSnoop tab', async ({ page }) => {
         // 1. Initial State: Upload a single log file to get started
         // We use the unzipped folder/file for speed first
-        const initFile = path.resolve(process.cwd(), 'TestFiles/bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57/FS/data/misc/bluetooth/logs/btsnoop_hci.log');
-        const zipFile = path.resolve(process.cwd(), 'TestFiles/bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57.zip');
+        const initFile = path.resolve(process.cwd(), 'TestData/fixtures/bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57/FS/data/misc/bluetooth/logs/btsnoop_hci.log');
+        const zipFile = path.resolve(process.cwd(), 'TestData/fixtures/bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57.zip');
 
         if (!fs.existsSync(initFile) || !fs.existsSync(zipFile)) {
             test.skip('Test files missing');
