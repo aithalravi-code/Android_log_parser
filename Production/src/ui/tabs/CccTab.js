@@ -451,10 +451,14 @@ const decodePayload = (type, subtype, payload) => {
                     const hopKey = content.substring(24, 32);
                     const syncIdx = content.substring(32, 34);
 
-                    params += formatParam('STS_Index0', '0x' + stsIndex) +
-                        formatParam('UWB_Time0', '0x' + uwbTime) +
+                    const stsDec = parseInt(stsIndex, 16);
+                    const uwbDec = BigInt('0x' + uwbTime).toString();
+                    const syncDec = parseInt(syncIdx, 16);
+
+                    params += formatParam('STS_Index0', `0x${stsIndex} (${stsDec})`) +
+                        formatParam('UWB_Time0', `0x${uwbTime} (${uwbDec})`) +
                         formatParam('HOP_Key', '0x' + hopKey) +
-                        formatParam('SYNC_Index', parseInt(syncIdx, 16));
+                        formatParam('SYNC_Index', `0x${syncIdx} (${syncDec})`);
                     if (content.length > 34) {
                         params += formatParam('Data (Remaining)', content.substring(34).match(/.{1,2}/g).join(' '));
                     }
@@ -494,9 +498,12 @@ const decodePayload = (type, subtype, payload) => {
                 const stsIndex = data.substring(0, 8);    // STS_Index0: 4 bytes
                 const uwbTime = data.substring(8, 24);    // UWB_Time0: 8 bytes
 
+                const stsDec = parseInt(stsIndex, 16);
+                const uwbDec = BigInt('0x' + uwbTime).toString();
+
                 params = formatParam('Length', '0x' + length) +
-                    formatParam('STS_Index0', '0x' + stsIndex) +
-                    formatParam('UWB_Time0', '0x' + uwbTime);
+                    formatParam('STS_Index0', `0x${stsIndex} (${stsDec})`) +
+                    formatParam('UWB_Time0', `0x${uwbTime} (${uwbDec})`);
                 if (data.length > 24) {
                     params += formatParam('Data (Remaining)', data.substring(24).match(/.{1,2}/g).join(' '));
                 }
@@ -582,19 +589,25 @@ const decodePayload = (type, subtype, payload) => {
         if (subtype === 0x0D) {
             innerMsg = "Time_Sync";
             if (payload.length >= 46) {
-                const eventCount = BigInt('0x' + payload.substring(0, 16));
-                const uwbTime = BigInt('0x' + payload.substring(16, 32));
-                const uncertainty = parseInt(payload.substring(32, 34), 16);
-                const skewAvail = parseInt(payload.substring(34, 36), 16);
-                const ppm = parseInt(payload.substring(36, 40), 16);
-                const success = parseInt(payload.substring(40, 42), 16);
+                const eventCountHex = payload.substring(0, 16);
+                const uwbTimeHex = payload.substring(16, 32);
+                const uncertaintyHex = payload.substring(32, 34);
+                const skewHex = payload.substring(34, 36);
+                const ppmHex = payload.substring(36, 40);
+                const successHex = payload.substring(40, 42);
 
-                params = formatParam('EventCount', eventCount) +
-                    formatParam('UWB Time', uwbTime) +
-                    formatParam('Uncertainty', '0x' + uncertainty.toString(16)) +
-                    formatParam('Skew', skewAvail) +
-                    formatParam('PPM', ppm) +
-                    formatParam('Success', success);
+                const eventCount = BigInt('0x' + eventCountHex);
+                const uwbTime = BigInt('0x' + uwbTimeHex);
+                const uncertainty = parseInt(uncertaintyHex, 16);
+                const ppm = parseInt(ppmHex, 16);
+                const success = parseInt(successHex, 16);
+
+                params = formatParam('EventCount', `0x${eventCountHex} (${eventCount.toString()})`) +
+                    formatParam('UWB Time', `0x${uwbTimeHex} (${uwbTime.toString()})`) +
+                    formatParam('Uncertainty', `0x${uncertaintyHex} (${uncertainty})`) +
+                    formatParam('Skew', `0x${skewHex}`) +
+                    formatParam('PPM', `0x${ppmHex} (${ppm})`) +
+                    formatParam('Success', `0x${successHex} (${success})`);
                 return { innerMsg, params };
             }
         }
