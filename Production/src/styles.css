@@ -1347,6 +1347,10 @@ input[type="file"]:hover {
     position: sticky;
     top: 0;
     z-index: 10;
+    background-color: #1e1e1e;
+    /* Solid dark background */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    /* Shadow for visual separation */
 }
 
 .ccc-table th,
@@ -1360,7 +1364,8 @@ input[type="file"]:hover {
 }
 
 .ccc-table thead th {
-    background-color: #f2f2f2;
+    background-color: #f2f2f2 !important;
+    /* Solid light background for headers */
     color: #3c4043;
     font-weight: bold;
     text-align: left;
@@ -1373,7 +1378,8 @@ input[type="file"]:hover {
 }
 
 .filter-row th {
-    background-color: #f9f9f9;
+    background-color: #e8e8e8 !important;
+    /* Solid background for filter row */
     padding: 4px 5px;
     border-bottom: 1px solid #ccc;
     position: sticky;
