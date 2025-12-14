@@ -1,110 +1,38 @@
-<testsuites id="" name="" tests="39" failures="0" skipped="0" errors="0" time="33.154781">
-<testsuite name="file-upload.spec.js" timestamp="2025-12-13T20:42:33.887Z" hostname="chromium" tests="13" failures="0" skipped="0" time="33.855" errors="0">
-<testcase name="UI Elements › should display initial UI correctly" classname="file-upload.spec.js" time="2.634">
+<testsuites id="" name="" tests="13" failures="0" skipped="0" errors="0" time="10.659655">
+<testsuite name="file-upload.spec.js" timestamp="2025-12-13T21:52:30.831Z" hostname="chromium" tests="13" failures="0" skipped="0" time="46.045" errors="0">
+<testcase name="UI Elements › should display initial UI correctly" classname="file-upload.spec.js" time="3.521">
 </testcase>
-<testcase name="UI Elements › should have all required UI elements" classname="file-upload.spec.js" time="2.553">
+<testcase name="UI Elements › should have all required UI elements" classname="file-upload.spec.js" time="4.611">
 </testcase>
-<testcase name="UI Elements › should load page within 3 seconds" classname="file-upload.spec.js" time="3.049">
+<testcase name="UI Elements › should load page within 3 seconds" classname="file-upload.spec.js" time="3.632">
 <system-out>
-<![CDATA[✅ Page loaded in 432ms
+<![CDATA[✅ Page loaded in 612ms
 ]]>
 </system-out>
 </testcase>
-<testcase name="Tab Navigation › should switch between tabs" classname="file-upload.spec.js" time="2.584">
+<testcase name="Tab Navigation › should switch between tabs" classname="file-upload.spec.js" time="3.477">
 </testcase>
-<testcase name="Tab Navigation › should have connectivity tab" classname="file-upload.spec.js" time="4.037">
+<testcase name="Tab Navigation › should have connectivity tab" classname="file-upload.spec.js" time="4.621">
 </testcase>
-<testcase name="Tab Navigation › should have stats tab" classname="file-upload.spec.js" time="4.678">
+<testcase name="Tab Navigation › should have stats tab" classname="file-upload.spec.js" time="3.157">
 </testcase>
-<testcase name="Filter Controls › should have log level filter buttons" classname="file-upload.spec.js" time="1.73">
+<testcase name="Filter Controls › should have log level filter buttons" classname="file-upload.spec.js" time="4.688">
 </testcase>
-<testcase name="Filter Controls › should have AND/OR logic toggle" classname="file-upload.spec.js" time="2.354">
+<testcase name="Filter Controls › should have AND/OR logic toggle" classname="file-upload.spec.js" time="4.52">
 </testcase>
-<testcase name="Filter Controls › should toggle between AND/OR logic" classname="file-upload.spec.js" time="2.813">
+<testcase name="Filter Controls › should toggle between AND/OR logic" classname="file-upload.spec.js" time="3.588">
 </testcase>
-<testcase name="Filter Controls › should have search input" classname="file-upload.spec.js" time="2.279">
+<testcase name="Filter Controls › should have search input" classname="file-upload.spec.js" time="2.531">
 </testcase>
-<testcase name="Performance Tracker › should have performance tracker available in console" classname="file-upload.spec.js" time="1.891">
-<system-out>
-<![CDATA[Performance tracker available: false
-]]>
-</system-out>
-</testcase>
-<testcase name="Accessibility › should be keyboard navigable" classname="file-upload.spec.js" time="1.682">
-</testcase>
-<testcase name="Accessibility › should have proper document title" classname="file-upload.spec.js" time="1.571">
-</testcase>
-</testsuite>
-<testsuite name="file-upload.spec.js" timestamp="2025-12-13T20:42:33.887Z" hostname="firefox" tests="13" failures="0" skipped="0" time="50.182" errors="0">
-<testcase name="UI Elements › should display initial UI correctly" classname="file-upload.spec.js" time="4.367">
-</testcase>
-<testcase name="UI Elements › should have all required UI elements" classname="file-upload.spec.js" time="4.914">
-</testcase>
-<testcase name="UI Elements › should load page within 3 seconds" classname="file-upload.spec.js" time="3.068">
-<system-out>
-<![CDATA[✅ Page loaded in 639ms
-]]>
-</system-out>
-</testcase>
-<testcase name="Tab Navigation › should switch between tabs" classname="file-upload.spec.js" time="6.064">
-</testcase>
-<testcase name="Tab Navigation › should have connectivity tab" classname="file-upload.spec.js" time="2.725">
-</testcase>
-<testcase name="Tab Navigation › should have stats tab" classname="file-upload.spec.js" time="5.847">
-</testcase>
-<testcase name="Filter Controls › should have log level filter buttons" classname="file-upload.spec.js" time="2.76">
-</testcase>
-<testcase name="Filter Controls › should have AND/OR logic toggle" classname="file-upload.spec.js" time="2.652">
-</testcase>
-<testcase name="Filter Controls › should toggle between AND/OR logic" classname="file-upload.spec.js" time="4.657">
-</testcase>
-<testcase name="Filter Controls › should have search input" classname="file-upload.spec.js" time="3.598">
-</testcase>
-<testcase name="Performance Tracker › should have performance tracker available in console" classname="file-upload.spec.js" time="4.426">
+<testcase name="Performance Tracker › should have performance tracker available in console" classname="file-upload.spec.js" time="2.987">
 <system-out>
 <![CDATA[Performance tracker available: false
 ]]>
 </system-out>
 </testcase>
-<testcase name="Accessibility › should be keyboard navigable" classname="file-upload.spec.js" time="3.216">
+<testcase name="Accessibility › should be keyboard navigable" classname="file-upload.spec.js" time="2.945">
 </testcase>
-<testcase name="Accessibility › should have proper document title" classname="file-upload.spec.js" time="1.888">
-</testcase>
-</testsuite>
-<testsuite name="file-upload.spec.js" timestamp="2025-12-13T20:42:33.887Z" hostname="webkit" tests="13" failures="0" skipped="0" time="44.467" errors="0">
-<testcase name="UI Elements › should display initial UI correctly" classname="file-upload.spec.js" time="3.023">
-</testcase>
-<testcase name="UI Elements › should have all required UI elements" classname="file-upload.spec.js" time="3.624">
-</testcase>
-<testcase name="UI Elements › should load page within 3 seconds" classname="file-upload.spec.js" time="4.248">
-<system-out>
-<![CDATA[✅ Page loaded in 905ms
-]]>
-</system-out>
-</testcase>
-<testcase name="Tab Navigation › should switch between tabs" classname="file-upload.spec.js" time="3.831">
-</testcase>
-<testcase name="Tab Navigation › should have connectivity tab" classname="file-upload.spec.js" time="3.031">
-</testcase>
-<testcase name="Tab Navigation › should have stats tab" classname="file-upload.spec.js" time="4.867">
-</testcase>
-<testcase name="Filter Controls › should have log level filter buttons" classname="file-upload.spec.js" time="3.45">
-</testcase>
-<testcase name="Filter Controls › should have AND/OR logic toggle" classname="file-upload.spec.js" time="2.968">
-</testcase>
-<testcase name="Filter Controls › should toggle between AND/OR logic" classname="file-upload.spec.js" time="4.12">
-</testcase>
-<testcase name="Filter Controls › should have search input" classname="file-upload.spec.js" time="2.994">
-</testcase>
-<testcase name="Performance Tracker › should have performance tracker available in console" classname="file-upload.spec.js" time="3.148">
-<system-out>
-<![CDATA[Performance tracker available: false
-]]>
-</system-out>
-</testcase>
-<testcase name="Accessibility › should be keyboard navigable" classname="file-upload.spec.js" time="3.125">
-</testcase>
-<testcase name="Accessibility › should have proper document title" classname="file-upload.spec.js" time="2.038">
+<testcase name="Accessibility › should have proper document title" classname="file-upload.spec.js" time="1.767">
 </testcase>
 </testsuite>
 </testsuites>

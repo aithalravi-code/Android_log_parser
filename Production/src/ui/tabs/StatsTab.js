@@ -7,7 +7,7 @@ import { logcatToDate } from '../../utils/date.js';
  * @param {Array} batteryDataPoints - Array of battery data points ({ts, level}) from workers
  * @returns {Object} Statistics object with CPU, temp, and battery data
  */
-export function processForDashboardStats(originalLogLines, batteryDataPoints = []) {
+export function processForDashboardStats(originalLogLines, batteryDataPoints = [], workerThermalData = []) {
     const cpuRegex = /(\d+)% user \+ (\d+)% kernel|\bLoad:\s+([\d.]+)\b/i;
     const tempRegex = /(?:temp(?:erature)?|tsens_tz_sensor\d+):?\s*[:=]\s*(\d+)/i;
 
@@ -52,6 +52,30 @@ export function processForDashboardStats(originalLogLines, batteryDataPoints = [
                 }
             }
         }
+    }
+
+
+
+    // Merge worker thermal data (SIOP)
+    // Convert SIOP points {ts, dateObj, AP, SKIN...} to {ts, temp}
+    // We'll prioritize AP temperature if available, or SKIN
+    if (workerThermalData && workerThermalData.length > 0) {
+        workerThermalData.forEach(pt => {
+            // Use AP or SKIN, normalize if needed (usually raw value e.g. 330 = 33.0C)
+            let val = pt.AP || pt.SKIN;
+            if (val !== undefined) {
+                // SIOP usually in deci-degrees? e.g. 300 = 30.0C -> divide by 10
+                // If test says "300 + i*1", and result is 30.0C..
+                // Let's assume divide by 10
+                val = val / 10;
+                temperatureDataPoints.push({
+                    ts: typeof pt.dateObj === 'string' ? new Date(pt.dateObj) : pt.dateObj, // Ensure it's a Date object
+                    temp: val
+                });
+            }
+        });
+        // Sort by timestamp after merging
+        temperatureDataPoints.sort((a, b) => a.ts - b.ts);
     }
 
     const tempsOnly = temperatureDataPoints.map(d => d.temp);

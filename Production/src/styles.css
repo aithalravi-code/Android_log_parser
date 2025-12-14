@@ -327,16 +327,26 @@ input[type="file"]:hover {
 
 .log-line {
     height: 20px;
-    /* Match the LINE_HEIGHT in JS */
     line-height: 20px;
-    /* Vertically center the text */
     padding: 0 1rem;
-    /* Simulate padding of old pre tag */
     white-space: pre;
-    /* Prevent wrapping, use pre for horizontal scroll */
     position: relative;
-    /* Needed for positioning the copy button */
+    border-bottom: 1px solid #3c4043;
+    /* Brighter separator */
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    /* Classic monospace stack */
+    display: flex;
+    /* Fix overlap by putting line number and content on same line */
+    align-items: center;
 }
+
+/* Force white text on selection for ALL children */
+.log-line.selected,
+.log-line.selected * {
+    color: #ffffff !important;
+}
+
+
 
 .copy-log-btn {
     position: absolute;
@@ -1012,46 +1022,86 @@ input[type="file"]:hover {
 
 /* Special case for Verbose bar to make text visible */
 /* Log Line Structure */
+/* Log Line Structure */
+/* Log Line Structure */
 .log-line-content {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     white-space: nowrap;
-    width: 100%;
+    flex: 1 1 auto;
+    /* Fill remaining space */
+    min-width: 0;
+    /* Allow shrinking */
+    width: auto;
+    /* Remove 100% width forcing */
+}
+
+.line-number {
+    display: inline-block;
+    width: 50px;
+    /* Slight increase for 4+ digits */
+    min-width: 50px;
+    color: #666;
+    text-align: right;
+    margin-right: 15px;
+    user-select: none;
+    flex: 0 0 50px;
+    /* Rigid width */
 }
 
 .log-meta {
-    width: 150px;
-    min-width: 150px;
+    width: 210px;
+    /* Increased from 150px to fit full timestamp */
+    min-width: 210px;
     display: inline-block;
     color: #9aa0a6;
     margin-right: 10px;
     overflow: hidden;
     text-overflow: clip;
-    /* Prefer clip over ellipsis for timestamps if tight */
+    flex-shrink: 0;
+    /* Prevent squishing */
+    font-family: 'Roboto Mono', monospace;
+    /* Ensure monospace */
 }
 
 /* Updated PID/TID/UID column - fixed width to prevent jitter, but wide enough */
+.log-line {
+    height: 20px;
+    line-height: 20px;
+    padding: 0 1rem;
+    white-space: pre;
+    position: relative;
+    border-bottom: 1px solid #3c4043;
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    /* Classic monospace stack */
+    display: flex;
+    align-items: center;
+}
+
 .log-pid-tid {
     width: 180px;
-    /* Increased from implicit default */
     min-width: 180px;
     display: inline-block;
     margin-right: 10px;
     text-align: right;
     font-family: 'Roboto Mono', monospace;
     overflow: visible;
-    /* Ensure content is not hidden */
     white-space: nowrap;
+    flex-shrink: 0;
+    /* Prevent squishing */
 }
 
 .log-tag {
-    width: 140px;
-    min-width: 140px;
+    width: 200px;
+    /* Increased from 140px to prevent truncation */
+    min-width: 200px;
     display: inline-block;
     margin-right: 10px;
     overflow: hidden;
     text-overflow: ellipsis;
     font-weight: 500;
+    flex-shrink: 0;
+    /* Prevent squishing */
 }
 
 .log-message {
@@ -1064,7 +1114,8 @@ input[type="file"]:hover {
 /* Log Level Box */
 .log-level-box {
     display: inline-block;
-    width: 20px;
+    width: 24px;
+    flex-shrink: 0;
     text-align: center;
     border-radius: 2px;
     font-weight: bold;
@@ -1088,6 +1139,8 @@ input[type="file"]:hover {
 
 .log-level-W {
     background-color: #FF9800;
+    color: #000;
+    /* Black text for better contrast on orange */
 }
 
 .log-level-E {
@@ -2172,4 +2225,113 @@ table thead tr:nth-child(2) th {
     top: 37px !important;
     /* Stack filter row below header row */
     z-index: 9 !important;
+}
+
+/* CCC Tooltip Styles */
+#cccTooltip {
+    position: fixed;
+    display: none;
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 8px 12px;
+    z-index: 10000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 12px;
+    max-width: 500px;
+    pointer-events: none;
+    /* Prevent interfering with mouse events */
+    white-space: pre-wrap;
+    /* Preserve formatting */
+}
+
+#cccTooltip .tooltip-header {
+    font-weight: bold;
+    color: #4CAF50;
+    margin-bottom: 4px;
+    border-bottom: 1px solid #555;
+    padding-bottom: 2px;
+}
+
+#cccTooltip .tooltip-row {
+    margin-bottom: 2px;
+}
+
+#cccTooltip .tooltip-label {
+    color: #aaa;
+    margin-right: 5px;
+}
+
+#cccTooltip .tooltip-value {
+    color: #fff;
+}
+
+#cccTooltip .ccc-param {
+    color: #b0b0b0;
+    font-weight: bold;
+}
+
+#cccTooltip .ccc-value {
+    color: #e0e0e0;
+}
+
+/* --- CCC Hover Tooltip --- */
+.ccc-tooltip {
+    position: fixed;
+    /* Fixed to viewport to avoid scroll clipping issues */
+    z-index: 9999;
+    background: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 6px;
+    padding: 10px;
+    max-width: 400px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    font-size: 0.9rem;
+    color: #e8eaed;
+    pointer-events: none;
+    /* Don't interfere with mouse events */
+    display: none;
+    /* Hidden by default */
+}
+
+.ccc-tooltip-header {
+    font-weight: bold;
+    border-bottom: 1px solid #444;
+    padding-bottom: 5px;
+    margin-bottom: 5px;
+    color: #4fc3f7;
+    /* Light Blue */
+}
+
+.ccc-tooltip-row {
+    margin-bottom: 3px;
+    display: flex;
+}
+
+.ccc-tooltip-label {
+    font-weight: 600;
+    color: #aaa;
+    margin-right: 5px;
+    min-width: 80px;
+}
+
+.ccc-tooltip-value {
+    color: #fff;
+    word-break: break-all;
+}
+
+/* Visual indicator for lines with CCC data */
+.log-line.ccc-line {
+    background: rgba(79, 195, 247, 0.05);
+    /* Very subtle blue tint */
+    border-left: 2px solid #4fc3f7;
+    /* Blue accent border */
+}
+
+.log-line.ccc-line:hover {
+    background: rgba(79, 195, 247, 0.15);
+    /* Slightly stronger on hover */
+    cursor: pointer;
 }

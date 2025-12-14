@@ -46,14 +46,17 @@ const AUTH_P1_MAP = {
 };
 
 const AUTH_P2_MAP = {
-    '00': 'No specific info',
-    '01': 'First message',
-    '02': 'Subsequent message',
-    '03': 'Last message',
-    '04': 'Single message',
-    '05': 'Chaining',
-    '06': 'Reserved',
-    '07': 'Reserved'
+    '00': 'RFU',
+    '01': 'Door unlock',
+    '02': 'Door lock',
+    '03': 'First engine start (First contact)',
+    '04': 'First engine start (Subsequent contact)',
+    '05': 'Other authentication request by vehicle',
+    '06': 'User authentication request by vehicle',
+    '07': 'First standard transaction at owner pairing',
+    '08': 'Second standard transaction at owner pairing',
+    '10': 'Derive ranging key',
+    '11': 'First approach (Standard transaction)'
 };
 
 const COMMON_TAGS = {
@@ -118,7 +121,7 @@ const RKE_STATUS_MAP = {
 
 const UWB_TAGS = {};
 
-const CCC_CONSTANTS = {
+export const CCC_CONSTANTS = {
     MESSAGE_TYPES: {
         0x00: "Framework",
         0x01: "SE",
@@ -239,7 +242,32 @@ const parseTLV = (hex, tagMap = COMMON_TAGS) => {
     return result;
 };
 
-const decodePayload = (type, subtype, payload) => {
+const decodeHoppingConfig = (hex) => {
+    const val = parseInt(hex, 16);
+    const modes = [];
+    if (val & 0x80) modes.push('No Hopping');
+    if (val & 0x40) modes.push('Continuous');
+    if (val & 0x20) modes.push('Adaptive');
+    if (val & 0x10) modes.push('Default Sequence');
+    if (val & 0x08) modes.push('AES Hopping');
+
+    // F8 (1111 1000) -> b7, b6, b5, b4, b3 set.
+
+    const modeStr = modes.length > 0 ? modes.join(', ') : 'None';
+    return `0x${hex} (${modeStr})`;
+};
+
+const decodeChannelBitmask = (hex) => {
+    const val = parseInt(hex, 16);
+    const channels = [];
+    if (val & 0x01) channels.push('Channel 5');
+    if (val & 0x02) channels.push('Channel 9');
+
+    const chanStr = channels.length > 0 ? channels.join(', ') : 'None';
+    return `0x${hex} (${chanStr})`;
+};
+
+export const decodePayload = (type, subtype, payload) => {
     let innerMsg = CCC_CONSTANTS.MESSAGE_TYPES[type] || `Type_0x${type.toString(16).padStart(2, '0')}`;
     let params = "";
 
@@ -297,8 +325,7 @@ const decodePayload = (type, subtype, payload) => {
                                 params = formatParam('AID', data);
                             }
                         }
-                        return { innerMsg, params };
-
+                        // Fall through to add P1/P2
                     } else if (cmdName === 'CONTROL_FLOW') {
                         p1Text = CONTROL_FLOW_P1_MAP[p1] || p1;
                         p2Text = CONTROL_FLOW_P2_MAP[p2] || p2;
@@ -314,11 +341,19 @@ const decodePayload = (type, subtype, payload) => {
                     params = commonParams + params;
 
                     if (data.length > 0) {
-                        const tlv = parseTLV(data, APDU_TAGS);
-                        if (tlv) {
-                            params += formatParam('Data (TLV)', tlv);
-                        } else {
+                        // SELECT command data is typically just the AID (raw bytes), not TLV.
+                        // CREATE_RANGING_KEY is also arbitrary data.
+                        if (cmdName === 'SELECT') {
+                            // Already extracted above
+                        } else if (cmdName === 'CREATE_RANGING_KEY') {
                             params += formatParam('Data', data.match(/.{1,2}/g).join(' '));
+                        } else {
+                            const tlv = parseTLV(data, APDU_TAGS);
+                            if (tlv) {
+                                params += formatParam('Data (TLV)', tlv);
+                            } else {
+                                params += formatParam('Data', data.match(/.{1,2}/g).join(' '));
+                            }
                         }
                     }
                 } else if (apdu.startsWith('8080')) {
@@ -328,7 +363,8 @@ const decodePayload = (type, subtype, payload) => {
                     innerMsg = "APDU";
                     if (claIns === '8071') {
                         innerMsg = "CREATE_RANGING_KEY";
-                        params = parseTLV(apdu.substring(10), APDU_TAGS);
+                        // This command has arbitrary data, not TLV
+                        params = formatParam('Data', apdu.substring(10).match(/.{1,2}/g).join(' '));
                     } else if (claIns === '8072') {
                         innerMsg = "TERMINATE_RANGING_SESSION";
                         params = parseTLV(apdu.substring(10), APDU_TAGS);
@@ -372,7 +408,7 @@ const decodePayload = (type, subtype, payload) => {
     }
 
     if (type === 0x02) {
-        innerMsg = "-";
+        innerMsg = CCC_CONSTANTS.UWB_RANGING_MSGS[subtype] || `UWB_Msg_0x${subtype.toString(16).padStart(2, '0')}`;
         if (subtype === 0x03) {
             if (payload.length >= 24) {
                 params = formatParam('Length', '0x' + payload.substring(0, 4)) +
@@ -380,7 +416,7 @@ const decodePayload = (type, subtype, payload) => {
                     formatParam('ConfigID', '0x' + payload.substring(8, 12)) +
                     formatParam('SessionID', '0x' + payload.substring(12, 20)) +
                     formatParam('PulseShape', '0x' + payload.substring(20, 22)) +
-                    formatParam('Channel', '0x' + payload.substring(22, 24));
+                    formatParam('Channel', decodeChannelBitmask(payload.substring(22, 24)));
                 if (payload.length > 24) {
                     params += formatParam('Data (Remaining)', payload.substring(24).match(/.{1,2}/g).join(' '));
                 }
@@ -398,16 +434,12 @@ const decodePayload = (type, subtype, payload) => {
                     const syncMask = content.substring(4, 12);
                     const channelHex = content.substring(12, 14);
                     const hoppingHex = content.substring(14, 16);
-                    const channelVal = parseInt(channelHex, 16);
-                    let channelText = `Channel ${channelVal}`;
-                    if (channelVal === 5) channelText = "Channel 5";
-                    if (channelVal === 9) channelText = "Channel 9";
 
                     params += formatParam('RAN_Multiplier', ranMult) +
                         formatParam('Slot_BitMask', '0x' + slotMask) +
                         formatParam('SYNC_Code_Index_BitMask', '0x' + syncMask) +
-                        formatParam('Selected_UWB_Channel', `${channelText} (0x${channelHex})`) +
-                        formatParam('Hopping_Config_Bitmask', `0x${hoppingHex}`);
+                        formatParam('Selected_UWB_Channel', decodeChannelBitmask(channelHex)) +
+                        formatParam('Hopping_Config_Bitmask', decodeHoppingConfig(hoppingHex));
 
                     if (content.length > 16) {
                         params += formatParam('Data (Remaining)', content.substring(16).match(/.{1,2}/g).join(' '));
@@ -428,8 +460,14 @@ const decodePayload = (type, subtype, payload) => {
                         formatParam('Number_Chaps_per_Slot', parseInt(content.substring(2, 4), 16)) +
                         formatParam('Number_Responders_Nodes', parseInt(content.substring(4, 6), 16)) +
                         formatParam('Number_Slots_per_Round', parseInt(content.substring(6, 8), 16)) +
-                        formatParam('SYNC_Code_Index', parseInt(content.substring(8, 16), 16)) +
-                        formatParam('Selected_Hopping_Config_Bitmask', '0x' + content.substring(16, 18));
+                        formatParam('SYNC_Code_Index', parseInt(content.substring(8, 16), 16));
+
+                    const combinedByte = parseInt(content.substring(16, 18), 16);
+                    const channelMask = combinedByte & 0x07; // b0-b2
+                    const hoppingConfig = combinedByte & 0xF8; // b3-b7 (AES, Default, Adaptive, Cont, No Hop)
+
+                    params += formatParam('Channel_Bitmask', decodeChannelBitmask(channelMask.toString(16))) +
+                        formatParam('Hopping_Config_Bitmask', decodeHoppingConfig(hoppingConfig.toString(16)));
                     if (content.length > 18) {
                         params += formatParam('Data (Remaining)', content.substring(18).match(/.{1,2}/g).join(' '));
                     }

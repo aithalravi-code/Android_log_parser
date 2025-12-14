@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 const MOCK_LOG_PATH = path.resolve(process.cwd(), 'mock_stats_log.txt');
-const NEW_BUILD_PATH = path.resolve(process.cwd(), 'dist/index.html');
+const NEW_BUILD_PATH = path.resolve(process.cwd(), 'dist/log_parser.html');
 
 test.describe('Performance Stats Proof', () => {
 

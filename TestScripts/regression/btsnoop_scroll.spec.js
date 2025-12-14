@@ -1,11 +1,16 @@
 import { test, expect } from '@playwright/test';
 
+test.slow(); // Increase timeout for this test
 test('BTSnoop Scroll Restoration on Filter Clear', async ({ page }) => {
     // 1. Load Page
     await page.goto('/log_parser.html');
     await page.waitForLoadState('domcontentloaded');
 
+    page.on('console', msg => console.log(`[Browser Log] ${msg.text()}`));
+    page.on('pageerror', err => console.log(`[Browser Error] ${err.message}`));
+
     // 2. Inject Mock BTSnoop Data via window._debug
+    await page.waitForFunction(() => window._debug);
     await page.evaluate(async () => {
         const packets = Array.from({ length: 200 }, (_, i) => ({
             number: i + 1,

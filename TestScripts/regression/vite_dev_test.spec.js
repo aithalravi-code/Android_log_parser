@@ -15,7 +15,7 @@ test('Vite Dev Server - File Upload Test', async ({ page }) => {
     console.log('\n🧪 Testing Vite Dev Server...\n');
 
     // Navigate to dev server
-    await page.goto('http://localhost:5173/');
+    const response = await page.goto('http://localhost:5173/log_parser.html');
     console.log('✓ Page loaded');
 
     // Wait for app to initialize

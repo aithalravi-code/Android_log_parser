@@ -15,6 +15,8 @@ import * as StatsTab from './ui/tabs/StatsTab.js';
 import * as CccTab from './ui/tabs/CccTab.js';
 import { makeSortable } from './table-sort.js';
 import { formatParam } from './utils/html.js';
+import LogParserWorker from './infra/workers/logParser.worker.js?worker&inline'; // Inline for file:// support
+import FilterWorker from './infra/workers/filter.worker.js?worker&inline'; // Inline for file:// support
 
 // Register Chart.js components
 Chart.register(...registerables);
@@ -24,6 +26,7 @@ window.noUiSlider = noUiSlider;
 window.XLSX = XLSX;
 window.JSZip = JSZip;
 window.Chart = Chart;
+window.CccTab = CccTab; // Expose for testing
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- IndexedDB Helper ---
@@ -90,109 +93,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- OPTIMIZATION Phase 3: Web Worker for Filtering ---
     // --- OPTIMIZATION Phase 3: Web Worker for Filtering ---
-    // Inlined for monolithic support (works without server/file://)
-    const filterWorkerCode = `
-    let storedLogLines = [];
-
-    // NOTE: wildcardToRegex is duplicated here because Web Workers cannot use ES6 imports.
-    // This version MUST match the implementation in utils/regex.js to ensure consistent behavior.
-    function wildcardToRegex(wildcard) {
-        const escapedPattern = wildcard.replace(/([.+?^\\$\\{\\}()|[\\]\\\\])/g, "\\\\\\$1");
-        // If no wildcard, do a whole-word search, which is faster and more precise.
-        if (!wildcard.includes('*')) {
-            return new RegExp(\`\\\\b\$\\{escapedPattern}\\\\b\`, 'i');
-        }
-        // Otherwise, treat as a "contains" search.
-        const regexPattern = escapedPattern.replace(/\\\\\\*/g, '.*');
-        return new RegExp(regexPattern, 'i');
-    }
-
-    self.onmessage = function (e) {
-        const { command, jobId, payload } = e.data;
-        try {
-            switch (command) {
-                case 'LOAD_DATA':
-                    storedLogLines = payload;
-                    self.postMessage({ command: 'LOAD_COMPLETE', jobId, count: storedLogLines.length });
-                    break;
-                case 'FILTER':
-                    if (!storedLogLines || storedLogLines.length === 0) {
-                        self.postMessage({ command: 'FILTER_COMPLETE', jobId, indices: [] });
-                        return;
-                    }
-                    const indices = runFilter(storedLogLines, payload);
-                    self.postMessage({ command: 'FILTER_COMPLETE', jobId, indices });
-                    break;
-                case 'CLEAR':
-                    storedLogLines = [];
-                    self.postMessage({ command: 'CLEARED', jobId });
-                    break;
-            }
-        } catch (error) {
-            self.postMessage({ command: 'ERROR', jobId, error: error.message });
-        }
-    };
-
-    function runFilter(lines, config) {
-        const { activeKeywords, isAndLogic, liveSearchQuery, activeLogLevels, timeRange, collapsedFileHeaders, isTimeFilterActive } = config;
-        const logLevelsSet = new Set(activeLogLevels);
-        const collapsedHeadersSet = new Set(collapsedFileHeaders);
-        const keywordRegexes = activeKeywords.length > 0 ? activeKeywords.map(wildcardToRegex) : null;
-        const liveSearchRegex = liveSearchQuery ? wildcardToRegex(liveSearchQuery) : null;
-        
-        // FIX: Append ':00Z' to treat datetime-local string as UTC, matching main thread logic.
-        const startTimeResult = timeRange.start ? new Date(timeRange.start + ':00Z') : null;
-        const endTimeResult = timeRange.end ? new Date(timeRange.end + ':00Z') : null;
-        const indices = [];
-        const checkTime = isTimeFilterActive && (startTimeResult || endTimeResult);
-        let stateInsideCollapsed = false;
-        let currentHeaderIndex = -1;
-        let headerHasMatches = false;
-
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            
-            if (line.isMeta) {
-                currentHeaderIndex = i;
-                headerHasMatches = false;
-                stateInsideCollapsed = collapsedHeadersSet.has(line.originalText);
-                continue;
-            }
-            if (stateInsideCollapsed) continue;
-
-            if (keywordRegexes) {
-                const matches = isAndLogic
-                    ? keywordRegexes.every(regex => regex.test(line.originalText))
-                    : keywordRegexes.some(regex => regex.test(line.originalText));
-                if (!matches) continue;
-            }
-            if (liveSearchRegex && !liveSearchRegex.test(line.originalText)) continue;
-            if (checkTime && line.dateObj) {
-                const d = new Date(line.dateObj);
-                if (isNaN(d.getTime())) {
-                     // console.log('Invalid Date for line:', line.originalText);
-                     // continue; 
-                }
-                if ((startTimeResult && d < startTimeResult) || (endTimeResult && d > endTimeResult)) {
-                     // console.log('Skipping line time:', line.timestamp, 'Start:', startTimeResult.toISOString(), 'End:', endTimeResult.toISOString(), 'LogDate:', d.toISOString());
-                    continue;
-                }
-            }
-            if (line.level && !logLevelsSet.has(line.level)) continue;
-
-            if (!headerHasMatches && currentHeaderIndex !== -1) {
-                indices.push(currentHeaderIndex);
-                headerHasMatches = true;
-            }
-            indices.push(i);
-        }
-        return indices;
-    }
-    `;
-
-    const filterWorkerBlob = new Blob([filterWorkerCode], { type: 'application/javascript' });
-    const filterWorkerUrl = URL.createObjectURL(filterWorkerBlob);
-    const filterWorker = new Worker(filterWorkerUrl);
+    // --- Worker Setup ---
+    // Initialize the filter worker (using inline class)
+    const filterWorker = new FilterWorker();
     let currentFilterJobId = 0;
     let pendingFilterPromise = null;
 
@@ -297,6 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let originalLogLines = []; // Holds all lines from all files, with metadata
     let cccMessages = []; // CCC messages extracted from log lines by filter workerfiles, with metadata
     let consolidatedBatteryDataPoints = []; // Battery data points from all workers
+    let consolidatedThermalDataPoints = []; // Thermal data points from all workers
     let filterKeywords = []; // Array of {text: string, active: boolean}
     let liveSearchQuery = ''; // For live filtering as the user types
     let currentZipFileName = ''; // To store the name of the loaded ZIP
@@ -314,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Worker Setup ---
     // Increment this version when worker logic changes to force updates
-    const workerVersion = 3;
+    const workerVersion = 4;
     let worker;
 
     // NEW: Connectivity Tab Globals
@@ -440,6 +344,175 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- CCC Hover Tooltip Logic ---
+    const cccTooltip = document.createElement('div');
+    cccTooltip.className = 'ccc-tooltip';
+    document.body.appendChild(cccTooltip);
+
+    function showTooltip(event, line, cccMsg) {
+        // Fallback: If cccMsg is not passed (from property), try to find it in global array
+        if (!cccMsg && line && line.lineNumber) {
+            // console.log('[Tooltip] Fallback lookup for line:', line.lineNumber);
+            // Use relaxed matching (timestamps match or within same line logic)
+            cccMsg = cccMessages.find(m => m.lineNumber === line.lineNumber);
+        }
+
+        if (!cccMsg) {
+            // console.log('[Tooltip] No CCC message found explicitly or via fallback.');
+            hideTooltip();
+            return;
+        }
+
+        // UX Improvement: If we are showing the custom UI, immediately remove native 'title' attributes 
+        // from the hovered elements to prevent double-tooltips (native + custom).
+        if (event.target) {
+            // Remove from specific target if it has one
+            if (event.target.hasAttribute('title')) event.target.removeAttribute('title');
+
+            // Also clean up siblings/parents just in case the mouse is slightly offset or bubbling
+            const lineEl = event.target.closest('.log-line');
+            if (lineEl) {
+                const titleEls = lineEl.querySelectorAll('[title]');
+                titleEls.forEach(el => el.removeAttribute('title'));
+            }
+        }
+
+        // Decode the payload if not already decoded
+        let decoded = cccMsg._decoded;
+        if (!decoded) {
+            try {
+                decoded = CccTab.decodePayload(cccMsg.type, cccMsg.subtype, cccMsg.payload);
+                cccMsg._decoded = decoded; // Cache it
+            } catch (err) {
+                console.error('[Tooltip] Decode failed:', err);
+                decoded = { innerMsg: "Error decoding", params: err.message };
+            }
+        }
+
+        const categoryName = CccTab.CCC_CONSTANTS.MESSAGE_TYPES[cccMsg.type] || `Unknown (0x${cccMsg.type.toString(16).padStart(2, '0').toUpperCase()})`;
+        let typeName = `Unknown`;
+        if (cccMsg.type === 0x02) typeName = CccTab.CCC_CONSTANTS.UWB_RANGING_MSGS[cccMsg.subtype] || typeName;
+        else if (cccMsg.type === 0x03) typeName = CccTab.CCC_CONSTANTS.DK_EVENT_CATEGORIES[cccMsg.subtype] || typeName;
+        else if (cccMsg.type === 0x01 && CccTab.CCC_CONSTANTS.SE_MSGS && CccTab.CCC_CONSTANTS.SE_MSGS[cccMsg.subtype]) typeName = CccTab.CCC_CONSTANTS.SE_MSGS[cccMsg.subtype];
+        else if (cccMsg.type === 0x05) typeName = CccTab.CCC_CONSTANTS.SUPPLEMENTARY_MSGS[cccMsg.subtype] || typeName;
+        else if (cccMsg.type === 0x00 && CccTab.CCC_CONSTANTS.FRAMEWORK_MSGS && CccTab.CCC_CONSTANTS.FRAMEWORK_MSGS[cccMsg.subtype]) typeName = CccTab.CCC_CONSTANTS.FRAMEWORK_MSGS[cccMsg.subtype];
+
+        const innerMessage = decoded.innerMsg || "-";
+
+        // Clean up params HTML for tooltip (remove nested divs if needed, or style them)
+        // The decodePayload returns HTML with .tlv-block classes. We can use them directly if styles allow.
+        const paramsHtml = decoded.params || "No parameters";
+
+        cccTooltip.innerHTML = `
+            <div class="ccc-tooltip-header">CCC Packet Details</div>
+            <div class="ccc-tooltip-row"><span class="ccc-tooltip-label">Category:</span><span class="ccc-tooltip-value">${categoryName}</span></div>
+            <div class="ccc-tooltip-row"><span class="ccc-tooltip-label">Type:</span><span class="ccc-tooltip-value">${typeName}</span></div>
+            <div class="ccc-tooltip-row"><span class="ccc-tooltip-label">Message:</span><span class="ccc-tooltip-value">${innerMessage}</span></div>
+            <div class="ccc-tooltip-row" style="flex-direction: column;">
+                <span class="ccc-tooltip-label" style="margin-bottom: 2px;">Parameters:</span>
+                <span class="ccc-tooltip-value" style="font-size: 0.85em;">${paramsHtml}</span>
+            </div>
+        `;
+
+        cccTooltip.style.display = 'block';
+        moveTooltip(event);
+    }
+
+    function moveTooltip(event) {
+        const x = event.clientX + 15;
+        const y = event.clientY + 15;
+
+        // Boundary checks
+        const rect = cccTooltip.getBoundingClientRect();
+        let finalX = x;
+        let finalY = y;
+
+        if (x + rect.width > window.innerWidth) {
+            finalX = event.clientX - rect.width - 10;
+        }
+        if (y + rect.height > window.innerHeight) {
+            finalY = event.clientY - rect.height - 10;
+        }
+
+        cccTooltip.style.left = `${finalX}px`;
+        cccTooltip.style.top = `${finalY}px`;
+    }
+
+    function hideTooltip() {
+        cccTooltip.style.display = 'none';
+    }
+
+    // Event Delegation for Tooltip
+    if (logContainer) {
+        logContainer.addEventListener('mouseover', (e) => {
+            const lineEl = e.target.closest('.log-line');
+            if (lineEl) {
+                const index = parseInt(lineEl.dataset.lineIndex, 10);
+                if (!isNaN(index) && filteredLogLines[index]) {
+                    const line = filteredLogLines[index];
+                    showTooltip(e, line, line.cccMessage);
+                }
+            } else {
+                hideTooltip();
+            }
+        });
+
+        logContainer.addEventListener('mousemove', (e) => {
+            if (cccTooltip.style.display === 'block') {
+                moveTooltip(e);
+            }
+        });
+
+        logContainer.addEventListener('mouseout', (e) => {
+            // Only hide if we left the log line or the container
+            // Actually, mouseover on another element will trigger checks.
+            // If we move out of a CCC line to a non-CCC line, the mouseover listener above will hide it.
+            // But if we move out of the container completely:
+            if (!e.relatedTarget || !logContainer.contains(e.relatedTarget)) {
+                hideTooltip();
+            }
+        });
+    }
+
+
+
+
+    // --- Enable Tooltip for Connectivity Tab (CCC Focus) ---
+    // The connectivity tab uses a separate viewport: connectivityLogViewport
+    // We need to attach listeners there as well.
+    // However, connectivityLogViewport might not be in the DOM yet or defined at this scope.
+    // We should attach it dynamically or use document-level delegation if possible, but localized is better.
+    // Let's hook into setupConnectivityTab or just poll for it/attach if it exists.
+    // Since main.js runs after DOMContentLoaded, we can try finding it.
+
+    const connectivityContainer = document.getElementById('connectivityLogContainer');
+    if (connectivityContainer) {
+        connectivityContainer.addEventListener('mouseover', (e) => {
+            const lineEl = e.target.closest('.log-line');
+            if (lineEl) {
+                const index = parseInt(lineEl.dataset.lineIndex, 10);
+                // Note: Connectivity tab uses filteredConnectivityLogLines
+                if (!isNaN(index) && filteredConnectivityLogLines[index]) {
+                    const line = filteredConnectivityLogLines[index];
+                    showTooltip(e, line, line.cccMessage);
+                }
+            } else {
+                hideTooltip();
+            }
+        });
+
+        connectivityContainer.addEventListener('mousemove', (e) => {
+            if (cccTooltip.style.display === 'block') {
+                moveTooltip(e);
+            }
+        });
+
+        connectivityContainer.addEventListener('mouseout', (e) => {
+            if (!e.relatedTarget || !connectivityContainer.contains(e.relatedTarget)) {
+                hideTooltip();
+            }
+        });
+    }
 
     // --- Tab Navigation ---
     tabs.forEach(tab => {
@@ -469,7 +542,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 for (const rule of sheet.cssRules) {
                     if (rule.selectorText === '.left-panel.collapsed') {
-                        rule.style.marginLeft = `-${panelWidth}px`;
+                        rule.style.marginLeft = `- ${panelWidth} px`;
                         return;
                     }
                 }
@@ -486,195 +559,195 @@ document.addEventListener('DOMContentLoaded', () => {
     function injectLogLevelStyles() {
         const style = document.createElement('style');
         style.textContent = `
-            /* --- Android Studio Font --- */
-            .log-line, .btsnoop-table {
-                font-family: 'JetBrains Mono', 'Consolas', 'Menlo', 'Courier New', monospace;
-                font-size: 13px;
-            }
+        /* --- Android Studio Font --- */
+        .log - line, .btsnoop - table {
+        font - family: 'JetBrains Mono', 'Consolas', 'Menlo', 'Courier New', monospace;
+        font - size: 13px;
+    }
             /* FIX: Make the log line a flex container to prevent overlap */
-            .log-line {
-                display: flex;
-                align-items: center;
-                padding: 2px 5px;
-                border-bottom: 1px solid #333;
-                cursor: pointer;
-                min-height: ${LINE_HEIGHT}px;
-                box-sizing: border-box;
-            }
-            
-            /* BTSnoop rows need absolute positioning for virtual scrolling */
-            #btsnoopLogViewport .log-line {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-            }
-            
-            .log-line:hover {
-                background-color: #444;
-            }
-            /* Adjusted Text Colors for Dark Mode Visibility */
-            .log-line-E { color: #FF5252; } /* Red 400 */
-            .log-line-W { color: #FFD740; } /* Amber A200 */
-            .log-line-I { color: #69F0AE; } /* Green A200 */
-            .log-line-D { color: #448AFF; } /* Blue A200 */
-            
-            /* Line numbers - fixed width to prevent misalignment */
-            .line-number {
-                display: inline-block;
-                width: 60px;
-                text-align: right;
-                padding-right: 10px;
-                color: #888;
-                flex-shrink: 0;
-                font-size: 11px;
-            }
+            .log - line {
+        display: flex;
+        align - items: center;
+        padding: 2px 5px;
+        border - bottom: 1px solid #333;
+        cursor: pointer;
+        min - height: ${LINE_HEIGHT} px;
+        box - sizing: border - box;
+    }
 
-            /* --- Table-based Layout for BTSnoop --- */
-            #btsnoopContentView {
-                display: flex;
-                flex-direction: column;
-                height: 100%;
-            }
+    /* BTSnoop rows need absolute positioning for virtual scrolling */
+    #btsnoopLogViewport.log - line {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100 %;
+    }
+            
+            .log - line:hover {
+        background - color: #444;
+    }
+            /* Adjusted Text Colors for Dark Mode Visibility */
+            .log - line - E { color: #FF5252; } /* Red 400 */
+            .log - line - W { color: #FFD740; } /* Amber A200 */
+            .log - line - I { color: #69F0AE; } /* Green A200 */
+            .log - line - D { color: #448AFF; } /* Blue A200 */
+
+            /* Line numbers - fixed width to prevent misalignment */
+            .line - number {
+        display: inline - block;
+        width: 60px;
+        text - align: right;
+        padding - right: 10px;
+        color: #888;
+        flex - shrink: 0;
+        font - size: 11px;
+    }
+
+    /* --- Table-based Layout for BTSnoop --- */
+    #btsnoopContentView {
+        display: flex;
+        flex - direction: column;
+        height: 100 %;
+    }
             /* --- Log Level Background Boxes --- */
-            .log-level-box {
-                display: inline-block;
-                padding: 0 5px;
-                margin: 0 5px;
-                border-radius: 3px;
-                color: #FFFFFF; /* White text by default */
-                font-weight: bold;
-                flex-shrink: 0; /* Don't shrink */
-                width: 20px; /* Fixed width for alignment */
-                text-align: center;
-            }
-            .log-level-box.log-level-E { background-color: #D32F2F; }
-            .log-level-box.log-level-W { background-color: #FFC107; color: #000000; } /* Black text on Amber */
-            .log-level-box.log-level-I { background-color: #388E3C; }
-            .log-level-box.log-level-D { background-color: #1976D2; }
-            .log-level-box.log-level-V { background-color: #757575; }
+            .log - level - box {
+        display: inline - block;
+        padding: 0 5px;
+        margin: 0 5px;
+        border - radius: 3px;
+        color: #FFFFFF; /* White text by default */
+        font - weight: bold;
+        flex - shrink: 0; /* Don't shrink */
+        width: 20px; /* Fixed width for alignment */
+        text - align: center;
+    }
+            .log - level - box.log - level - E { background - color: #D32F2F; }
+            .log - level - box.log - level - W { background - color: #FFC107; color: #000000; } /* Black text on Amber */
+            .log - level - box.log - level - I { background - color: #388E3C; }
+            .log - level - box.log - level - D { background - color: #1976D2; }
+            .log - level - box.log - level - V { background - color: #757575; }
 
             /* --- Android Studio Style Log Lines --- */
-            .log-line-content {
-                display: flex;
-                flex-direction: row;
-                white-space: nowrap;
-            }
-            .log-meta {
-                flex: 0 0 160px; /* Do not grow, do not shrink, base width 160px */
-                white-space: nowrap;
-            }
-            .log-pid-tid {
-                flex: 0 0 100px; /* Fixed width for PID-TID */
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-            .log-tag {
-                flex: 0 0 180px; /* Fixed width for the tag */
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                color: #E0E0E0;
-            }
-            .log-message {
-                flex-grow: 1; /* Take up remaining space */
-                white-space: nowrap;
-            }
-            
+            .log - line - content {
+        display: flex;
+        flex - direction: row;
+        white - space: nowrap;
+    }
+            .log - meta {
+        flex: 0 0 160px; /* Do not grow, do not shrink, base width 160px */
+        white - space: nowrap;
+    }
+            .log - pid - tid {
+        flex: 0 0 100px; /* Fixed width for PID-TID */
+        white - space: nowrap;
+        overflow: hidden;
+        text - overflow: ellipsis;
+    }
+            .log - tag {
+        flex: 0 0 180px; /* Fixed width for the tag */
+        white - space: nowrap;
+        overflow: hidden;
+        text - overflow: ellipsis;
+        color: #E0E0E0;
+    }
+            .log - message {
+        flex - grow: 1; /* Take up remaining space */
+        white - space: nowrap;
+    }
+
             /* --- Enable horizontal scrolling for all log containers --- */
-            .log-container {
-                overflow-x: auto; /* This was correct */
-                overflow-y: auto;
-            }
-            
-            #btsnoopContentView {
-                display: flex;
-                flex-direction: column;
-                height: 100%;
-            }
-            .btsnoop-table { /* A single class for both header and body tables */
-                width: 100%;
-                min-width: 1200px; /* Ensure table is wide enough to trigger horizontal scroll */
-                table-layout: auto; /* FIX: Allow table to expand with content, enabling horizontal scroll */
-                border-collapse: collapse;
-            }
-            
-            #btsnoopLogContainer { /* The scrollable body container */
-                flex-grow: 1;
-                overflow-y: auto;
-                overflow-x: auto; /* FIX: Enable horizontal scrolling */
-                position: relative; /* Required for virtual scrolling viewport */
-                width: 100%; /* Ensure container respects parent width */
-            }
-            
-            #btsnoopLogSizer {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                min-width: 1200px; /* Match table min-width for horizontal scroll */
-                pointer-events: none;
-            }
-            
-            #btsnoopLogViewport {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                min-width: 1200px; /* Match table min-width for horizontal scroll */
-            }
-            
+            .log - container {
+        overflow - x: auto; /* This was correct */
+        overflow - y: auto;
+    }
+
+    #btsnoopContentView {
+        display: flex;
+        flex - direction: column;
+        height: 100 %;
+    }
+            .btsnoop - table { /* A single class for both header and body tables */
+        width: 100 %;
+        min - width: 1200px; /* Ensure table is wide enough to trigger horizontal scroll */
+        table - layout: auto; /* FIX: Allow table to expand with content, enabling horizontal scroll */
+        border - collapse: collapse;
+    }
+
+    #btsnoopLogContainer { /* The scrollable body container */
+        flex - grow: 1;
+        overflow - y: auto;
+        overflow - x: auto; /* FIX: Enable horizontal scrolling */
+        position: relative; /* Required for virtual scrolling viewport */
+        width: 100 %; /* Ensure container respects parent width */
+    }
+
+    #btsnoopLogSizer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100 %;
+        min - width: 1200px; /* Match table min-width for horizontal scroll */
+        pointer - events: none;
+    }
+
+    #btsnoopLogViewport {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100 %;
+        min - width: 1200px; /* Match table min-width for horizontal scroll */
+    }
+
             /* BTSnoop row styling */
-            .btsnoop-row {
-                display: block;
-                padding: 0;
-                border-bottom: 1px solid #444;
-            }
+            .btsnoop - row {
+        display: block;
+        padding: 0;
+        border - bottom: 1px solid #444;
+    }
             
-            .btsnoop-row table {
-                width: 100%;
-                min-width: 1200px; /* Match header table min-width */
-                margin: 0;
-                border-spacing: 0;
-            }
-            
-            #btsnoopHeaderTable th {
-                background-color: #f2f2f2;
-                font-weight: bold;
-                text-align: left;
-                border-bottom: 2px solid #ccc;
-            }
-            .btsnoop-table th, .btsnoop-table td, .btsnoop-table .log-line-cell {
-                padding: 2px 5px;
-                overflow: hidden;
-                box-sizing: border-box;
-                vertical-align: top;
-                white-space: nowrap; /* Keep content on one line */
-                text-overflow: ellipsis; /* Truncate with ... */
-            }
+            .btsnoop - row table {
+        width: 100 %;
+        min - width: 1200px; /* Match header table min-width */
+        margin: 0;
+        border - spacing: 0;
+    }
+
+    #btsnoopHeaderTable th {
+        background - color: #f2f2f2;
+        font - weight: bold;
+        text - align: left;
+        border - bottom: 2px solid #ccc;
+    }
+            .btsnoop - table th, .btsnoop - table td, .btsnoop - table.log - line - cell {
+        padding: 2px 5px;
+        overflow: hidden;
+        box - sizing: border - box;
+        vertical - align: top;
+        white - space: nowrap; /* Keep content on one line */
+        text - overflow: ellipsis; /* Truncate with ... */
+    }
             /* Define column widths for both header and body */
-            .btsnoop-table col:nth-child(1) { width: 60px; }
-            .btsnoop-table col:nth-child(2) { width: 120px; }
-            .btsnoop-table col:nth-child(3) { width: 160px; }
-            .btsnoop-table col:nth-child(4) { width: 160px; }
-            .btsnoop-table col:nth-child(5) { width: 80px; }
-            .btsnoop-table col:nth-child(6) { width: 40%; } /* Summary */
-            .btsnoop-table col:nth-child(7) { width: 60%; } /* Data */
+            .btsnoop - table col: nth - child(1) { width: 60px; }
+            .btsnoop - table col: nth - child(2) { width: 120px; }
+            .btsnoop - table col: nth - child(3) { width: 160px; }
+            .btsnoop - table col: nth - child(4) { width: 160px; }
+            .btsnoop - table col: nth - child(5) { width: 80px; }
+            .btsnoop - table col: nth - child(6) { width: 40 %; } /* Summary */
+            .btsnoop - table col: nth - child(7) { width: 60 %; } /* Data */
 
             /* --- Fixes for Final Table Layout --- */
-            .btsnoop-row {
-                position: absolute; /* Required for virtual scrolling */
-                left: 0;
-                right: 0;
-                height: ${LINE_HEIGHT}px; /* Fixed height is crucial for virtual scrolling performance */
-                background-color: #2C2C2C; /* Dark background for rows */
-            }
-            .btsnoop-row:nth-child(even) {
-                background-color: #343434; /* Slightly lighter for even rows */
-            }
+            .btsnoop - row {
+        position: absolute; /* Required for virtual scrolling */
+        left: 0;
+        right: 0;
+        height: ${LINE_HEIGHT} px; /* Fixed height is crucial for virtual scrolling performance */
+        background - color: #2C2C2C; /* Dark background for rows */
+    }
+            .btsnoop - row: nth - child(even) {
+        background - color: #343434; /* Slightly lighter for even rows */
+    }
 
-        `;
+    `;
         document.head.appendChild(style);
     }
     injectLogLevelStyles();
@@ -738,9 +811,9 @@ document.addEventListener('DOMContentLoaded', () => {
         saveDebounceTimer = setTimeout(async () => {
             try {
                 await saveData(key, value);
-                console.log(`[Perf] Saved ${key} to IndexedDB (non-blocking)`);
+                console.log(`[Perf] Saved ${key} to IndexedDB(non - blocking)`);
             } catch (error) {
-                console.error(`[Perf] Failed to save ${key}:`, error);
+                console.error(`[Perf] Failed to save ${key}: `, error);
             }
         }, 2000);
     }
@@ -811,16 +884,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!isBtsnoopProcessed) {
                         await processForBtsnoop();
                     }
-                    console.log(`[Perf Phase2] BTSnoop tab loaded. Total packets: ${btsnoopPackets.length}`);
+                    console.log(`[Perf Phase2]BTSnoop tab loaded.Total packets: ${btsnoopPackets.length}`);
                     break;
 
                 case 'ccc':
                     // CCC Analysis is handled by setupCccTab which is called in refreshActiveTab
-                    console.log(`[Perf Phase2] ${tabId} tab ready (init deferred to setupCccTab)`);
+                    console.log(`[Perf Phase2]${tabId} tab ready(init deferred to setupCccTab)`);
                     break;
 
                 case 'stats':
-                    console.log(`[Perf Phase2] Processing stats...`);
+                    console.log(`[Perf Phase2]Processing stats...`);
 
                     // Calculate log level statistics
                     const logStats = { total: 0, E: 0, W: 0, I: 0, D: 0, V: 0 };
@@ -854,18 +927,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     await StatsTab.setupStatsTab(originalLogLines, getDashboardElements(), batteryDataPoints);
-                    console.log(`[Perf Phase2] stats tab loaded in ${(performance.now() - statsStart).toFixed(2)}ms`);
+                    console.log(`[Perf Phase2]stats tab loaded in ${(performance.now() - statsStart).toFixed(2)}ms`);
                     break;
             }
 
             const duration = performance.now() - startTime;
-            console.log(`[Perf Phase2] ${tabId} tab loaded in ${duration.toFixed(2)}ms`);
+            console.log(`[Perf Phase2]${tabId} tab loaded in ${duration.toFixed(2)}ms`);
 
             // Set loaded flag AFTER processing to avoid race conditions.
             tabsLoaded[tabId] = true;
 
         } catch (error) {
-            console.error(`[Perf Phase2] Failed to lazy load ${tabId} tab:`, error);
+            console.error(`[Perf Phase2]Failed to lazy load ${tabId} tab: `, error);
             tabsLoaded[tabId] = true;
         }
     }
@@ -1167,7 +1240,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Apply sorting if column is selected
                 if (btsnoopSortColumn !== null) {
-                    console.log(`[BTSnoop Sort] Sorting ${filteredPackets.length} packets by column ${btsnoopSortColumn}`);
+                    console.log(`[BTSnoop Sort]Sorting ${filteredPackets.length} packets by column ${btsnoopSortColumn}`);
 
                     filteredPackets.sort((a, b) => {
                         let aValue = '';
@@ -1402,14 +1475,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
         // Clear other data structures
-        filterKeywords = [];
+        // FIX: Preserve keywords? User likely wants them.
+        // If we want to clear them, we should do it explicitly via a "Reset" button.
+        // For now, let's PRESERVE them.
+        // filterKeywords = []; 
         logTags = [];
         allAppVersions = [];
         fileTasks = [];
 
         // Clear search and filters
-        liveSearchQuery = '';
-        searchInput.value = '';
+        // FIX: Preserve live search too
+        // liveSearchQuery = '';
+        // searchInput.value = '';
 
         // Clear time filters
         startTimeInput.value = '';
@@ -1421,8 +1498,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Reset log levels to default (all active)
-        activeLogLevels = new Set(['V', 'D', 'I', 'W', 'E']);
-        logLevelButtons.forEach(btn => btn.classList.add('active'));
+        // FIX: Do NOT reset log levels on file reload. User wants persistence.
+        // Only reset if we are explicitly resetting the app (which might need a different flag or explicit call)
+        // For 'clearPreviousState(true)' which is file load, we preserve filters.
+        if (!activeLogLevels || activeLogLevels.size === 0) {
+            activeLogLevels = new Set(['V', 'D', 'I', 'W', 'E']);
+            logLevelButtons.forEach(btn => btn.classList.add('active'));
+        }
+        // Else: keep existing activeLogLevels and button states.
 
         // Clear maps and sets
         logViewCollapseState.clear();
@@ -1546,38 +1629,38 @@ document.addEventListener('DOMContentLoaded', () => {
                     const zipWorkerScriptText = `
                     self.importScripts('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js');
 
-                    async function processZip(zipData, currentPath, fileTasks) {
-                        const jszip = new JSZip();
-                        const zip = await jszip.loadAsync(zipData);
-                        const promises = [];
+async function processZip(zipData, currentPath, fileTasks) {
+    const jszip = new JSZip();
+    const zip = await jszip.loadAsync(zipData);
+    const promises = [];
 
-                        zip.forEach((relativePath, zipEntry) => {
-                            const fullPath = currentPath ? currentPath + ' -> ' + zipEntry.name : zipEntry.name;
-                            if (zipEntry.dir) return;
+    zip.forEach((relativePath, zipEntry) => {
+        const fullPath = currentPath ? currentPath + ' -> ' + zipEntry.name : zipEntry.name;
+        if (zipEntry.dir) return;
 
-                            if (zipEntry.name.endsWith('.zip')) {
-                                promises.push(
-                                    zipEntry.async('arraybuffer').then(nestedZipData => processZip(nestedZipData, fullPath, fileTasks))
-                                );
-                            } else if (zipEntry.name.endsWith('.txt') || zipEntry.name.endsWith('.log') || zipEntry.name.includes('btsnoop_hci.log')) {
-                                promises.push(
-                                    zipEntry.async('blob').then(blob => fileTasks.push({ blob, path: fullPath, size: blob.size }))
-                                );
-                            }
-                        });
-                        await Promise.all(promises);
-                    }
+        if (zipEntry.name.endsWith('.zip')) {
+            promises.push(
+                zipEntry.async('arraybuffer').then(nestedZipData => processZip(nestedZipData, fullPath, fileTasks))
+            );
+        } else if (zipEntry.name.endsWith('.txt') || zipEntry.name.endsWith('.log') || zipEntry.name.includes('btsnoop_hci.log')) {
+            promises.push(
+                zipEntry.async('blob').then(blob => fileTasks.push({ blob, path: fullPath, size: blob.size }))
+            );
+        }
+    });
+    await Promise.all(promises);
+}
 
-                    self.onmessage = async (event) => {
-                        const { zipFile } = event.data;
-                        const fileTasks = [];
-                        try {
-                            await processZip(zipFile, '', fileTasks); // Start with an empty path
-                            self.postMessage({ status: 'success', fileTasks });
-                        } catch (error) {
-                            self.postMessage({ status: 'error', error: error.message });
-                        }
-                    };`;
+self.onmessage = async (event) => {
+    const { zipFile } = event.data;
+    const fileTasks = [];
+    try {
+        await processZip(zipFile, '', fileTasks); // Start with an empty path
+        self.postMessage({ status: 'success', fileTasks });
+    } catch (error) {
+        self.postMessage({ status: 'error', error: error.message });
+    }
+}; `;
                     const blob = new Blob([zipWorkerScriptText], { type: 'application/javascript' });
                     const zipWorkerURL = URL.createObjectURL(blob);
                     const zipWorker = new Worker(zipWorkerURL);
@@ -1622,350 +1705,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const tasksToParse = fileTasks
             .filter(task => !task.path.includes('btsnoop_hci.log'))
             .sort((a, b) => (b.size || 0) - (a.size || 0));
-        const workerScriptText = 'self.onmessage = async (event) => {\n' +
-            '    const { file, blob, path } = event.data;\n' +
-            '    let fileContent = \'\';\n' +
-            '\n' +
-            '    async function streamToString(stream) {\n' +
-            '        const reader = stream.getReader();\n' +
-            '        const decoder = new TextDecoder();\n' +
-            '        let result = \'\';\n' +
-            '        while (true) {\n' +
-            '            const { done, value } = await reader.read();\n' +
-            '            if (done) break;\n' +
-            '            result += decoder.decode(value, { stream: false });\n' +
-            '        }\n' +
-            '        return result;\n' +
-            '    }\n' +
-            '\n' +
-            '    if (file) { fileContent = await streamToString(file.stream()); }\n' +
-            '    else if (blob) { fileContent = await streamToString(blob.stream()); }\n' +
-            '\n' +
-            '    const logcatRegex = new RegExp(\n' +
-            '        \'^\\\\s*(?:\' + // Allow optional leading whitespace\n' +
-            '            \'(?<logcatDate>\\\\d{2}-\\\\d{2})\\\\s(?<logcatTime>\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{3,})\' + // MM-DD HH:mm:ss.SSS\n' +
-            '            \'\\\\s+\' + // Separator\n' +
-            '            \'(?:\' + // Start PID/TID/UID group\n' +
-            '                \'(?<pid>[\\\\w-]+)\\\\s+(?<tid>\\\\d+)\\\\s+(?:(?<uid>[\\\\w-]+)\\\\s+)?(?<level>[A-Z])\\\\s+(?<tag>[^\\\\s]+?)\\\\s*:\\\\s+\' + // PID TID [UID] Level Tag :\n' +
-            '                \'|\' + // OR\n' +
-            '                \'(?<pid2>\\\\d+)\\\\s+(?<level2>[A-Z])\\\\s+(?<tag2>[^\\\\s|]+?)(?:\\\\||:)\\\\s*\' + // PID Level Tag| or Tag:\n' +
-            '            \')\' + // End PID/TID/UID group\n' +
-            '            \'(?<message>(?!.*Date: \\\\d{4}).+)\' + // Message\n' +
-            '        \'|\' +\n' +
-            '            \'Date:\\\\s(?<customFullDate>\\\\d{4}-\\\\d{2}-\\\\d{2})\\\\s(?<customTime>\\\\d{2}:\\\\d{2}:\\\\d{2})\' + // Date: YYYY-MM-DD HH:mm:ss\n' +
-            '            \'(?<customMessage>\\\\|.*)\' + // The rest of the custom log line, must start with a pipe\n' +
-            '        \'|\' +\n' +
-            '            \'\\\\[(?<weaverDate>\\\\d{2}-\\\\d{2})\\\\s(?<weaverTime>\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d+)\\\\]\' + // Weaver log format [MM-DD HH:mm:ss.SSSSSS]\n' +
-            '            \'\\\\[(?<weaverPid>\\\\d+)\\\\]\\\\[(?<weaverTag>[^\\\\]]+)\\\\]\\\\s*(?<weaverMessage>.*)\' + // Weaver PID, Tag, and Message\n' +
-            '        \'|\' +\n' +
-            '            \'(?<simpleDate>\\\\d{2}-\\\\d{2})\\\\s(?<simpleTime>\\\\d{2}:\\\\d{2}:\\\\d{2}[:.]\\\\d{3,})\\\\s+\' + // Simple format: MM-DD HH:mm:ss:SSS (colon or dot)\n' +
-            '            \'(?<simpleTag>[^:]+?)\\\\s*:\\\\s+(?<simpleMessage>.+)\' + // Tag : Message (Level implied/missing)\n' +
-            '        \')\',\n' +
-            '        \'m\' // Use \'m\' (multiline) for ^, but NOT \'g\' (global) with exec() in a loop\n' +
-            '    );\n' +
-            '\n' +
-            '    let parsedLines = [];\n' +
-            '    const tagSet = new Set();\n' +
-            '    let minTimestamp, maxTimestamp;\n' +
-            '    const workerDebugLogs = [];\n' +
-            '\n' +
-            '    const stats = { total: 0, E: 0, W: 0, I: 0, D: 0, V: 0 };\n' +
-            '    const services = {\n' +
-            '        \'Bluetooth\': { on: /(bluetooth is on|Bluetooth.*Turning On)/i, off: /(bluetooth is off|Bluetooth.*Turning Off)/i, history: [] },\n' +
-            '        \'Wi-Fi\': { on: /wifi is on/i, off: /wifi is off/i, history: [] },\n' +
-            '        \'Airplane Mode\': { on: /(airplane mode is on|Airplane Mode: ON)/i, off: /(airplane mode is off|Airplane Mode: OFF)/i, history: [] },\n' +
-            '        \'NFC\': { on: /NFC is on/i, off: /NFC is off/i, history: [] }\n' +
-            '    };\n' +
-            '    const highlights = { accounts: new Set(), deviceEvents: [], walletEvents: [] };\n' +
-            '    const accountRegex = new RegExp(\'(?:account:)?Account {name=([^,]+), type=[^}]+}\', \'g\');\n' +
-            '    const lockRegex = /KeyguardUpdateMonitor.*Device.*policy:\\\\s*1/;\n' +
-            '    const unlockRegex = /KeyguardUpdateMonitor.*Device.*policy:\\\\s*2/;\n' +
-            '    // Regex for BT connection events\n' +
-            '    const btConnectRegex = /(?:onConnectionStateChange|CONNECT|connectionStateChange).*status=0.*?newState=(?:2|CONNECTED)/i;\n' +
-            '    const btDisconnectRegex = /(?:onConnectionStateChange|DISCONNECT|connectionStateChange).*?newState=(?:0|DISCONNECTED)/i;\n' +
-            '    const btAddressRegex = /([0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2})/i;\n' +
-            '    \n' +
-            '    const batteryRegex = /level: (\\\\d+).*scale: (\\\\d+)/;\n' +
-            '    const batteryDataPoints = [];\n' +
-            '    const cccMessages = [];\n' +
-            '    const cccRegex = /(?:Sending|Received):\\s*\\[([0-9a-fA-F]+)\\]/;\n' +
-            '    const versionRegex = new RegExp(\'Package\\\\s+\\\\[([^\\]]+)\\\\].*?versionName=([^\\\\s\\\\n,]+)\');\n' +
-            '    const appVersions = new Map();\n' +
-            '    const localAddressRegex = /Read BD_ADDR.*return: (([0-9A-F]{2}:){5}[0-9A-F]{2})/i;\n' +
-            '    // Regex for multi-line dumpsys package format\n' +
-            '    const dumpsysPackageRegex = /Package\\s+\\[([^\\]]+)\\][^:]*:[\\s\\S]*?^\\s+versionName=([^\\s\\n]+)/gm;\n' +
-            '    let dumpsysMatch;\n' +
-            '    while ((dumpsysMatch = dumpsysPackageRegex.exec(fileContent)) !== null) {\n' +
-            '        if (dumpsysMatch[1] && dumpsysMatch[2]) {\n' +
-            '            appVersions.set(dumpsysMatch[1], dumpsysMatch[2]);\n' +
-            '        }\n' +
-            '    }\n' +
-            '    // Regex for the custom format: { component_name=... version=... label=... }\n' +
-            '    const customVersionRegex = /component_name=([\\w.\\/]+).*?version=([\\d]+).*?label=([\\w]+)/;\n' +
-            '\n' +
-            '    // Split words: Strict (needs boundary to avoid noise like \'available\') vs Loose (can be prefix/substring like \'BluetoothHeadset\')\n' +
-            '    const bleStrictKeywords = [\'BLE\', \'GATT\', \'SMP\', \'L2CAP\', \'HCI\', \'ATT\', \'SDP\', \'RFCOMM\'];\n' +
-            '    const bleLooseKeywords = [\'BluetoothAdapter\', \'BluetoothManager\', \'Bluetooth\', \'BtGatt\', \'GattService\', \'HciHal\', \'bt_\'];\n' +
-            '    // FIX ESCAPING: Ensure correct word boundaries for the strict part (8 backslashes for double escaping in template literal)\n' +
-            '    const bleTagRegex = new RegExp(`\\\\\\\\b(${bleStrictKeywords.join(\'|\')})\\\\\\\\b|(${bleLooseKeywords.join(\'|\')})`, \'i\');\n' +
-            '\n' +
-            '    const bleMessageKeywords = [\'Bluetooth\', \'BLE\', \'GATT\', \'SMP\', \'L2CAP\', \'HCI\', \'NotificationService\'];\n' +
-            '    // For messages, we also want strictly \'BLE\'/\'GATT\' etc, but \'Bluetooth\' can be loose.\n' +
-            '    const bleMessageRegex = new RegExp(`\\\\\\\\b(BLE|GATT|SMP|L2CAP|HCI)\\\\\\\\b|(Bluetooth|NotificationService)`, \'i\');\n' +
-            '\n' +
-            '    const nfcTagKeywords = [ \'StNfcHal\', \'NfcService\', \'NfcManager\', \'TagDispatcher\', \'NfcTag\', \'P2pLinkManager\', \'HostEmulationManager\', \'ApduServiceInfo\', \'NxpNci\', \'NxpExtns\', \'libnfc\', \'libnfc-nci\' ];\n' +
-            '    const nfcTagRegex = new RegExp(`^(${nfcTagKeywords.join(\'|\')})$`, \'i\');\n' +
-            '    const nfcMessageKeywords = [\'NFC\', \'contactless\', \'APDU\'];\n' +
-            '    const nfcMessageRegex = new RegExp(`\\\\b(${nfcMessageKeywords.join(\'|\')})\\\\b`, \'i\');\n' +
-            '\n' +
-            '    const dckKeywords = [\'DigitalCarKey\', \'CarKey\', \'UwbTransport\', \'Dck\', \'UWB\', \'nearby\'];\n' +
-            '    const CHUNK_SIZE = 10000; // Number of lines to send back at a time\n' +
-            '    const dckRegex = new RegExp(`\\\\b(${dckKeywords.join(\'|\')})\\\\b`, \'i\');\n' +
-            '    const walletKeywords = [\'Wallet\', \'QuickAccessWallet\', \'WalletService\', \'WalletCard\', \'GenericIdCard\', \'Barcode\', \'MagneticStripe\'];\n' +
-            '    const walletRegex = new RegExp(`\\\\b(${walletKeywords.join(\'|\')})\\\\b`, \'i\');\n' +
-            '    const kernelRegex = /^\\\\s*\\\\[\\\\s*\\\\d+\\\\.\\\\d+\\\\s*\\\\]/;\n' +
-            '\n' +
-            '    const yearMatch = path.match(/(\\d{4})-\\d{2}-\\d{2}/);\n' +
-            '    const fileYear = yearMatch ? parseInt(yearMatch[1], 10) : new Date().getFullYear();\n' +
-            '\n' +
-            '    parsedLines.push({ isMeta: true, text: \'--- Log from \' + path + \' ---\', originalText: \'--- Log from \' + path + \' ---\', level: \'M\' });\n' +
-            '\n' +
-            '    const lines = fileContent.split(\'\\n\');\n' +
-            '    for (let i = 0; i < lines.length; i++) {\n' +
-            '        const lineText = lines[i];\n' +
-            '        if (!lineText.trim()) continue;\n' +
-            '        stats.total++;\n' +
-            '\n' +
-            '        let match = logcatRegex.exec(lineText);\n' +
-            '        let parsedLine = { lineNumber: i + 1 }; // Add line number\n' +
-            '        let lineDateObj = null;\n' +
-            '\n' +
-            '        if (match) {\n' +
-            '            if (match.groups.logcatDate) { // Standard logcat format\n' +
-            '                const { logcatDate, logcatTime, level, tag, level2, tag2, message, tid, uid } = match.groups;\n' +
-            '                const pid = match.groups.pid || match.groups.pid2;\n' +
-            '                const [month, day] = logcatDate.split(\'-\').map(Number);\n' + // This was line 209\n' +
-            '                const [hours, minutes, seconds, milliseconds] = logcatTime.split(/[:.]/).map(Number);\n' +
-            '                lineDateObj = new Date(Date.UTC(fileYear, month - 1, day, hours, minutes, seconds, milliseconds || 0));\n' +
-            '\n' +
-            '                const fullTimestamp = logcatDate + \' \' + logcatTime;\n' +
-            '                if (!minTimestamp || fullTimestamp < minTimestamp) minTimestamp = fullTimestamp;\n' +
-            '                if (!maxTimestamp || fullTimestamp > maxTimestamp) maxTimestamp = fullTimestamp;\n' +
-            '\n' +
-            '                const finalTag = (tag || tag2 || \'\').trim();\n' +
-            '                tagSet.add(finalTag);\n' +
-            '                const finalLevel = (level || level2 || \'\').trim();\n' +
-            '                \n' +
-            '                // FIX: Detect UID PID TID format (3 numbers) vs PID TID (2 numbers)\n' +
-            '                // Current regex captures 1st->pid, 2nd->tid, 3rd->uid.\n' +
-            '                // If 3rd (uid) is present, it\'s usually the UID PID TID format.\n' +
-            '                let finalPid = pid;\n' +
-            '                let finalTid = tid;\n' +
-            '                let finalUid = uid;\n' +
-            '                \n' +
-            '                if (uid) {\n' +
-            '                    // Start swap: 1st=UID, 2nd=PID, 3rd=TID\n' +
-            '                    finalUid = pid;\n' +
-            '                    finalPid = tid;\n' +
-            '                    finalTid = uid; \n' +
-            '                }\n' +
-            '                \n' +
-            '                parsedLine = { isMeta: false, dateObj: lineDateObj, date: logcatDate, time: logcatTime, timestamp: fullTimestamp, level: finalLevel, pid: finalPid, tid: finalTid, uid: finalUid, tag: finalTag, message: message.trim(), originalText: lineText };\n' +
-            '                if (stats[finalLevel] !== undefined) stats[finalLevel]++;\n' +
-            '            } else if (match.groups.customFullDate) { // Custom YYYY-MM-DD format\n' +
-            '                const { customFullDate, customTime, customMessage } = match.groups;\n' +
-            '                const [year, month, day] = customFullDate.split(\'-\').map(Number);\n' +
-            '                const [hours, minutes, seconds] = customTime.split(\':\').map(Number);\n' +
-            '                lineDateObj = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds, 0));\n' +
-            '\n' +
-            '                const mmdd = customFullDate.substring(5);\n' +
-            '                const timeWithMs = customTime + \'.000\';\n' +
-            '                const fullTimestamp = mmdd + \' \' + timeWithMs;\n' +
-            '                if (!minTimestamp || fullTimestamp < minTimestamp) minTimestamp = fullTimestamp;\n' +
-            '                if (!maxTimestamp || fullTimestamp > maxTimestamp) maxTimestamp = fullTimestamp;\n' +
-            '\n' +
-            '                parsedLine = { isMeta: false, dateObj: lineDateObj, date: mmdd, time: timeWithMs, timestamp: fullTimestamp, level: \'I\', tag: \'CustomLog\', message: customMessage.trim(), originalText: lineText };\n' +
-            '                stats.I++;\n' +
-            '            }\n' +
-            '            else if (match.groups.weaverDate) { // Weaver log format\n' +
-            '                const { weaverDate, weaverTime, weaverPid, weaverTag, weaverMessage } = match.groups;\n' +
-            '                const [month, day] = weaverDate.split(\'-\').map(Number);\n' +
-            '                const [hours, minutes, seconds, milliseconds] = weaverTime.split(/[.:]/).map(Number);\n' +
-            '                lineDateObj = new Date(Date.UTC(fileYear, month - 1, day, hours, minutes, seconds, Math.floor(milliseconds / 1000))); // Convert microseconds to ms\n' +
-            '\n' +
-            '                const fullTimestamp = weaverDate + \' \' + weaverTime.slice(0, 12); // Trim to ms for consistency\n' +
-            '                if (!minTimestamp || fullTimestamp < minTimestamp) minTimestamp = fullTimestamp;\n' +
-            '                if (!maxTimestamp || fullTimestamp > maxTimestamp) maxTimestamp = fullTimestamp;\n' +
-            '\n' +
-            '                parsedLine = { isMeta: false, dateObj: lineDateObj, date: weaverDate, time: weaverTime, timestamp: fullTimestamp, level: \'D\', pid: weaverPid, tag: weaverTag.trim(), message: weaverMessage.trim(), originalText: lineText };\n' +
-            '                stats.D++;\n' +
-            '            }\n' +
-            '            else if (match.groups.simpleDate) { // NEW: Simple Tag Log format\n' +
-            '                const { simpleDate, simpleTime, simpleTag, simpleMessage } = match.groups;\n' +
-            '                const [month, day] = simpleDate.split(\'-\').map(Number);\n' +
-            '                // Handle both colon and dot separators for milliseconds\n' +
-            '                const [hours, minutes, seconds, milliseconds] = simpleTime.split(/[.:]/).map(Number);\n' +
-            '                \n' +
-            '                // Note: simpleTime might have 3 digits for ms\n' +
-            '                lineDateObj = new Date(Date.UTC(fileYear, month - 1, day, hours, minutes, seconds, milliseconds || 0));\n' +
-            '\n' +
-            '                // Standardize timestamp format to use dot for consistency in display/filtering\n' +
-            '                const stdTime = `${String(hours).padStart(2, \'0\')}:${String(minutes).padStart(2, \'0\')}:${String(seconds).padStart(2, \'0\')}.${String(milliseconds || 0).padStart(3, \'0\')}`;\n' +
-            '                const fullTimestamp = simpleDate + \' \' + stdTime;\n' +
-            '\n' +
-            '                if (!minTimestamp || fullTimestamp < minTimestamp) minTimestamp = fullTimestamp;\n' +
-            '                if (!maxTimestamp || fullTimestamp > maxTimestamp) maxTimestamp = fullTimestamp;\n' +
-            '\n' +
-            '                parsedLine = {\n' +
-            '                    isMeta: false,\n' +
-            '                    dateObj: lineDateObj,\n' +
-            '                    date: simpleDate,\n' +
-            '                    time: stdTime,\n' +
-            '                    timestamp: fullTimestamp,\n' +
-            '                    level: \'D\', // Default to Debug as level is missing\n' +
-            '                    tag: simpleTag.trim(),\n' +
-            '                    message: simpleMessage.trim(),\n' +
-            '                    originalText: lineText\n' +
-            '                };\n' +
-            '                stats.D++;\n' +
-            '            }\n' +
-            '        } else { // Unmatched line logic\n' +
-            '            const levelMatch = lineText.match(/\\s([VDIWE])\\s/);\n' +
-            '            const level = levelMatch ? levelMatch[1] : \'V\';\n' +
-            '            parsedLine = { isMeta: false, dateObj: null, date: \'N/A\', time: \'N/A\', originalText: lineText, level: level, lineNumber: i + 1 };\n' +
-            '            \n' +
-            '            // FIX: Explicitly check for Verbose level to ensure it is counted\n' +
-            '            if (stats[level] !== undefined) {\n' +
-            '                stats[level]++;\n' +
-            '            } else {\n' +
-            '                stats.V++; // Default to Verbose count if unknown\n' +
-            '            }\n' +
-            '        }\n' +
-            '\n' +
-            '        if (parsedLine) parsedLine.lineNumber = i + 1;\n' +
-            '        const textToSearchForHighlights = parsedLine.message || lineText;\n' +
-            '        let accountMatch;\n' +
-            '        while ((accountMatch = accountRegex.exec(textToSearchForHighlights)) !== null) {\n' +
-            '            if (accountMatch[1]) highlights.accounts.add(accountMatch[1].trim());\n' +
-            '        }\n' +
-            '\n' +
-            '        const localAddrMatch = lineText.match(localAddressRegex);\n' +
-            '        if (localAddrMatch && localAddrMatch[1]) {\n' +
-            '            highlights.localBtAddress = localAddrMatch[1];\n' +
-            '        }\n' +
-            '\n' +
-            '        if (lockRegex.test(textToSearchForHighlights)) highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: \'Device Locked\', detail: \'\', originalText: lineText });\n' +
-            '        if (unlockRegex.test(textToSearchForHighlights)) highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: \'Device Unlocked\', detail: \'\', originalText: lineText });\n' +
-            '\n' +
-            '        for (const serviceName in services) {\n' +
-            '            const service = services[serviceName];\n' +
-            '            if (service.on.test(lineText)) highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: serviceName + \' Status\', detail: \'On\', originalText: lineText });\n' +
-            '            if (service.off.test(lineText)) highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: serviceName + \' Status\', detail: \'Off\', originalText: lineText });\n' +
-            '        }\n' +
-            '        \n' +
-            '        if (btConnectRegex.test(textToSearchForHighlights)) {\n' +
-            '            const addressMatch = textToSearchForHighlights.match(btAddressRegex);\n' +
-            '            highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: \'Bluetooth Connected\', detail: addressMatch ? addressMatch[1] : \'N/A\', originalText: lineText });\n' +
-            '        }\n' +
-            '        if (btDisconnectRegex.test(textToSearchForHighlights)) {\n' +
-            '            const addressMatch = textToSearchForHighlights.match(btAddressRegex);\n' +
-            '            highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: \'Bluetooth Disconnected\', detail: addressMatch ? addressMatch[1] : \'N/A\', originalText: lineText });\n' +
-            '        }\n' +
-            '\n' +
-            '        const versionMatch = lineText.match(versionRegex);\n' +
-            '        if (versionMatch) {\n' +
-            '            const packageName = versionMatch[1];\n' +
-            '            const versionName = versionMatch[2];\n' +
-            '            if (packageName && versionName) appVersions.set(packageName, versionName);\n' +
-            '        }\n' +
-            '        const customVersionMatch = lineText.match(customVersionRegex);\n' +
-            '        if (customVersionMatch) {\n' +
-            '            const componentName = customVersionMatch[1];\n' +
-            '            const packageName = componentName.split(\'/\')[0]; // Extract package name from component\n' +
-            '            const versionCode = customVersionMatch[2];\n' +
-            '            if (packageName && versionCode) appVersions.set(packageName, versionCode);\n' +
-            '        }\n' +
-            '        \n' +
-            '        const batteryMatch = lineText.match(batteryRegex);\n' +
-            '        if (batteryMatch && lineDateObj) {\n' +
-            '            const level = parseInt(batteryMatch[1]);\n' +
-            '            batteryDataPoints.push({ ts: lineDateObj, level: level });\n' +
-            '        }\n' +
-            '\n' +
-            '        // FIX: Extract CCC messages from text logs - ONLY from lines with [BleConnection/...]\n' +
-            '        const cccMatch = lineText.match(cccRegex);\n' +
-            '        if (cccMatch && parsedLine) {\n' +
-            '            const hex = cccMatch[1];\n' +
-            '            // Only process if this line has [BleConnection/...] to avoid duplicates\n' +
-            '            const extractedAddress = (lineText.match(/BleConnection\\/([0-9A-Fa-f:]+)/i) || [])[1] || null;\n' +
-            '            if (hex.length >= 4 && extractedAddress) {\n' +
-            '                const type = parseInt(hex.substring(0, 2), 16);\n' +
-            '                const subtype = parseInt(hex.substring(2, 4), 16);\n' +
-            '                const payload = hex.substring(4);\n' +
-            '                cccMessages.push({ \n' +
-            '                    timestamp: parsedLine.timestamp, \n' +
-            '                    direction: lineText.includes("Sending") ? "Host -> Controller" : "Controller -> Host", \n' +
-            '                    type, \n' +
-            '                    subtype, \n' +
-            '                    payload, \n' +
-            '                    fullHex: hex,\n' +
-            '                    peerAddress: extractedAddress,\n' +
-            '                    handle: null\n' +
-            '                });\n' +
-            '            }\n' +
-            '        }\n' +
-            '\n' +
-            '\n' +
-            '        if (parsedLine) { // Ensure parsedLine is not null\n' +
-            '        // Capture Verbose lines that might have been missed by strict tag/message regexes if they are relevant\n' +
-            '        const isVerbose = parsedLine.level === \'V\';\n' +
-            '        \n' +
-            '        // Check for BLE - Try Regex first, then explicit fallback for robustness\n' +
-            '        const textToScan = parsedLine.tag || \'\';\n' +
-            '        // Exclude false positives like "Bubbles" which contains "ble" but is not Bluetooth\n' +
-            '        const isBubblesOrSimilar = textToScan === \'Bubbles\' || lineText.includes(\'Bubbles :\');\n' +
-            '        // FIX: Use includes(\'bluetooth\') on full lineText to handle failed parsing or regex misses.\n' +
-            '        if (!isBubblesOrSimilar && ((parsedLine.tag && bleTagRegex.test(parsedLine.tag)) || (parsedLine.message && bleMessageRegex.test(parsedLine.message)) || bleTagRegex.test(lineText) || bleMessageRegex.test(lineText) || lineText.toLowerCase().includes(\'bluetooth\') || textToScan.toLowerCase().startsWith(\'bt_\'))) {\n' +
-            '            parsedLine.isBle = true;\n' +
-            '        }\n' +
-            '        if ((parsedLine.tag && nfcTagRegex.test(parsedLine.tag)) || (parsedLine.message && nfcMessageRegex.test(parsedLine.message)) || nfcTagRegex.test(lineText) || nfcMessageRegex.test(lineText)) {\n' +
-            '            parsedLine.isNfc = true;\n' +
-            '        }\n' +
-            '        if (dckRegex.test(lineText)) {\n' +
-            '            parsedLine.isDck = true;\n' +
-            '        }\n' +
-            '        if (walletRegex.test(lineText)) {\n' +
-            '            parsedLine.isWallet = true;\n' +
-            '        }\n' +
-            '        }\n' +
-            '\n' +
-            '        // FIX: The kernel check must be independent of the logcat match and the if(parsedLine) block.\n' +
-            '        if (parsedLine && kernelRegex.test(lineText)) {\n' +
-            '            parsedLine.isKernel = true;\n' +
-            '        }\n' +
-            '\n' +
-            '        if(parsedLine) parsedLines.push(parsedLine);\n' +
-            '\n' +
-            '        // If the chunk is full, send it back to the main thread\n' +
-            '        if (parsedLines.length >= CHUNK_SIZE) {\n' +
-            '            self.postMessage({ status: \'chunk\', parsedLines: parsedLines, filePath: path });\n' +
-            '            parsedLines = []; // Reset for the next chunk\n' +
-            '        }\n' +
-            '    }\n' +
-            '\n' +
-            '    // Send any remaining lines in the last chunk\n' +
-            '    if (parsedLines.length > 0) {\n' +
-            '        self.postMessage({ status: \'chunk\', parsedLines: parsedLines, filePath: path });\n' +
-            '    }\n' +
-            '\n' +
-            '    if (workerDebugLogs.length > 0) {\n' +
-            '        self.postMessage({ status: \'debug\', logs: workerDebugLogs, filePath: path });\n' +
-            '    }\n' +
-            '    // Send a final success message with summary data, but without the huge parsedLines array\n' +
-            '    self.postMessage({ status: \'success\', tags: Array.from(tagSet), minTimestamp, maxTimestamp, filePath: path, stats, highlights: { ...highlights, accounts: Array.from(highlights.accounts) }, appVersions: Array.from(appVersions), batteryDataPoints, cccMessages });\n' +
-            '};';
-        const blob = new Blob([workerScriptText], { type: 'application/javascript' });
-        const workerScriptURL = URL.createObjectURL(blob);
+        // Use the dedicated parser worker file
+        // Note: We use a loop to create multiple workers below
 
         const allResults = await new Promise((resolve, reject) => {
             const maxWorkers = navigator.hardwareConcurrency || 4;
@@ -2014,13 +1755,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (tasksCompleted === totalTasks) {
                         resolve(results);
                         workers.forEach(w => w.terminate());
-                        URL.revokeObjectURL(workerScriptURL);
                     }
                 }
             };
 
             for (let i = 0; i < maxWorkers; i++) {
-                const worker = new Worker(workerScriptURL);
+                const worker = new LogParserWorker(); // Use Vite worker import
                 worker.onmessage = onWorkerMessage;
                 worker.onerror = (err) => {
                     console.error(`[Main] Worker error:`, err);
@@ -2059,7 +1799,24 @@ document.addEventListener('DOMContentLoaded', () => {
             return sizeB - sizeA;
         });
 
+        // Helper to get dashboard elements for StatsTab
+        function getDashboardElements() {
+            return {
+                cpuLoadStats: document.getElementById('cpuLoadStats'),
+                temperatureStats: document.getElementById('temperatureStats'),
+                batteryStats: document.getElementById('batteryStats'),
+                cpuLoadPlotContainer: document.getElementById('cpuLoadPlotContainer'),
+                batteryPlotContainer: document.getElementById('batteryPlotContainer')
+            };
+        }
+
         originalLogLines = [];
+        // Ensure CCC messages are reset before re-populating if we are re-processing files (though processFiles usually clears state first)
+        // But if multiple calls happen, we want to be safe.
+        // Actually, cccMessages is global. It accumulates across files in the loop.
+        // We should clear it at the START of processFiles, which calls clearPreviousState.
+        // But here we are just merging results.
+
         const consolidatedTagSet = new Set(); // Use a new set for consolidation
         let consolidatedMinTimestamp, consolidatedMaxTimestamp;
         const finalServices = {};
@@ -2069,7 +1826,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let finalLocalBtAddress = null;
         const consolidatedAppVersions = new Map();
         // Reset battery data points for new file load
+        // Reset battery data points for new file load
         consolidatedBatteryDataPoints = [];
+        consolidatedThermalDataPoints = [];
 
 
         let resultIndex = 0;
@@ -2113,6 +1872,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
                 let currentIndex = originalLogLines.length;
+
+                // FIX: Map CCC messages to lines for tooltip hover
+                if (result.cccMessages && result.cccMessages.length > 0) {
+                    const lineMap = new Map();
+                    // Create a lookup for lines in THIS file chunk/result by lineNumber
+                    result.parsedLines.forEach(l => lineMap.set(l.lineNumber, l));
+
+                    let mappedCount = 0;
+                    result.cccMessages.forEach(cccMsg => {
+                        if (cccMsg.lineNumber) {
+                            const line = lineMap.get(cccMsg.lineNumber);
+                            if (line) {
+                                line.cccMessage = cccMsg;
+                                mappedCount++;
+                            } else {
+                                if (mappedCount === 0) console.warn('[CCC Debug] Failed to find line for CCC msg at line:', cccMsg.lineNumber);
+                            }
+                        }
+                    });
+                    console.log(`[Main] Mapped ${mappedCount} / ${result.cccMessages.length} CCC messages. (Sample Line # from Map: ${result.parsedLines[0]?.lineNumber})`);
+                }
+
                 for (const line of result.parsedLines) {
                     line.index = currentIndex++; // Assign global index immediately
                     originalLogLines.push(line);
@@ -2158,6 +1939,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     // FIX: Use push with spread syntax to avoid creating new large arrays.
                     for (const point of result.batteryDataPoints) {
                         consolidatedBatteryDataPoints.push(point);
+                    }
+                }
+
+                // Consolidate thermal data from worker
+                if (result.thermalDataPoints) {
+                    for (const point of result.thermalDataPoints) {
+                        consolidatedThermalDataPoints.push(point);
                     }
                 }
 
@@ -2216,10 +2004,30 @@ document.addEventListener('DOMContentLoaded', () => {
         // otherwise applyFilters (called by refreshActiveTab) will abort.
         isProcessing = false;
 
-        // Refresh the currently active tab. This ensures that if the user is on
+        // Refresh the currently active tab. This ensures that the user is on
         // 'btsnoop' or 'connectivity' tabs, they find the data ready (e.g., lazy loading triggered).
         // This replaces the hardcoded applyFilters(true).
         await refreshActiveTab();
+
+        // --- Background Processing ---
+        // Automatically start heavy decoding tasks (like BTSnoop and CCC pre-processing)
+        // after the main UI is ready. This fulfills the requirement for "decode ble" in background.
+        setTimeout(async () => {
+            console.log('[Background] Starting background processing for BTSnoop/CCC...');
+            if (!isBtsnoopProcessed) {
+                await processForBtsnoop();
+            }
+
+            // Pre-calculate CCC Stats in background
+            if (cccMessages && cccMessages.length > 0 && !tabsLoaded.ccc) {
+                console.log('[Background] Pre-calculating CCC stats...');
+                await CccTab.setup(cccMessages, btsnoopConnectionMap, processForBtsnoop, isBtsnoopProcessed);
+                // Note: we don't set tabsLoaded.ccc = true here to ensure refreshActiveTab still checks if needed,
+                // but CccTab cache will be populated.
+            }
+
+            console.log('[Background] Processing complete.');
+        }, 500);
 
         // Auto-collapse left panel to maximize log viewing space
         if (leftPanel && panelToggleBtn && !leftPanel.classList.contains('collapsed')) {
@@ -3648,6 +3456,16 @@ document.addEventListener('DOMContentLoaded', () => {
             );
 
             if (btsnoopTasks.length === 0) {
+                // BUG FIX: If we have cached packets but fileTasks is empty (e.g. lost context after tab switch),
+                // do NOT show "No files found". Just reuse what we have.
+                if (btsnoopPackets.length > 0) {
+                    console.log('[BTSnoop Debug] [MAIN.JS] No files in current task list, but packets exist in memory. Preserving state.');
+                    TimeTracker.stop('BTSnoop Processing');
+                    isBtsnoopProcessed = true;
+                    setupBtsnoopTab(); // Ensure UI is listening
+                    return resolve();
+                }
+
                 btsnoopInitialView.innerHTML = '<p>No btsnoop_hci.log files found.</p>';
                 TimeTracker.stop('BTSnoop Processing');
                 isBtsnoopProcessed = true; // Mark as "processed" even if no files, to prevent re-running.
@@ -4879,6 +4697,88 @@ document.addEventListener('DOMContentLoaded', () => {
             if (logText) {
                 navigator.clipboard.writeText(logText).then(() => {
                     console.log('[Copy] Copied:', logText.length, 'chars');
+                    // --- CCC Hover Tooltip Logic ---
+                    function setupCccHover() {
+                        const viewport = document.getElementById('logViewport');
+                        const tooltip = document.createElement('div');
+                        tooltip.id = 'cccTooltip';
+                        document.body.appendChild(tooltip);
+
+                        // Helper to hide tooltip
+                        const hideTooltip = () => {
+                            tooltip.style.display = 'none';
+                        };
+
+                        // Delegate mouseover/mousemove on the viewport
+                        viewport.addEventListener('mousemove', (e) => {
+                            const target = e.target.closest('.log-line');
+                            if (!target) {
+                                hideTooltip();
+                                return;
+                            }
+
+                            const index = parseInt(target.dataset.lineIndex, 10);
+                            if (isNaN(index)) return;
+
+                            // Determine which list is active (filtered or original) based on current view
+                            // The 'renderVirtualList' is called with 'filteredLogLines' (or original if filters empty)
+                            // But main.js variable 'filteredLogLines' is always the source of truth for the MAIN view loop.
+                            // If we are in connectivity view, that's different.
+                            // Assuming this is the main Log View.
+                            const line = filteredLogLines[index];
+
+                            if (line && line.cccMessage) {
+                                // Decode on the fly
+                                const msg = line.cccMessage;
+                                const { innerMsg, params } = CccTab.decodePayload(msg.type, msg.subtype, msg.payload);
+                                const categoryName = CccTab.CCC_CONSTANTS?.MESSAGE_TYPES?.[msg.type] || `Type 0x${msg.type.toString(16)}`;
+
+                                let handleNumber = -1;
+                                if (msg.handle !== undefined && msg.handle !== null) {
+                                    if (typeof msg.handle === 'string' && msg.handle.startsWith('0x')) {
+                                        handleNumber = parseInt(msg.handle, 16);
+                                    } else {
+                                        handleNumber = Number(msg.handle);
+                                    }
+                                }
+                                const peerAddress = msg.peerAddress || btsnoopConnectionMap?.get(handleNumber)?.address || 'N/A';
+
+
+                                let html = `<div class="tooltip-header">CCC Packet Detail</div>`;
+                                html += `<div class="tooltip-row"><span class="tooltip-label">Category:</span><span class="tooltip-value">${escapeHtml(categoryName)}</span></div>`;
+                                html += `<div class="tooltip-row"><span class="tooltip-label">Msg:</span><span class="tooltip-value" style="font-weight:bold; color:#fff">${escapeHtml(innerMsg)}</span></div>`;
+                                html += `<div class="tooltip-row"><span class="tooltip-label">Dir:</span><span class="tooltip-value">${escapeHtml(msg.direction)}</span></div>`;
+                                html += `<div class="tooltip-row"><span class="tooltip-label">Peer:</span><span class="tooltip-value">${escapeHtml(peerAddress)}</span></div>`;
+
+                                if (params) {
+                                    html += `<div class="tooltip-row" style="margin-top:4px; border-top:1px solid #444; padding-top:2px;">${params}</div>`;
+                                }
+
+                                tooltip.innerHTML = html;
+                                tooltip.style.display = 'block';
+
+                                // Position tooltip
+                                const x = e.clientX + 15;
+                                const y = e.clientY + 15;
+
+                                // Adjust if off screen
+                                const rect = tooltip.getBoundingClientRect();
+                                const winWidth = window.innerWidth;
+                                const winHeight = window.innerHeight;
+
+                                tooltip.style.left = (x + rect.width > winWidth ? x - rect.width - 20 : x) + 'px';
+                                tooltip.style.top = (y + rect.height > winHeight ? y - rect.height - 20 : y) + 'px';
+                            } else {
+                                hideTooltip();
+                            }
+                        });
+
+                        viewport.addEventListener('mouseleave', hideTooltip);
+                    }
+
+                    // Initialize hover listeners once DOM is ready (or after initial render?)
+                    // DOMContentLoaded started at line 31.
+                    setupCccHover();
 
                     // Visual feedback
                     const feedbackEl = isCopyBtn ? target : copyTarget;

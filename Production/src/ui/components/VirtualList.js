@@ -70,16 +70,16 @@ export function renderVirtualList(container, sizer, viewport, lines, activeColla
             }
 
             lineContent = `<div class="log-line-content">
-                    <span class="log-meta copy-cell" data-log-text="${line.timestamp || (line.date + ' ' + line.time)}">${line.timestamp || (line.date + ' ' + line.time)}</span>
-                    <span class="log-pid-tid copy-cell" data-log-text="${line.pid || ''}${line.tid ? '-' + line.tid : ''}${line.uid ? ' ' + line.uid : ''}" style="color: ${pidColor};">
-                        <span class="copy-cell" data-log-text="${line.pid || ''}" style="font-weight: bold;">${line.pid || ''}</span>
-                        ${line.tid ? '<span class="copy-cell" data-log-text="' + line.tid + '" style="opacity: 0.8; font-size: 0.9em;">-' + line.tid + '</span>' : ''}
-                        ${line.uid ? '<span class="copy-cell" data-log-text="' + line.uid + '" style="opacity: 0.6; font-size: 0.8em; margin-left: 2px;"> ' + line.uid + '</span>' : ''}
-                    </span>
-                    ${levelHtml}
-                    <span class="log-tag copy-cell" data-log-text="${escapeHtml(line.tag || '')}" title="${escapeHtml(line.tag || '')}">${tagText}</span>
-                    <span class="log-message copy-cell" data-log-text="${escapeHtml(line.message || line.originalText)}" title="${escapeHtml(line.message || line.originalText)}">${messageText}</span>
-                </div>`;
+                <span class="log-meta copy-cell" data-log-text="${line.timestamp || (line.date + ' ' + line.time)}">${line.timestamp || (line.date + ' ' + line.time)}</span>
+                <span class="log-pid-tid copy-cell" data-log-text="${line.pid || ''}${line.tid ? '-' + line.tid : ''}${line.uid ? ' ' + line.uid : ''}" style="color: ${pidColor};">
+                    <span class="copy-cell" data-log-text="${line.pid || ''}" style="font-weight: bold;">${line.pid || ''}</span>
+                    ${line.tid ? '<span class="copy-cell" data-log-text="' + line.tid + '" style="opacity: 0.8; font-size: 0.9em;">-' + line.tid + '</span>' : ''}
+                    ${line.uid ? '<span class="copy-cell" data-log-text="' + line.uid + '" style="opacity: 0.6; font-size: 0.8em; margin-left: 2px;"> ' + line.uid + '</span>' : ''}
+                </span>
+                ${levelHtml}
+                <span class="log-tag copy-cell" data-log-text="${escapeHtml(line.tag || '')}" ${!line.cccMessage ? `title="${escapeHtml(line.tag || '')}"` : ''}>${tagText}</span>
+                <span class="log-message copy-cell" data-log-text="${escapeHtml(line.message || line.originalText)}" ${!line.cccMessage ? `title="${escapeHtml(line.message || line.originalText)}"` : ''}>${messageText}</span>
+            </div>`;
         }
         const copyButtonHtml = line.isMeta ? '' : `<button class="copy-log-btn" data-log-text="${escapeHtml(line.originalText || line.text)}">📋</button>`;
         if (selectedLine === line) {
@@ -90,6 +90,12 @@ export function renderVirtualList(container, sizer, viewport, lines, activeColla
         if (!line.isMeta && line.lineNumber) {
             lineNumberHtml = `<span class="line-number">${line.lineNumber}</span>`;
         }
+
+        // Add class for CCC packets to show visual indication
+        if (line.cccMessage) {
+            lineClass += ' ccc-line';
+        }
+
         visibleHtml += `<div class="${lineClass}" data-line-index="${i}">${lineNumberHtml}${lineContent}${copyButtonHtml}</div>`;
     }
 

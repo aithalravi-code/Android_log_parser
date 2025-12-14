@@ -13,7 +13,7 @@ test.describe('BTSnoop Connection Events Scroll Restoration', () => {
         });
 
         // Navigate to localhost dev server
-        await page.goto('http://localhost:5173/');
+        await page.goto('http://localhost:5173/log_parser.html');
         await page.waitForLoadState('networkidle');
 
         // Upload test file

@@ -7,14 +7,17 @@ let storedLogLines = [];
  * Convert wildcard pattern to regex (duplicated from utils/regex.js for worker context)
  */
 function wildcardToRegex(wildcard) {
-    const escapedPattern = wildcard.replace(/([.+?^\\$\\{\\}()|[\\]\\\\])/g, "\\\\$1");
-    // If no wildcard, do a whole-word search, which is faster and more precise.
+    // console.log('DEBUG: converting', wildcard);
     if (!wildcard.includes('*')) {
-        return new RegExp(`\\b${escapedPattern}\\b`, 'i');
+        const escaped = wildcard.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+        return new RegExp(`\\b${escaped}\\b`, 'i');
     }
-    // Otherwise, treat as a "contains" search.
-    const regexPattern = escapedPattern.replace(/\\\\\\*/g, '.*');
-    return new RegExp(regexPattern, 'i');
+    // Escape all special characters including *
+    // Then replace escaped * (\*) with .*
+    const escaped = wildcard.replace(/[.+?^${}()|[\]\\*]/g, '\\$&');
+    const regexStr = escaped.replace(/\\\*/g, '.*');
+    // console.log('DEBUG: regexStr', regexStr);
+    return new RegExp(regexStr, 'i');
 }
 
 /**
@@ -104,3 +107,6 @@ self.onmessage = function (e) {
         self.postMessage({ command: 'ERROR', jobId, error: error.message });
     }
 };
+
+// Export for unit testing
+export { runFilter, wildcardToRegex };

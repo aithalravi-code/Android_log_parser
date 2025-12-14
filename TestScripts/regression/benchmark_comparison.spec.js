@@ -4,7 +4,7 @@ import path from 'path';
 import { spawn } from 'child_process';
 
 const MOCK_LOG_PATH = path.resolve(process.cwd(), 'mock_regression_log.txt');
-const NEW_BUILD_PATH = path.resolve(process.cwd(), 'dist/index.html');
+const NEW_BUILD_PATH = path.resolve(process.cwd(), 'dist/log_parser.html');
 const LEGACY_PATH = path.resolve(process.cwd(), 'legacy_code/src/index.html');
 
 // Helper to spawn a simple http server for legacy modules if needed
@@ -15,6 +15,7 @@ const LEGACY_PATH = path.resolve(process.cwd(), 'legacy_code/src/index.html');
 // We'll use a simple static serve approach or assume the 'new' implementation is the baseline.
 
 test.describe.serial('Performance Benchmark: Old vs New', () => {
+    test.setTimeout(60000); // Allow enough time for both benchmarks (especially legacy timeouts)
 
     test.beforeAll(async () => {
         // Ensure mock log exists (it should from previous test)
@@ -90,8 +91,8 @@ test.describe.serial('Performance Benchmark: Old vs New', () => {
         const page1 = await browser.newPage();
 
         // Run New
-        // Use file:// for dist/index.html (bundled)
-        const newResults = await runBenchmark(page1, 'CURRENT (Vite)', `file://${NEW_BUILD_PATH}`);
+        // Use dev server for consistent environment
+        const newResults = await runBenchmark(page1, 'CURRENT (Vite)', 'http://127.0.0.1:5173/log_parser.html');
 
         // Run Legacy
         // We need to serve legacy_code/src because it uses modules and imports
