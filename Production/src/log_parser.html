@@ -137,6 +137,7 @@
                             <button class="filter-icon active" data-level="I">Info</button>
                             <button class="filter-icon active" data-level="W">Warn</button>
                             <button class="filter-icon active" data-level="E">Error</button>
+                            <button class="filter-icon active" data-level="F">Fatal</button>
                             <button id="logLevelToggleBtn" class="filter-action-btn">None</button>
                         </div>
                     </section>
@@ -308,8 +309,8 @@
                         <!-- This content will be managed by JS -->
                     </div>
                     <div id="btsnoopContentView" style="display: none; height: 100%; flex-direction: column;">
-                        <div id="btsnoopHeader"></div>
                         <div id="btsnoopLogContainer" class="log-container">
+                            <div id="btsnoopHeader"></div>
                             <div id="btsnoopLogSizer"></div>
                             <div id="btsnoopLogViewport"></div>
                         </div>
@@ -464,12 +465,12 @@
                                         placeholder="Search packages..." autocomplete="off">
                                 </div>
                             </div>
-                            <div class="scrollable-table-container">
-                                <table id="appVersionsTable" class="highlight-table">
+                            <div style="overflow-x: auto;">
+                                <table id="appVersionsTable" class="ccc-table">
                                     <thead>
                                         <tr>
-                                            <th>Package</th>
-                                            <th>Version</th>
+                                            <th style="width: 400px;">Package</th>
+                                            <th style="width: 150px;">Version</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -511,7 +512,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css"
         integrity="sha512-qveKnGrvOChbSzAdtSs8p69eoLegyh+1hwOMbmpCViIwj7rn4oJjdmMvWOuyQlTOZgTlZA0N2PXA7iA8/2TUYA=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"
         integrity="sha512-UOJe4paV6hYWBnS0c9GnIRH8PLm2nFK22uhfAvsTIqd3uwnWsVri1OPn5fJYdLtGY3wB11LGHJ4yPU1WFJeBYQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>

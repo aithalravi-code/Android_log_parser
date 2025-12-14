@@ -11,7 +11,7 @@
     "grepInvert": null,
     "maxFailures": 0,
     "metadata": {
-      "actualWorkers": 6
+      "actualWorkers": 3
     },
     "preserveOutput": "always",
     "reporter": [
@@ -56,7 +56,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 6
+          "actualWorkers": 3
         },
         "id": "chromium",
         "name": "chromium",
@@ -72,7 +72,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 6
+          "actualWorkers": 3
         },
         "id": "firefox",
         "name": "firefox",
@@ -88,7 +88,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 6
+          "actualWorkers": 3
         },
         "id": "webkit",
         "name": "webkit",
@@ -115,21 +115,21 @@
   },
   "suites": [
     {
-      "title": "file-upload.spec.js",
-      "file": "file-upload.spec.js",
+      "title": "btsnoop_layout.spec.js",
+      "file": "btsnoop_layout.spec.js",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "UI Elements",
-          "file": "file-upload.spec.js",
-          "line": 16,
+          "title": "BTSnoop Layout Alignment",
+          "file": "btsnoop_layout.spec.js",
+          "line": 5,
           "column": 6,
           "specs": [
             {
-              "title": "should display initial UI correctly",
-              "ok": true,
+              "title": "Should verify that File Header does not overlap Table Header or Data Rows",
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -142,471 +142,208 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 3521,
-                      "errors": [],
+                      "status": "failed",
+                      "duration": 12332,
+                      "error": {
+                        "message": "TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.btsnoop-file-header') to be visible\u001b[22m\n",
+                        "stack": "TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.btsnoop-file-header') to be visible\u001b[22m\n\n    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/btsnoop_layout.spec.js:35:20)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)",
+                        "location": {
+                          "file": "copy)/TestScripts/regression/btsnoop_layout.spec.js",
+                          "column": 20,
+                          "line": 35
+                        }
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "copy)/TestScripts/regression/btsnoop_layout.spec.js",
+                            "column": 20,
+                            "line": 35
+                          },
+                          "message": "TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.btsnoop-file-header') to be visible\u001b[22m\n\n    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/btsnoop_layout.spec.js:35:20)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)"
+                        }
+                      ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-13T21:52:32.446Z",
+                      "startTime": "2025-12-14T14:14:59.102Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "copy)/TestScripts/regression/btsnoop_layout.spec.js",
+                        "column": 20,
+                        "line": 35
+                      }
                     }
                   ],
-                  "status": "expected"
+                  "status": "unexpected"
                 }
               ],
-              "id": "ffdc48538a45b9f85f2e-2fbf0eb616a9050ca99f",
-              "file": "file-upload.spec.js",
-              "line": 22,
+              "id": "5a331eea375e1541be65-188a1e6879e409a8389d",
+              "file": "btsnoop_layout.spec.js",
+              "line": 17,
               "column": 5
             },
             {
-              "title": "should have all required UI elements",
-              "ok": true,
+              "title": "Should verify that File Header does not overlap Table Header or Data Rows",
+              "ok": false,
               "tags": [],
               "tests": [
                 {
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
                   "results": [
                     {
                       "workerIndex": 1,
                       "parallelIndex": 1,
-                      "status": "passed",
-                      "duration": 4611,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-12-13T21:52:32.457Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "ffdc48538a45b9f85f2e-77e271bf8ba64d50e936",
-              "file": "file-upload.spec.js",
-              "line": 37,
-              "column": 5
-            },
-            {
-              "title": "should load page within 3 seconds",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 2,
-                      "status": "passed",
-                      "duration": 3632,
-                      "errors": [],
-                      "stdout": [
+                      "status": "failed",
+                      "duration": 12801,
+                      "error": {
+                        "message": "TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.btsnoop-file-header') to be visible\u001b[22m\n",
+                        "stack": "TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.btsnoop-file-header') to be visible\u001b[22m\n\n    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/btsnoop_layout.spec.js:35:20)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)",
+                        "location": {
+                          "file": "copy)/TestScripts/regression/btsnoop_layout.spec.js",
+                          "column": 20,
+                          "line": 35
+                        }
+                      },
+                      "errors": [
                         {
-                          "text": "✅ Page loaded in 612ms\n"
+                          "location": {
+                            "file": "copy)/TestScripts/regression/btsnoop_layout.spec.js",
+                            "column": 20,
+                            "line": 35
+                          },
+                          "message": "TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.btsnoop-file-header') to be visible\u001b[22m\n\n    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/btsnoop_layout.spec.js:35:20)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)"
                         }
                       ],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-12-13T21:52:32.471Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "ffdc48538a45b9f85f2e-0b6dd63df475a529354c",
-              "file": "file-upload.spec.js",
-              "line": 51,
-              "column": 5
-            }
-          ]
-        },
-        {
-          "title": "Tab Navigation",
-          "file": "file-upload.spec.js",
-          "line": 64,
-          "column": 6,
-          "specs": [
-            {
-              "title": "should switch between tabs",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 3,
-                      "parallelIndex": 3,
-                      "status": "passed",
-                      "duration": 3477,
-                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-13T21:52:32.581Z",
+                      "startTime": "2025-12-14T14:14:59.052Z",
                       "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "ffdc48538a45b9f85f2e-187856a89ed6bda1ad14",
-              "file": "file-upload.spec.js",
-              "line": 70,
-              "column": 5
-            },
-            {
-              "title": "should have connectivity tab",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 4,
-                      "parallelIndex": 4,
-                      "status": "passed",
-                      "duration": 4621,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-12-13T21:52:32.551Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "ffdc48538a45b9f85f2e-1b7931bd2e1e0d807096",
-              "file": "file-upload.spec.js",
-              "line": 87,
-              "column": 5
-            },
-            {
-              "title": "should have stats tab",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 5,
-                      "parallelIndex": 5,
-                      "status": "passed",
-                      "duration": 3157,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-12-13T21:52:32.548Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "ffdc48538a45b9f85f2e-9811a46fdf987d51c2f3",
-              "file": "file-upload.spec.js",
-              "line": 92,
-              "column": 5
-            }
-          ]
-        },
-        {
-          "title": "Filter Controls",
-          "file": "file-upload.spec.js",
-          "line": 98,
-          "column": 6,
-          "specs": [
-            {
-              "title": "should have log level filter buttons",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 5,
-                      "parallelIndex": 5,
-                      "status": "passed",
-                      "duration": 4688,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-12-13T21:52:36.566Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "ffdc48538a45b9f85f2e-06a71ccd04362867d7b0",
-              "file": "file-upload.spec.js",
-              "line": 104,
-              "column": 5
-            },
-            {
-              "title": "should have AND/OR logic toggle",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 3,
-                      "parallelIndex": 3,
-                      "status": "passed",
-                      "duration": 4520,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-12-13T21:52:36.576Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "ffdc48538a45b9f85f2e-00130da28e529c554c55",
-              "file": "file-upload.spec.js",
-              "line": 115,
-              "column": 5
-            },
-            {
-              "title": "should toggle between AND/OR logic",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 3588,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-12-13T21:52:36.630Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "ffdc48538a45b9f85f2e-9f0ae6ec80c0ff73e301",
-              "file": "file-upload.spec.js",
-              "line": 123,
-              "column": 5
-            },
-            {
-              "title": "should have search input",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 2,
-                      "status": "passed",
-                      "duration": 2531,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-12-13T21:52:36.790Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "ffdc48538a45b9f85f2e-7761dcc8c2e8ecb1b4d9",
-              "file": "file-upload.spec.js",
-              "line": 144,
-              "column": 5
-            }
-          ]
-        },
-        {
-          "title": "Performance Tracker",
-          "file": "file-upload.spec.js",
-          "line": 155,
-          "column": 6,
-          "specs": [
-            {
-              "title": "should have performance tracker available in console",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
-                      "status": "passed",
-                      "duration": 2987,
-                      "errors": [],
-                      "stdout": [
+                      "attachments": [
                         {
-                          "text": "Performance tracker available: false\n"
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-firefox/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-firefox/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-firefox/error-context.md"
                         }
                       ],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-12-13T21:52:37.724Z",
-                      "annotations": [],
-                      "attachments": []
+                      "errorLocation": {
+                        "file": "copy)/TestScripts/regression/btsnoop_layout.spec.js",
+                        "column": 20,
+                        "line": 35
+                      }
                     }
                   ],
-                  "status": "expected"
+                  "status": "unexpected"
                 }
               ],
-              "id": "ffdc48538a45b9f85f2e-1531420574add953f863",
-              "file": "file-upload.spec.js",
-              "line": 161,
-              "column": 5
-            }
-          ]
-        },
-        {
-          "title": "Accessibility",
-          "file": "file-upload.spec.js",
-          "line": 173,
-          "column": 6,
-          "specs": [
-            {
-              "title": "should be keyboard navigable",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 4,
-                      "parallelIndex": 4,
-                      "status": "passed",
-                      "duration": 2945,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-12-13T21:52:37.727Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "ffdc48538a45b9f85f2e-97f65d0770029bd28acf",
-              "file": "file-upload.spec.js",
-              "line": 179,
+              "id": "5a331eea375e1541be65-a375bbeb6b0be7d9e9c6",
+              "file": "btsnoop_layout.spec.js",
+              "line": 17,
               "column": 5
             },
             {
-              "title": "should have proper document title",
-              "ok": true,
+              "title": "Should verify that File Header does not overlap Table Header or Data Rows",
+              "ok": false,
               "tags": [],
               "tests": [
                 {
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
                   "results": [
                     {
                       "workerIndex": 2,
                       "parallelIndex": 2,
-                      "status": "passed",
-                      "duration": 1767,
-                      "errors": [],
+                      "status": "failed",
+                      "duration": 14450,
+                      "error": {
+                        "message": "TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.btsnoop-file-header') to be visible\u001b[22m\n",
+                        "stack": "TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.btsnoop-file-header') to be visible\u001b[22m\n\n    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/btsnoop_layout.spec.js:35:20)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)",
+                        "location": {
+                          "file": "copy)/TestScripts/regression/btsnoop_layout.spec.js",
+                          "column": 20,
+                          "line": 35
+                        }
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "copy)/TestScripts/regression/btsnoop_layout.spec.js",
+                            "column": 20,
+                            "line": 35
+                          },
+                          "message": "TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.btsnoop-file-header') to be visible\u001b[22m\n\n    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/btsnoop_layout.spec.js:35:20)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)"
+                        }
+                      ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-13T21:52:39.467Z",
+                      "startTime": "2025-12-14T14:14:59.067Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-webkit/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-webkit/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-webkit/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "copy)/TestScripts/regression/btsnoop_layout.spec.js",
+                        "column": 20,
+                        "line": 35
+                      }
                     }
                   ],
-                  "status": "expected"
+                  "status": "unexpected"
                 }
               ],
-              "id": "ffdc48538a45b9f85f2e-57af8649122e0126a743",
-              "file": "file-upload.spec.js",
-              "line": 193,
+              "id": "5a331eea375e1541be65-4a3f1f260e3b399ca72c",
+              "file": "btsnoop_layout.spec.js",
+              "line": 17,
               "column": 5
             }
           ]
@@ -616,11 +353,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-12-13T21:52:30.754Z",
-    "duration": 10659.655,
-    "expected": 13,
+    "startTime": "2025-12-14T14:14:55.465Z",
+    "duration": 18558.170000000002,
+    "expected": 0,
     "skipped": 0,
-    "unexpected": 0,
+    "unexpected": 3,
     "flaky": 0
   }
 }

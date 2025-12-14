@@ -60,13 +60,17 @@ self.onmessage = async (event) => {
     const btDisconnectRegex = /(?:onConnectionStateChange|DISCONNECT|connectionStateChange).*?newState=(?:0|DISCONNECTED)/i;
     const btAddressRegex = /([0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2})/i;
 
-    const batteryRegex = /level: (\\d+).*scale: (\\d+)/;
+    // Expanded regex to catch 'soc' (State of Charge) and 'capacity' often found in Samsung/OEM logs
+    const batteryRegex = /(?:level|l|soc|capacity)[:=]\s*(\d+).*?(?:scale|s)[:=]\s*(\d+)|(?:level|l|soc|capacity)[:=]\s*(\d+)/i;
     const batteryDataPoints = [];
     const cccMessages = [];
     const cccRegex = /(?:Sending|Received):\s*\[([0-9a-fA-F]+)\]/;
     const versionRegex = new RegExp('Package\\s+\\[([^\\]]+)\\].*?versionName=([^\\s\\n,]+)');
     const appVersions = new Map();
     const localAddressRegex = /Read BD_ADDR.*return: (([0-9A-F]{2}:){5}[0-9A-F]{2})/i;
+    // Fix: Extract BLE Keys from text logs
+    const bleKeyRegex = /(LTK|IRK|CSRK)[:=]\s*([0-9a-fA-F]{32})/i;
+    const bleKeys = []; // Array of [addr, keyInfo]
 
     // Regex for multi-line dumpsys package format
     let dumpsysMatch;
@@ -239,8 +243,32 @@ self.onmessage = async (event) => {
 
         const batteryMatch = lineText.match(batteryRegex);
         if (batteryMatch && lineDateObj) {
-            const level = parseInt(batteryMatch[1]);
-            batteryDataPoints.push({ ts: lineDateObj, level: level });
+            // Group 1 or 3 is level (depending on which part of regex matched)
+            // Group 2 is scale (optional, default 100)
+            const levelStr = batteryMatch[1] || batteryMatch[3];
+            const scaleStr = batteryMatch[2];
+
+            let level = parseInt(levelStr);
+            const scale = scaleStr ? parseInt(scaleStr) : 100;
+
+            if (!isNaN(level)) {
+                // Normalize to percentage if scale is not 100
+                if (scale !== 100 && scale > 0) {
+                    level = Math.round((level / scale) * 100);
+                }
+                batteryDataPoints.push({ ts: lineDateObj, level: level });
+            }
+        }
+
+        // FIX: Extract BLE Keys from text logs using regex
+        const bleKeyMatch = lineText.match(bleKeyRegex);
+        if (bleKeyMatch) {
+            const keyType = bleKeyMatch[1];
+            const keyValue = bleKeyMatch[2];
+            // Try to find address in same line
+            const addrMatch = lineText.match(btAddressRegex);
+            const addr = addrMatch ? addrMatch[1] : 'Unknown';
+            bleKeys.push([addr, { type: keyType, key: keyValue, value: keyValue }]);
         }
 
         // FIX: Extract CCC messages from text logs - ONLY from lines with [BleConnection/...] to avoid duplicates
@@ -288,5 +316,5 @@ self.onmessage = async (event) => {
         self.postMessage({ status: 'chunk', parsedLines: parsedLines, filePath: path });
     }
 
-    self.postMessage({ status: 'success', parsedLines: [], tags: Array.from(tagSet), minTimestamp, maxTimestamp, filePath: path, stats, highlights: { ...highlights, accounts: Array.from(highlights.accounts) }, appVersions: Array.from(appVersions), batteryDataPoints, cccMessages, thermalStats });
+    self.postMessage({ status: 'success', parsedLines: [], tags: Array.from(tagSet), minTimestamp, maxTimestamp, filePath: path, stats, highlights: { ...highlights, accounts: Array.from(highlights.accounts) }, appVersions: Array.from(appVersions), batteryDataPoints, cccMessages, thermalStats, bleKeys });
 };

@@ -6,15 +6,20 @@ import { renderVirtualList } from './ui/components/VirtualList.js';
 import './styles.css';
 import noUiSlider from 'nouislider';
 import 'nouislider/dist/nouislider.css';
-import * as XLSX from 'xlsx';
+// import * as XLSX from 'xlsx'; // REMOVED: Using global XLSX from xlsx-js-style CDN for styling support
 import JSZip from 'jszip';
 import { Chart, registerables } from 'chart.js';
 import { makeTableResizable } from './table-resize.js';
 import * as BtsnoopTab from './ui/tabs/BtsnoopTab.js';
 import * as StatsTab from './ui/tabs/StatsTab.js';
 import * as CccTab from './ui/tabs/CccTab.js';
+import { setupDeviceEventsTab, renderDeviceEvents } from './ui/tabs/DeviceEventsTab.js';
+import { setupBleKeysTab, renderBleKeys } from './ui/tabs/BleKeysTab.js';
+import { filterConnectivityLogs } from './ui/tabs/ConnectivityTab.js';
 import { makeSortable } from './table-sort.js';
 import { formatParam } from './utils/html.js';
+import * as FilterManager from './filters/FilterManager.js';
+import * as ExportManager from './export/ExportManager.js';
 import LogParserWorker from './infra/workers/logParser.worker.js?worker&inline'; // Inline for file:// support
 import FilterWorker from './infra/workers/filter.worker.js?worker&inline'; // Inline for file:// support
 
@@ -199,13 +204,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Application State ---
     let originalLogLines = []; // Holds all lines from all files, with metadata
     let cccMessages = []; // CCC messages extracted from log lines by filter workerfiles, with metadata
+    // FIX: Promote finalBleKeys to global for access in render
+    window.finalBleKeys = new Map();
+    window.finalDashboardStats = null; // Store stats for re-rendering
+
     let consolidatedBatteryDataPoints = []; // Battery data points from all workers
     let consolidatedThermalDataPoints = []; // Thermal data points from all workers
     let filterKeywords = []; // Array of {text: string, active: boolean}
     let liveSearchQuery = ''; // For live filtering as the user types
     let currentZipFileName = ''; // To store the name of the loaded ZIP
     let isAndLogic = false; // Default to OR logic
-    let activeLogLevels = new Set(['V', 'D', 'I', 'W', 'E']); // Default to all levels active
+    let activeLogLevels = new Set(['V', 'D', 'I', 'W', 'E', 'F', 'A', 'S']); // Default to all levels active
     let bleLogLines = []; // Holds all BLE-related log lines
     let filteredBleLogLines = []; // The currently filtered set of BLE lines
     let nfcLogLines = []; // Holds all NFC-related log lines
@@ -218,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Worker Setup ---
     // Increment this version when worker logic changes to force updates
-    const workerVersion = 4;
+    const workerVersion = 6;
     let worker;
 
     // NEW: Connectivity Tab Globals
@@ -553,6 +562,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================================
+    // --- Helper Functions ---
+    // =================================================================================
+
+    /**
+     * Helper to get dashboard elements for StatsTab
+     * @returns {Object} Object containing dashboard DOM element references
+     */
+    function getDashboardElements() {
+        return {
+            cpuLoadStats: document.getElementById('cpuLoadStats'),
+            temperatureStats: document.getElementById('temperatureStats'),
+            batteryStats: document.getElementById('batteryStats'),
+            cpuLoadPlotContainer: document.getElementById('cpuLoadPlotContainer'),
+            batteryPlotContainer: document.getElementById('batteryPlotContainer')
+        };
+    }
+
+    // =================================================================================
     // --- Style Injection for Log Levels ---
     // =================================================================================
     // Inject CSS for log level colors directly, as we can't edit the CSS file.
@@ -673,30 +700,8 @@ document.addEventListener('DOMContentLoaded', () => {
         border - collapse: collapse;
     }
 
-    #btsnoopLogContainer { /* The scrollable body container */
-        flex - grow: 1;
-        overflow - y: auto;
-        overflow - x: auto; /* FIX: Enable horizontal scrolling */
-        position: relative; /* Required for virtual scrolling viewport */
-        width: 100 %; /* Ensure container respects parent width */
-    }
-
-    #btsnoopLogSizer {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100 %;
-        min - width: 1200px; /* Match table min-width for horizontal scroll */
-        pointer - events: none;
-    }
-
-    #btsnoopLogViewport {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100 %;
-        min - width: 1200px; /* Match table min-width for horizontal scroll */
-    }
+    /* NOTE: #btsnoopLogContainer, #btsnoopLogSizer, and #btsnoopLogViewport styles
+       have been moved to styles.css to avoid conflicts with top: 70px offset */
 
             /* BTSnoop row styling */
             .btsnoop - row {
@@ -926,7 +931,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.log('[Stats] Skipping BTSnoop processing. Processed:', isBtsnoopProcessed, 'Tasks:', btsnoopTasks.length);
                     }
 
-                    await StatsTab.setupStatsTab(originalLogLines, getDashboardElements(), batteryDataPoints);
+
+                    await StatsTab.setupStatsTab(originalLogLines, getDashboardElements(), consolidatedBatteryDataPoints);
                     console.log(`[Perf Phase2]stats tab loaded in ${(performance.now() - statsStart).toFixed(2)}ms`);
                     break;
             }
@@ -1155,7 +1161,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const exportBtsnoopXlsxBtn = document.getElementById('exportBtsnoopXlsxBtn');
         if (exportBtsnoopXlsxBtn) {
             // FIX: Attach the event listener for the Excel export button.
-            exportBtsnoopXlsxBtn.addEventListener('click', () => exportBtsnoopToXlsx());
+            exportBtsnoopXlsxBtn.addEventListener('click', () => BtsnoopTab.exportBtsnoopToXlsx());
         }
 
 
@@ -1199,7 +1205,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Sort by Size Button
         const sortBySizeBtn = document.getElementById('sortBySizeBtn');
-        let sortDescending = true; // Track sort direction
+        let sortDescending = false; // Initial click will sort Ascending (Smallest First) since files are usually Descending
         if (sortBySizeBtn) {
             sortBySizeBtn.addEventListener('click', () => {
                 console.log('[Sort Debug] Button clicked, originalLogLines.length:', originalLogLines.length);
@@ -1208,81 +1214,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 // Apply active filters
-                let filteredPackets = allPackets.filter(packet => {
-                    if (!packet) return false;
-
-                    // Layer filters
-                    if (activeBtsnoopLayers.size > 0 && !activeBtsnoopLayers.has(packet.layer)) return false;
-
-                    // Text filters for each column
-                    for (let i = 0; i < btsnoopFilters.length; i++) {
-                        const filterValue = btsnoopFilters[i];
-                        if (!filterValue) continue;
-
-                        let cellText = '';
-                        switch (i) {
-                            case 0: cellText = String(packet.packetNum); break;
-                            case 1: cellText = packet.timestamp || ''; break;
-                            case 2: cellText = packet.source || ''; break;
-                            case 3: cellText = packet.destination || ''; break;
-                            case 4: cellText = packet.type || ''; break;
-                            case 5: cellText = packet.summary || ''; break;
-                            case 6: cellText = packet.dataHex || ''; break;
-                        }
-
-                        if (!cellText.toLowerCase().includes(filterValue.toLowerCase())) {
-                            return false;
-                        }
-                    }
-
-                    return true;
-                });
-
-                // Apply sorting if column is selected
-                if (btsnoopSortColumn !== null) {
-                    console.log(`[BTSnoop Sort]Sorting ${filteredPackets.length} packets by column ${btsnoopSortColumn}`);
-
-                    filteredPackets.sort((a, b) => {
-                        let aValue = '';
-                        let bValue = '';
-
-                        // Get values based on column
-                        switch (btsnoopSortColumn) {
-                            case 0: aValue = String(a.packetNum); bValue = String(b.packetNum); break;
-                            case 1: aValue = a.timestamp || ''; bValue = b.timestamp || ''; break;
-                            case 2: aValue = a.source || ''; bValue = b.source || ''; break;
-                            case 3: aValue = a.destination || ''; bValue = b.destination || ''; break;
-                            case 4: aValue = a.type || ''; bValue = b.type || ''; break;
-                            case 5: aValue = a.summary || ''; bValue = b.summary || ''; break;
-                            case 6: aValue = a.dataHex || ''; bValue = a.dataHex || ''; break; // Corrected bValue here
-                        }
-
-                        // Smart comparison
-                        const isTimestamp = /\d{1,2}[-:]\d{1,2}/.test(aValue);
-
-                        if (isTimestamp) {
-                            // String comparison for timestamps
-                            return btsnoopSortOrder === 'asc'
-                                ? aValue.localeCompare(bValue)
-                                : bValue.localeCompare(aValue);
-                        }
-
-                        // Try numeric comparison
-                        const aNum = parseFloat(aValue.replace(/[^0-9.-]/g, ''));
-                        const bNum = parseFloat(bValue.replace(/[^0-9.-]/g, ''));
-
-                        if (!isNaN(aNum) && !isNaN(bNum)) {
-                            return btsnoopSortOrder === 'asc' ? aNum - bNum : bNum - aNum;
-                        }
-
-                        // String comparison
-                        return btsnoopSortOrder === 'asc'
-                            ? aValue.localeCompare(bValue)
-                            : bValue.localeCompare(aValue);
-                    });
-                }
-
-                const packetCount = filteredPackets.length;
+                // (Logic removed: Irrelevant BTSnoop filtering block was here)
                 // Group lines by file (using isMeta headers as delimiters)
                 const fileSections = [];
                 let currentSection = null;
@@ -1350,85 +1282,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // New Function: Export Stats Tab to Multi-sheet Excel
+    // Export Stats Tab to Multi-sheet Excel (using ExportManager)
     function exportStatsToExcel() {
-        if (typeof XLSX === 'undefined') {
-            alert('SheetJS (XLSX) library not loaded!');
-            return;
+        try {
+            ExportManager.exportStatsToExcel({
+                logLines: originalLogLines,
+                minLogDate: minLogDate,
+                maxLogDate: maxLogDate,
+                filename: 'android_log_stats.xlsx'
+            });
+        } catch (error) {
+            alert('Export failed: ' + error.message);
+            console.error('Export error:', error);
         }
-
-        const wb = XLSX.utils.book_new();
-
-        // Sheet 1: Log Summary
-        const summaryData = [
-            ['Analysis Generated', new Date().toLocaleString()],
-            ['Total Log Lines', originalLogLines.length],
-            ['Start Time', minLogDate ? minLogDate.toISOString() : 'N/A'],
-            ['End Time', maxLogDate ? maxLogDate.toISOString() : 'N/A'],
-            [],
-            ['Log Level Distribution'],
-            ...Object.entries(calculateLogLevels(originalLogLines))
-        ];
-        // Add error distribution
-        summaryData.push([], ['Error Tag Distribution']);
-        const errorCounts = {};
-        originalLogLines.filter(l => l.level === 'E').forEach(l => {
-            errorCounts[l.tag] = (errorCounts[l.tag] || 0) + 1;
-        });
-        Object.entries(errorCounts)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 20)
-            .forEach(([tag, count]) => summaryData.push([tag, count]));
-
-        const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
-        XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
-
-        // Sheet 2: Accounts
-        const highlightAccounts = document.getElementById('accountsList');
-        if (highlightAccounts) {
-            const accounts = Array.from(highlightAccounts.querySelectorAll('li')).map(li => [li.textContent]);
-            if (accounts.length > 0) {
-                const wsAccounts = XLSX.utils.aoa_to_sheet([['Discovered Accounts'], ...accounts]);
-                XLSX.utils.book_append_sheet(wb, wsAccounts, 'Accounts');
-            }
-        }
-
-        // Sheet 3: Device Events (Scrape from table)
-        const deviceTable = document.getElementById('deviceEventsTable');
-        if (deviceTable) {
-            const wsDevice = XLSX.utils.table_to_sheet(deviceTable);
-            XLSX.utils.book_append_sheet(wb, wsDevice, 'Device Events');
-        }
-
-        // Sheet 4: BLE Keys
-        const bleKeysTable = document.getElementById('bleKeysTable');
-        if (bleKeysTable) {
-            const wsKeys = XLSX.utils.table_to_sheet(bleKeysTable);
-            XLSX.utils.book_append_sheet(wb, wsKeys, 'BLE Keys');
-        }
-
-        // Sheet 5: BTSnoop Events
-        const btConnectionTable = document.getElementById('btsnoopConnectionEventsTable');
-        if (btConnectionTable) {
-            const wsBtEvents = XLSX.utils.table_to_sheet(btConnectionTable);
-            XLSX.utils.book_append_sheet(wb, wsBtEvents, 'Connection Events');
-        }
-
-        // Sheet 6: App Versions
-        const appTable = document.getElementById('appVersionsTable');
-        if (appTable) {
-            const wsApps = XLSX.utils.table_to_sheet(appTable);
-            XLSX.utils.book_append_sheet(wb, wsApps, 'App Versions');
-        }
-
-        XLSX.writeFile(wb, 'android_log_stats.xlsx');
     }
 
     // Helper for summary stats (simplified re-implementation)
+    // Use ExportManager's calculateLogLevels
     function calculateLogLevels(lines) {
-        const counts = { V: 0, D: 0, I: 0, W: 0, E: 0 };
-        lines.forEach(l => { if (counts[l.level] !== undefined) counts[l.level]++; });
-        return counts;
+        return ExportManager.calculateLogLevels(lines);
     }
+
 
     async function clearPreviousState(clearStorage = false) {
         // Invalidate any currently running filter operations
@@ -1452,6 +1326,7 @@ document.addEventListener('DOMContentLoaded', () => {
         filteredBtsnoopPackets = null;
         btsnoopConnectionEvents = null;
         cccMessages = null;
+        if (window.finalBleKeys) window.finalBleKeys.clear();
 
 
         // Now reinitialize as empty arrays
@@ -1502,7 +1377,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Only reset if we are explicitly resetting the app (which might need a different flag or explicit call)
         // For 'clearPreviousState(true)' which is file load, we preserve filters.
         if (!activeLogLevels || activeLogLevels.size === 0) {
-            activeLogLevels = new Set(['V', 'D', 'I', 'W', 'E']);
+            activeLogLevels = new Set(['V', 'D', 'I', 'W', 'E', 'F', 'A', 'S']);
             logLevelButtons.forEach(btn => btn.classList.add('active'));
         }
         // Else: keep existing activeLogLevels and button states.
@@ -1799,17 +1674,6 @@ self.onmessage = async (event) => {
             return sizeB - sizeA;
         });
 
-        // Helper to get dashboard elements for StatsTab
-        function getDashboardElements() {
-            return {
-                cpuLoadStats: document.getElementById('cpuLoadStats'),
-                temperatureStats: document.getElementById('temperatureStats'),
-                batteryStats: document.getElementById('batteryStats'),
-                cpuLoadPlotContainer: document.getElementById('cpuLoadPlotContainer'),
-                batteryPlotContainer: document.getElementById('batteryPlotContainer')
-            };
-        }
-
         originalLogLines = [];
         // Ensure CCC messages are reset before re-populating if we are re-processing files (though processFiles usually clears state first)
         // But if multiple calls happen, we want to be safe.
@@ -1822,7 +1686,8 @@ self.onmessage = async (event) => {
         const finalServices = {};
         const finalHighlights = { accounts: new Set(), deviceEvents: [], walletEvents: [] };
         const finalStats = { total: 0, E: 0, W: 0, I: 0, D: 0, V: 0 };
-        const finalBleKeys = new Map();
+        // finalBleKeys is now global window.finalBleKeys
+        window.finalBleKeys.clear(); // Reset for new processing
         let finalLocalBtAddress = null;
         const consolidatedAppVersions = new Map();
         // Reset battery data points for new file load
@@ -1930,7 +1795,7 @@ self.onmessage = async (event) => {
                 // Consolidate BLE keys from worker
                 if (result.bleKeys) {
                     result.bleKeys.forEach(([addr, keyInfo]) => {
-                        finalBleKeys.set(addr, keyInfo);
+                        window.finalBleKeys.set(addr, keyInfo);
                     });
                 }
 
@@ -1960,14 +1825,10 @@ self.onmessage = async (event) => {
 
         TimeTracker.stop('Result Consolidation');
 
-        // --- Persist Data ---
-        TimeTracker.start('Persisting & UI Render');
-
-        // Assign indices to originalLogLines
-        // REMOVED: Loop moved to consolidation phase to ensure all arrays share the same index property
-        // for (let i = 0; i < originalLogLines.length; i++) {
-        //     originalLogLines[i].index = i;
-        // }
+        // Re-assign indices after sorting to ensure they are sequential
+        for (let i = 0; i < originalLogLines.length; i++) {
+            originalLogLines[i].index = i;
+        }
 
         // OPTIMIZATION Phase 3: Sync data to filter worker
         syncDataToWorker(originalLogLines);
@@ -1993,8 +1854,14 @@ self.onmessage = async (event) => {
 
         // Process and render secondary dashboard stats like CPU, Temp, and App Versions
         const dashboardStats = StatsTab.processForDashboardStats(originalLogLines, consolidatedBatteryDataPoints);
+        // FIX: Store for re-rendering
+        window.finalDashboardStats = dashboardStats;
+        // Also attach battery points to the stats object for convenience
+        window.finalDashboardStats.batteryStatsPoints = consolidatedBatteryDataPoints;
+
         StatsTab.renderDashboardStats(dashboardStats, { cpuLoadStats, temperatureStats, batteryStats });
         StatsTab.renderAppVersions(allAppVersions, appVersionsTable, appSearchInput);
+        makeTableResizable('appVersionsTable'); // FIX: Enable resize on this table
         StatsTab.renderTemperaturePlot(dashboardStats.temperatureDataPoints, document.getElementById('temperaturePlotContainer'));
         StatsTab.renderCpuPlot(dashboardStats.cpuDataPoints, cpuLoadPlotContainer);
         StatsTab.renderBatteryPlot(consolidatedBatteryDataPoints, batteryPlotContainer);
@@ -2137,14 +2004,57 @@ self.onmessage = async (event) => {
                 cacheFilteredResults('connectivity', filteredConnectivityLogLines);
                 break;
             case 'btsnoop':
-                await setupBtsnoopTab();
-                cacheFilteredResults('btsnoop', btsnoopPackets);
+                // Delegate setup to the module
+                // FIX: Pass necessary dependencies including DB refs and UI containers
+                await BtsnoopTab.setupBtsnoopTab({
+                    db,
+                    getDb: () => db, // Simple wrapper if getDb isn't global, but passing 'db' instance usually works if open
+                    saveData,
+                    loadData,
+                    TimeTracker,
+                    btsnoopInitialView: document.getElementById('btsnoopInitialView'),
+                    btsnoopContentView: document.getElementById('btsnoopContentView'),
+                    btsnoopFilterContainer: document.getElementById('btsnoopFilterContainer')
+                });
+                // FIX: Render BLE Keys using the Connection Events from the module
+                // The module manages the data state (processed events), so we pull from it.
+                const bleKeysTableBody = document.querySelector('#bleKeysTable tbody');
+                if (bleKeysTableBody) {
+                    renderBleKeys(
+                        BtsnoopTab.getBtsnoopConnectionEvents(),
+                        BtsnoopTab.getBtsnoopConnectionMap(),
+                        bleKeysTableBody
+                    );
+                }
+                cacheFilteredResults('btsnoop', BtsnoopTab.getBtsnoopPackets());
                 break;
             case 'ccc':
                 await CccTab.setup(cccMessages, btsnoopConnectionMap, processForBtsnoop, isBtsnoopProcessed);
                 cacheFilteredResults('ccc', true); // Mark as cached so needsRefiltering works correctly next time
                 break;
             case 'stats':
+                // FIX: Render BLE Keys in Stats tab too
+                const bleKeysTable = document.querySelector('#bleKeysTable tbody');
+                if (bleKeysTable) {
+                    renderBleKeys(
+                        BtsnoopTab.getBtsnoopConnectionEvents(),
+                        BtsnoopTab.getBtsnoopConnectionMap(),
+                        bleKeysTable,
+                        window.finalBleKeys || new Map() // Pass global keys
+                    );
+                }
+
+                // FIX: Re-render charts to ensure correct dimensions if parsed while tab was hidden
+                if (window.finalDashboardStats) {
+                    // Use requestAnimationFrame to ensure DOM is visible/layout is computed
+                    requestAnimationFrame(() => {
+                        if (cpuLoadPlotContainer) StatsTab.renderCpuPlot(window.finalDashboardStats.cpuDataPoints, cpuLoadPlotContainer);
+                        const tempContainer = document.getElementById('temperaturePlotContainer');
+                        if (tempContainer) StatsTab.renderTemperaturePlot(window.finalDashboardStats.temperatureDataPoints, tempContainer);
+                        if (batteryPlotContainer) StatsTab.renderBatteryPlot(window.finalDashboardStats.batteryStatsPoints || [], batteryPlotContainer);
+                    });
+                }
+
                 cacheFilteredResults('stats', null);
                 break;
         }
@@ -2157,73 +2067,58 @@ self.onmessage = async (event) => {
      * @param {Array} linesToFilter The array of log line objects to filter.
      * @returns {Array} A new array containing only the lines that pass the filters.
      */
-    function applyMainFilters(linesToFilter, collapseState, activeCollapseSet) {
-        const activeKeywords = filterKeywords.filter(kw => kw.active).map(kw => kw.text);
-        const keywordRegexes = activeKeywords.length > 0 ? activeKeywords.map(wildcardToRegex) : null;
-        const liveSearchRegex = liveSearchQuery ? wildcardToRegex(liveSearchQuery) : null;
-        // FIX: Parse inputs as UTC to match worker's UTC-based timestamps, avoiding timezone offset issues.
+
+    // Helper function to build filter configuration for FilterManager
+    function getFilterConfig() {
+        const activeKeywords = filterKeywords.filter(kw => kw.active).map(kw => ({
+            text: kw.text,
+            active: true,
+            regex: wildcardToRegex(kw.text)
+        }));
+
+        // Parse inputs as UTC to match worker's UTC-based timestamps
         const startTime = startTimeInput.value ? new Date(startTimeInput.value + ':00Z') : null;
         const endTime = endTimeInput.value ? new Date(endTimeInput.value + ':00Z') : null;
 
-        // Filter initialization
+        return {
+            activeLogLevels: activeLogLevels,
+            keywords: activeKeywords,
+            isAndLogic: isAndLogic,
+            liveSearchQuery: liveSearchQuery,
+            startTime: startTime,
+            endTime: endTime,
+            isTimeFilterActive: isTimeFilterActive
+        };
+    }
 
+    function applyMainFilters(linesToFilter, collapseState, activeCollapseSet) {
+        // Use FilterManager for filtering
+        const filterConfig = getFilterConfig();
 
-        const state = collapseState || { isInside: false };
-        const results = [];
-        let currentHeader = null;
-        let headerHasMatches = false;
+        // Add time filter handling for compatibility
+        if (filterConfig.isTimeFilterActive && (filterConfig.startTime || filterConfig.endTime)) {
+            // Filter by time using dateObj
+            linesToFilter = linesToFilter.filter(line => {
+                if (line.isMeta) return true; // Always include meta lines
+                if (!line.dateObj) return true; // Include lines without dates
 
-        for (const line of linesToFilter) {
-            if (line.isMeta) {
-                state.isInside = activeCollapseSet.has(line.originalText);
+                const startTime = filterConfig.startTime;
+                const endTime = filterConfig.endTime;
 
-                if (state.isInside) {
-                    // If collapsed, push the header immediately so it's visible (to allow un-collapsing)
-                    results.push(line);
-                    currentHeader = null; // Reset so we don't double-push or try to attach matches to it
-                    headerHasMatches = false;
-                } else {
-                    // Store new header, don't add yet (wait for a match)
-                    currentHeader = line;
-                    headerHasMatches = false;
-                }
-                continue;
-            }
+                if (startTime && line.dateObj < startTime) return false;
+                if (endTime && line.dateObj > endTime) return false;
 
-            if (state.isInside) continue;
-
-            // Apply filters
-            if (keywordRegexes) {
-                const matches = isAndLogic
-                    ? keywordRegexes.every(regex => regex.test(line.originalText))
-                    : keywordRegexes.some(regex => regex.test(line.originalText));
-                if (!matches) continue;
-            }
-            if (liveSearchRegex && !liveSearchRegex.test(line.originalText)) continue;
-
-
-
-
-            if (isTimeFilterActive && (startTime || endTime)) {
-                if (line.dateObj) {
-                    if ((startTime && line.dateObj < startTime) || (endTime && line.dateObj > endTime)) {
-                        continue;
-                    }
-                }
-            }
-
-            if (line.level && !activeLogLevels.has(line.level)) continue;
-
-            // Line passed all filters - mark header as having matches
-            if (!headerHasMatches && currentHeader) {
-                results.push(currentHeader);
-                headerHasMatches = true;
-            }
-
-            results.push(line);
+                return true;
+            });
         }
 
-        return results;
+        // Use FilterManager.applyMainFilters
+        return FilterManager.applyMainFilters(
+            linesToFilter,
+            collapseState || { isInside: false },
+            activeCollapseSet,
+            filterConfig
+        );
     }
     // --- Clear & Reset Logic ---
     clearStateBtn.addEventListener('click', async () => {
@@ -2701,28 +2596,14 @@ self.onmessage = async (event) => {
         await refreshActiveTab();
     }
 
+    // Export logs to text file (using ExportManager)
     function handleExport(logLines, filename) {
-        if (!logLines || logLines.length === 0) {
-            alert('No logs to export.');
-            return;
+        try {
+            ExportManager.exportLogsToText(logLines, filename, currentZipFileName);
+        } catch (error) {
+            alert('Export failed: ' + error.message);
+            console.error('Export error:', error);
         }
-
-        // Prepend the zip file name if it exists
-        const finalFilename = currentZipFileName
-            ? `${currentZipFileName.replace('.zip', '')}_${filename}`
-            : filename;
-
-        const content = logLines.map(line => line.originalText || line.text).join('\n');
-        const blob = new Blob([content], { type: 'text/plain;charset=utf-u8' });
-        const url = URL.createObjectURL(blob);
-
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = finalFilename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
     }
 
     // --- Event Listener for Virtual Scroll ---
@@ -2951,86 +2832,13 @@ self.onmessage = async (event) => {
         }
 
         // FIX: Correctly render BLE Security Keys (IRK/LTK)
+        // FIX: Correctly render BLE Security Keys (IRK/LTK)
         if (bleKeysTbody) {
-            bleKeysTbody.innerHTML = ''; // Clear previous content
-            const keyEvents = btsnoopConnectionEvents.filter(e => e.keyType); // Filter for key events
-
-            if (keyEvents.length === 0) {
-                bleKeysTbody.innerHTML = '<tr><td colspan="3">No BLE security keys found.</td></tr>';
-            } else {
-                let keyTableHtml = '';
-                const seenKeys = new Set(); // Deduplicate keys
-
-                for (const event of keyEvents) {
-                    // Deduplication check
-                    if (seenKeys.has(event.keyValue)) continue;
-                    seenKeys.add(event.keyValue);
-
-                    // Resolve peer address from connection map if handle is available
-                    // FIX: Handle both hex string (0x...) and raw number formats from worker
-                    let handleNumber = -1;
-                    if (event.handle !== undefined && event.handle !== null) {
-                        if (typeof event.handle === 'string' && event.handle.startsWith('0x')) {
-                            handleNumber = parseInt(event.handle, 16);
-                        } else {
-                            handleNumber = Number(event.handle);
-                        }
-                    }
-
-                    const peerAddress = event.peerAddress || btsnoopConnectionMap.get(handleNumber)?.address || 'N/A';
-
-                    // Generate unique row ID for scroll restoration
-                    const rowId = `ble-key-${event.keyValue}`;
-
-                    keyTableHtml += `<tr data-row-id="${rowId}">
-                        <td>${event.packetNum || '-'}</td>
-                        <td>${event.timestamp || '-'}</td>
-                        <td class="copy-cell" data-log-text="${peerAddress}">${peerAddress}</td>
-                        <td>${event.keyType}</td>
-                        <td class="copy-cell" data-log-text="${event.keyValue}"><span style="font-family: monospace; font-size: 0.9em;">${event.keyValue}</span></td>
-                        <td class="copy-cell" data-log-text="${event.data || '-'}"><span style="font-family: monospace; font-size: 0.85em; display: block; word-break: break-all; white-space: normal;">${event.data || '-'}</span></td> 
-                    </tr>`;
-                }
-                bleKeysTbody.innerHTML = keyTableHtml;
-            }
+            renderBleKeys(btsnoopConnectionEvents, btsnoopConnectionMap, bleKeysTbody);
         }
 
         // Render Device Events
-        deviceEventsTable.innerHTML = '';
-        if (highlights.deviceEvents && highlights.deviceEvents.length > 0) {
-            // Sort events by timestamp to process them in chronological order
-            highlights.deviceEvents.sort((a, b) => {
-                if (!a.timestamp || !b.timestamp) return 0;
-                return a.timestamp.localeCompare(b.timestamp);
-            });
-
-            const lastState = new Map(); // Tracks the last value for each event type
-            let tableHtml = '';
-
-            highlights.deviceEvents.forEach(event => {
-                const lastValue = lastState.get(event.event);
-                // Add to table if it's the first time we see this event, or if its value has changed.
-                if (lastValue === undefined || lastValue.value !== event.detail) {
-                    const previousValue = lastValue ? lastValue.value : 'N/A';
-
-                    // Generate unique row ID
-                    const rowId = `dev-evt-${event.timestamp ? event.timestamp.replace(/[^a-zA-Z0-9]/g, '') : 'na'}-${event.event.replace(/[^a-zA-Z0-9]/g, '')}`;
-
-                    tableHtml += `<tr data-row-id="${rowId}">
-                            <td class="copy-cell" data-log-text="${event.date || ''}">${event.date || 'N/A'}</td>
-                            <td class="copy-cell" data-log-text="${event.time || ''}">${event.time || 'N/A'}</td>
-                            <td class="copy-cell" data-log-text="${escapeHtml(event.event)}">${escapeHtml(event.event)}</td>
-                            <td class="copy-cell" data-log-text="${escapeHtml(event.detail)}">${escapeHtml(event.detail)}</td>
-                            <td class="copy-cell" data-log-text="${escapeHtml(previousValue)}">${escapeHtml(previousValue)}</td>
-                            <td class="copy-cell log-line-cell" data-log-text="${escapeHtml(event.originalText)}">${escapeHtml(event.originalText)}</td>
-                        </tr>`;
-                    lastState.set(event.event, { value: event.detail });
-                }
-            });
-            deviceEventsTable.innerHTML = tableHtml;
-        } else {
-            deviceEventsTable.innerHTML = '<tr><td colspan="6">No specific device or setting events found.</td></tr>';
-        }
+        renderDeviceEvents(highlights.deviceEvents, deviceEventsTable);
 
         // Setup filters for all highlight tables
         setupTableFilters('deviceEventsTable');
@@ -3043,17 +2851,12 @@ self.onmessage = async (event) => {
         restoreTableScroll('btsnoopConnectionEventsTable');
 
         // Make tables sortable with default descending sort
-        makeSortable('deviceEventsTable', 0, 'desc'); // Sort by Timestamp
-        makeSortable('bleKeysTable', 0, 'desc'); // Sort by Packet No
+        // Make tables sortable with default descending sort
+        setupDeviceEventsTab('deviceEventsTable');
+        setupBleKeysTab('bleKeysTable');
         makeSortable('btsnoopConnectionEventsTable', 1, 'desc'); // Sort by timestamp column
 
         // Make tables resizable
-        if (document.getElementById('deviceEventsTable')) {
-            makeTableResizable('deviceEventsTable');
-        }
-        if (document.getElementById('bleKeysTable')) {
-            makeTableResizable('bleKeysTable');
-        }
         if (document.getElementById('btsnoopConnectionEventsTable')) {
             makeTableResizable('btsnoopConnectionEventsTable');
         }
@@ -3151,101 +2954,29 @@ self.onmessage = async (event) => {
     }
 
     async function applyConnectivityFilters() {
-        // 1. Gather filtered lines from each active tech
-        let candidates = [];
-        const usedIds = new Set();
-        const addLine = (line) => {
-            // Use line index as unique identifier to prevent duplicates
-            if (!usedIds.has(line.index)) {
-                candidates.push(line);
-                usedIds.add(line.index);
-            }
+        // Collect active layers from DOM
+        const activeLayers = {
+            ble: new Set(),
+            nfc: new Set()
         };
 
-        // BLE Logic
-        if (activeTechs.ble) {
-            const bleKeywords = {
-                manager: /Bluetooth|BLE|bt_/i,
-                gatt: /GATT|BtGatt|BluetoothGatt|bt_att|bt_gatt/i,
-                smp: /SMP|bt_smp/i,
-                hci: /HCI|bt_hci/i
-            };
-            const activeLayers = new Set();
-            document.querySelectorAll('#bleFiltersPanel .filter-icon.active').forEach(b => activeLayers.add(b.dataset.bleFilter));
-            console.log(`[Connectivity] BLE Active Layers: ${Array.from(activeLayers).join(', ')}`);
-
-            bleLogLines.forEach(line => {
-                if (line.isMeta) { addLine(line); return; }
-
-                // DEBUG: Trace specific line
-                if (line.originalText.includes('BluetoothAdapter') && line.originalText.includes('isLeEnabled')) {
-                    console.log(`[Debug] Checking BluetoothAdapter line: index=${line.index}, level=${line.level}, activeLayers=${activeLayers.size}`);
-                }
-
-                // FIX: Allow Verbose lines to pass, OR lines that explicitly contain our key tags regardless of level
-                // MOVED UP: Check this BEFORE activeLayers size check to ensure core logs appear even if filters are wonky
-                if (line.level === 'V' || /Bluetooth|bt_/i.test(line.originalText)) {
-                    addLine(line);
-                    return;
-                }
-
-                if (activeLayers.size === 0) return;
-
-                const hit = Array.from(activeLayers).some(layer => bleKeywords[layer]?.test(line.originalText));
-                if (hit) addLine(line);
-            });
+        const blePanel = document.getElementById('bleFiltersPanel');
+        if (blePanel) {
+            blePanel.querySelectorAll('.filter-icon.active').forEach(b => activeLayers.ble.add(b.dataset.bleFilter));
         }
 
-        // NFC Logic
-        if (activeTechs.nfc) {
-            const nfcKeywords = {
-                framework: /NFC|NfcManager|NfcService|TagDispatcher|NfcTag|P2pLinkManager/i,
-                hce: /HostEmulationManager|ApduServiceInfo/i,
-                p2p: /P2pLinkManager/i,
-                hal: /NxpNci|NxpExtns|libnfc|libnfc-nci|StNfcHal/i
-            };
-            const activeLayers = new Set();
-            document.querySelectorAll('#nfcFiltersPanel .filter-icon.active').forEach(b => activeLayers.add(b.dataset.nfcFilter));
-
-            nfcLogLines.forEach(line => {
-                if (line.isMeta) { addLine(line); return; }
-                if (activeLayers.size === 0) return;
-
-                // FIX: Allow Verbose lines
-                if (line.level === 'V') {
-                    addLine(line);
-                    return;
-                }
-
-                const hit = Array.from(activeLayers).some(layer => nfcKeywords[layer]?.test(line.originalText));
-                if (hit) addLine(line);
-            });
+        const nfcPanel = document.getElementById('nfcFiltersPanel');
+        if (nfcPanel) {
+            nfcPanel.querySelectorAll('.filter-icon.active').forEach(b => activeLayers.nfc.add(b.dataset.nfcFilter));
         }
 
-        // DCK Logic
-        if (activeTechs.dck) {
-            dckLogLines.forEach(line => {
-                // DCK currently has no sub-layers, so just add
-                addLine(line);
-            });
-        }
+        const data = { bleLogLines, nfcLogLines, dckLogLines, uwbLogLines, walletLogLines };
 
-        // UWB Logic
-        if (activeTechs.uwb) {
-            uwbLogLines.forEach(line => {
-                addLine(line);
-            });
-        }
-
-        // Wallet Logic
-        if (activeTechs.wallet) {
-            walletLogLines.forEach(line => {
-                addLine(line);
-            });
-        }
+        let candidates = filterConnectivityLogs(data, activeTechs, activeLayers);
 
         // Sort by index to maintain chronological order
-        candidates.sort((a, b) => a.index - b.index);
+        // Note: filterConnectivityLogs already sorts, but double check if we need to resort here?
+        // The module sorts. We are good.
 
         // Update global source
         connectivityLogLines = candidates;
@@ -3397,1264 +3128,51 @@ self.onmessage = async (event) => {
 
     // --- BTSnoop Log Processing ---
     async function processForBtsnoop() {
-        console.log('[BTSnoop Debug] [MAIN.JS] 1. Starting processForBtsnoop in main.js.');
+        console.log('[BTSnoop Debug] [MAIN.JS] Delegating to BtsnoopTab module...');
 
-        // OPTIMIZATION Phase 3: Cache check first
-        // If we've already processed and have cached data, skip the worker entirely.
-        if (isBtsnoopProcessed && btsnoopPackets.length > 0) {
-            console.log(`[BTSnoop Debug] [MAIN.JS] Already processed, skipping. Packets: ${btsnoopPackets.length}`);
-            // But ensure the UI is set up:
-            setupBtsnoopTab();
-            return;
+        // Pass dependencies explicitly to module
+        const deps = {
+            db,
+            getDb: () => db,
+            saveData,
+            loadData,
+            TimeTracker,
+            btsnoopInitialView,
+            btsnoopContentView,
+            btsnoopFilterContainer
+        };
+
+        try {
+            // Processing is now handled by the module
+            const result = await BtsnoopTab.processForBtsnoop(fileTasks, deps);
+
+            // Sync duplicated state to satisfy legacy code in main.js (e.g. searching/filtering if not yet refactored)
+            btsnoopPackets = BtsnoopTab.getBtsnoopPackets();
+            btsnoopConnectionEvents = BtsnoopTab.getBtsnoopConnectionEvents();
+            isBtsnoopProcessed = true;
+
+            // Update main.js cache logic
+            cacheFilteredResults('btsnoop', btsnoopPackets);
+
+            return result;
+
+        } catch (e) {
+            console.error('[BTSnoop Debug] Module processing failed:', e);
+            // Ensure UI shows error
+            if (btsnoopInitialView) {
+                btsnoopInitialView.innerHTML = `<p>Error: ${e.message}</p>`;
+            }
+            throw e;
         }
-
-        console.log('[BTSnoop Debug] [MAIN.JS] 2. No cached data, starting worker.');
-        TimeTracker.start('BTSnoop Processing');
-
-        return new Promise(async (resolve, reject) => {
-            const exportXlsxBtn = document.getElementById('exportBtsnoopXlsxBtn');
-
-            // FIX: Ensure the database is open before proceeding.
-            if (!db) {
-                console.error('[BTSnoop Debug] DB not open');
-                return reject('DB not open');
-            }
-
-            if (!btsnoopInitialView || !btsnoopContentView || !btsnoopFilterContainer) {
-                console.error('[BTSnoop Debug] UI elements missing', { btsnoopInitialView, btsnoopContentView, btsnoopFilterContainer });
-                return reject('BTSnoop UI elements not found');
-            }
-
-            // Check if worker code has changed    // Versioning for worker cache invalidation
-            const btsnoopWorkerVersion = '2025-12-07-21:50'; // Updated for Address Resolution & UTC Fix
-            const storedVersion = localStorage.getItem('btsnoopWorkerVersion');
-            if (storedVersion !== btsnoopWorkerVersion) {
-                console.log('[BTSnoop] Worker code changed (v' + btsnoopWorkerVersion + '), clearing ALL cache...');
-                // Clear IndexedDB btsnoopStore
-                if (db) {
-                    const tx = db.transaction([BTSNOOP_STORE_NAME], 'readwrite');
-                    await tx.objectStore(BTSNOOP_STORE_NAME).clear();
-                    await new Promise((resolve, reject) => {
-                        tx.oncomplete = resolve;
-                        tx.onerror = reject;
-                    });
-                }
-                // Clear btsnoopPackets from logStore too!
-                await saveData('btsnoopPackets', null);
-                // Clear in-memory cache
-                btsnoopPackets = [];
-                btsnoopConnectionEvents = [];
-                isBtsnoopProcessed = false; // Force re-processing
-                localStorage.setItem('btsnoopWorkerVersion', btsnoopWorkerVersion);
-                console.log('[BTSnoop] All cache cleared (including logStore), will force re-process');
-            }
-
-            TimeTracker.start('BTSnoop Processing');
-
-            const btsnoopTasks = fileTasks.filter(task =>
-                /btsnoop_hci\.log.*/.test(task.path)
-            );
-
-            if (btsnoopTasks.length === 0) {
-                // BUG FIX: If we have cached packets but fileTasks is empty (e.g. lost context after tab switch),
-                // do NOT show "No files found". Just reuse what we have.
-                if (btsnoopPackets.length > 0) {
-                    console.log('[BTSnoop Debug] [MAIN.JS] No files in current task list, but packets exist in memory. Preserving state.');
-                    TimeTracker.stop('BTSnoop Processing');
-                    isBtsnoopProcessed = true;
-                    setupBtsnoopTab(); // Ensure UI is listening
-                    return resolve();
-                }
-
-                btsnoopInitialView.innerHTML = '<p>No btsnoop_hci.log files found.</p>';
-                TimeTracker.stop('BTSnoop Processing');
-                isBtsnoopProcessed = true; // Mark as "processed" even if no files, to prevent re-running.
-                return resolve();
-            }
-
-            // FIX: Clear previous connection events to prevent duplication
-            btsnoopConnectionEvents = [];
-
-            // Clear previous data from IndexedDB
-            // OPTIMIZATION Phase 3: We now use single blob storage (logStore) so explicit clear isn't needed (overwrite).
-            // btsnoopPackets accumulator reset
-            btsnoopPackets = [];
-
-            btsnoopInitialView.innerHTML = `<p>Found ${btsnoopTasks.length} btsnoop file(s). Parsing and storing packets...</p><div id="btsnoop-progress"></div>`;
-            const progressDiv = document.getElementById('btsnoop-progress');
-
-            try {
-                const bufferPromises = btsnoopTasks.map(task => (task.file || task.blob).arrayBuffer());
-                const fileBuffers = await Promise.all(bufferPromises);
-                // Use full path/relative path if available to prevent name collisions
-                const fileNames = btsnoopTasks.map(task => {
-                    if (task.path) return task.path; // Already relative path from zip/folder
-                    if (task.file && task.file.webkitRelativePath) return task.file.webkitRelativePath;
-                    return task.file ? task.file.name : 'unknown.log';
-                });
-
-                // FIX: Embed the worker script to avoid file:// origin security errors.
-                const btsnoopWorkerScript = `
-                // --- Dictionaries for HCI Parsing ---
-                const HCI_COMMANDS = { 0x200C: 'LE Set Scan Enable', 0x200B: 'LE Set Scan Parameters', 0x2006: 'LE Set Advertising Parameters', 0x200A: 'LE Set Advertising Enable', 0x200D: 'LE Create Connection' };
-                const HCI_EVENTS = { 0x05: 'Disconnect Complete', 0x0E: 'Command Complete', 0x0F: 'Command Status', 0x3E: 'LE Meta Event' };
-                const LE_META_EVENTS = { 0x01: 'LE Connection Complete', 0x02: 'LE Advertising Report', 0x0A: 'LE Enhanced Connection Complete', 0x0B: 'LE Connection Update Complete' };
-                const L2CAP_CIDS = { 0x0004: 'ATT', 0x0005: 'LE Signaling', 0x0006: 'SMP' };
-                const ATT_OPCODES = { 0x01: 'Error Rsp', 0x02: 'Exchange MTU Req', 0x03: 'Exchange MTU Rsp', 0x04: 'Find Info Req', 0x05: 'Find Info Rsp', 0x08: 'Read By Type Req', 0x09: 'Read By Type Rsp', 0x0A: 'Read Req', 0x0B: 'Read Rsp', 0x0C: 'Read Blob Req', 0x0D: 'Read Blob Rsp', 0x10: 'Read By Group Type Req', 0x11: 'Read By Group Type Rsp', 0x12: 'Write Req', 0x13: 'Write Rsp', 0x52: 'Write Cmd', 0x1B: 'Notification', 0x1D: 'Indication', 0x1E: 'Confirmation' };
-                const SMP_CODES = { 0x01: 'Pairing Req', 0x02: 'Pairing Rsp', 0x03: 'Pairing Confirm', 0x04: 'Pairing Random', 0x05: 'Pairing Failed', 0x06: 'Encryption Info (LTK)', 0x07: 'Master Identification', 0x08: 'Identity Info (IRK)' };
-
-                // --- Main Worker Logic ---
-                self.onmessage = async (event) => {
-                    let { fileBuffers, fileNames, localBtAddress } = event.data; // Receive local address and filenames
-                    if (!fileBuffers || fileBuffers.length === 0) {
-                        self.postMessage({ type: 'error', message: 'No file buffers received.' });
-                        return;
-                    }
-
-                    try {
-                        let packetNumber = 1;
-                        const BTSNOOP_EPOCH_DELTA = 0x00dcddb30f2f8000n;
-                        const connectionMap = new Map();
-                        const CHUNK_SIZE = 1000;
-                        const packets = [];
-
-                        // Process each file separately
-                        for (let fIndex = 0; fIndex < fileBuffers.length; fIndex++) {
-                            const buffer = fileBuffers[fIndex];
-                            const currentFileName = fileNames ? fileNames[fIndex] : '';
-                            const dataView = new DataView(buffer);
-
-                            const magic = new TextDecoder().decode(buffer.slice(0, 8));
-                            if (magic !== 'btsnoop\\0') {
-                                console.warn('Skipping file ' + currentFileName + ': Invalid btsnoop header');
-                                continue;
-                            }
-
-                            // Inject META packet for the file header
-                            packets.push({
-                                type: 'META',
-                                fileName: currentFileName,
-                                number: 0, // Meta packets don't have a real number, but need one for sorting if needed
-                                timestamp: '',
-                                source: '',
-                                destination: '',
-                                summary: 'File: ' + currentFileName,
-                                data: ''
-                            });
-
-                            let offset = 16;
-                            
-                            while (offset < buffer.byteLength) {
-                            if (offset + 24 > buffer.byteLength) break;
-
-                            const includedLength = dataView.getUint32(offset + 4, false);
-                            const flags = dataView.getUint32(offset + 8, false); // FIX: Flags are at offset 8, not 12.
-                            const timestampMicro = dataView.getBigUint64(offset + 16, false);
-
-                            const timestampMs = Number(timestampMicro - BTSNOOP_EPOCH_DELTA) / 1000;
-                            const date = new Date(timestampMs);
-                            const timestampStr = \`\${(date.getUTCMonth()+1).toString().padStart(2, '0')}-\${date.getUTCDate().toString().padStart(2, '0')} \${date.getUTCHours().toString().padStart(2, '0')}:\${date.getUTCMinutes().toString().padStart(2, '0')}:\${date.getUTCSeconds().toString().padStart(2, '0')}.\${date.getUTCMilliseconds().toString().padStart(3, '0')}\`;
-
-                            offset += 24;
-                            if (offset + includedLength > buffer.byteLength) break;
-
-                            const packetData = new Uint8Array(buffer, offset, includedLength);
-                            const direction = (flags & 1) === 0 ? 'Host -> Controller' : 'Controller -> Host';
-
-                            const interpretation = interpretHciPacket(packetData, connectionMap, packetNumber, direction, timestampStr, localBtAddress);
-
-                            // FIX: If local address was found in this packet, update logic for future packets
-                            if (interpretation.foundLocalAddress) {
-                                localBtAddress = interpretation.foundLocalAddress;
-                                self.postMessage({ type: 'localAddressFound', address: localBtAddress });
-                            }
-
-                            const packet = { ...interpretation, number: packetNumber, timestamp: timestampStr, fileName: currentFileName, direction };
-                            packets.push(packet);
-
-                            packetNumber++;
-                            
-                            // Chunking update (per file loop or global? Global is better suited here, checking total packets)
-                            if (packets.length >= CHUNK_SIZE) {
-                                self.postMessage({ type: 'chunk', packets: packets.splice(0, packets.length) });
-                                // Yield
-                                await new Promise(resolve => setTimeout(resolve, 0));
-                            }
-                            offset += includedLength;
-                        }
-                    } // End of file loop
-
-                        if (packets.length > 0) {
-                            self.postMessage({ type: 'chunk', packets: packets });
-                        }
-
-                        self.postMessage({ type: 'complete', connectionMap: Object.fromEntries(connectionMap) });
-
-                    } catch (error) {
-                        self.postMessage({ type: 'error', message: error.message, stack: error.stack });
-                    }
-                };
-
-                // --- Helper Functions for Worker ---
-                function concatenateBtsnoopBuffers(buffers) {
-                    if (buffers.length === 1) return buffers[0];
-                    let totalSize = buffers[0].byteLength;
-                    for (let i = 1; i < buffers.length; i++) {
-                        totalSize += (buffers[i].byteLength - 16);
-                    }
-                    const finalArray = new Uint8Array(totalSize);
-                    let offset = 0;
-                    finalArray.set(new Uint8Array(buffers[0]), offset);
-                    offset += buffers[0].byteLength;
-                    for (let i = 1; i < buffers.length; i++) {
-                        const dataPart = new Uint8Array(buffers[i], 16);
-                        finalArray.set(dataPart, offset);
-                        offset += dataPart.byteLength;
-                    }
-                    return finalArray.buffer;
-                }
-
-                function interpretHciPacket(data, connectionMap, packetNum, direction, timestampStr, localBtAddress) {
-                    if (data.length === 0) return { type: 'Empty', summary: 'Empty Packet', tags: [], data: '' };
-                    const packetType = data[0];
-                    const tags = [];
-                    const hexData = Array.from(data, byte => byte.toString(16).padStart(2, '0')).join(' ');
-                    let source, destination;
-
-                    switch (packetType) {
-                        case 1: // HCI Command - ALWAYS Host -> Controller
-                            tags.push('cmd');
-                            source = 'Host';
-                            destination = 'Controller';
-                            if (data.length < 4) return { type: 'HCI Cmd', summary: 'Malformed', tags, source, destination, data: hexData };
-                            const ocf = data[1] | ((data[2] & 0x03) << 8);
-                            const ogf = (data[2] >> 2) & 0x3F;
-                            const opcode = (ogf << 10) | ocf;
-                            const paramLength = data[3];
-
-                            // Extract LTK from LE Start Encryption (0x2019) or LE LTK Request Reply (0x201A)
-                            if ((opcode === 0x2019 && data.length >= 32) || (opcode === 0x201A && data.length >= 22)) {
-                                const handle = data[4] | (data[5] << 8);
-                                let ltkBytes;
-                                
-                                if (opcode === 0x2019) {
-                                    // 0x2019: LTK starts at offset 16
-                                    ltkBytes = data.slice(16, 32); 
-                                } else {
-                                    // 0x201A: LTK starts at offset 6
-                                    ltkBytes = data.slice(6, 22);
-                                }
-
-                                const ltk = Array.from(ltkBytes).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-                                const connInfo = connectionMap.get(handle);
-                                const peerAddr = connInfo ? connInfo.address : \`Handle 0x\${handle.toString(16)}\`;
-                                
-                                self.postMessage({ 
-                                    type: 'connectionEvent', 
-                                    event: { packetNum, handle: \`0x\${handle.toString(16).padStart(4, '0')}\`, keyType: 'LTK', keyValue: ltk, timestamp: timestampStr, peerAddress: peerAddr, data: hexData } 
-                                });
-                            }
-                            const opName = HCI_COMMANDS[opcode] || \`Unknown OpCode: 0x\${opcode.toString(16).padStart(4, '0')}\`;
-                            return { type: 'HCI Cmd', summary: \`\${opName}, Len: \${paramLength}\`, tags, source, destination, data: hexData };
-                        case 2: // ACL Data - Direction from flags, use connection map for address
-                            tags.push('acl');
-                            if (data.length < 5) return { type: 'ACL Data', summary: 'Malformed', tags, source: 'Host', destination: 'Controller', data: hexData };
-                            const handle = ((data[2] & 0x0F) << 8) | data[1];
-                            const dataLength = (data[4] << 8) | data[3];
-                            const connInfo = connectionMap.get(handle);
-                            const remoteAddr = connInfo ? connInfo.address : \`Handle 0x\${handle.toString(16)}\`;
-                            // Direction determines who is source and who is destination
-                            if (direction === 'Host -> Controller') {
-                                source = localBtAddress;
-                                destination = remoteAddr;
-                            } else {
-                                source = remoteAddr;
-                                destination = localBtAddress;
-                            }
-                            let aclSummary = \`Len: \${dataLength}\`;
-                            if (data.length >= 9) {
-                                tags.push('l2cap');
-                                const l2capLength = (data[6] << 8) | data[5];
-                                const cid = (data[8] << 8) | data[7];
-                                aclSummary += \`, L2CAP Len: \${l2capLength}, CID: \${L2CAP_CIDS[cid] || '0x' + cid.toString(16)}\`;
-                                if (cid === 4 && data.length >= 10) {
-                                    tags.push('att');
-                                    const attOpcode = data[9]; 
-                                    aclSummary += \` > ATT: \${ATT_OPCODES[attOpcode] || 'Op ' + attOpcode.toString(16)}\`; 
-                                }
-                                else if (cid === 6 && data.length >= 10) { 
-                                    tags.push('smp'); 
-                                    const smpCode = data[9]; 
-                                    aclSummary += \` > SMP: \${SMP_CODES[smpCode] || 'Code ' + smpCode.toString(16)}\`;
-                                    
-                                    // Extract IRK and LTK keys from SMP packets
-                                    if (smpCode === 0x06 && data.length >= 26) { // Encryption Info (LTK) - 16 bytes
-                                        const ltk = Array.from(data.slice(10, 26)).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-                                        aclSummary += ' [LTK Found]';
-                                        // FIX: Use source address to identify who sent the key (Owner)
-                                        const peerAddr = source;
-                                        self.postMessage({ type: 'connectionEvent', event: { packetNum, handle, keyType: 'LTK', keyValue: ltk, timestamp: timestampStr, peerAddress: peerAddr, data: hexData } });
-                                    }
-                                    else if (smpCode === 0x08 && data.length >= 26) { // Identity Info (IRK) - 16 bytes
-                                        const irk = Array.from(data.slice(10, 26)).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-                                        // FIX: Use source address to identify who sent the key (Owner)
-                                        const peerAddr = source;
-                                        self.postMessage({ type: 'connectionEvent', event: { packetNum, handle, keyType: 'IRK', keyValue: irk, timestamp: timestampStr, peerAddress: peerAddr, data: hexData } });
-                                        aclSummary += \` [IRK Found]\`;
-                                    }
-                                }
-                            }
-                            return { type: 'ACL Data', summary: aclSummary, tags, source, destination, data: hexData, handle };
-                        case 4: // HCI Event - ALWAYS Controller -> Host (destination is localBtAddress)
-                            tags.push('evt');
-                            source = 'Controller';
-                            destination = localBtAddress;
-                            if (data.length < 3) return { type: 'HCI Evt', summary: 'Malformed', tags, source, destination, data: hexData};
-                            const eventCode = data[1];
-                            const eventLength = data[2];
-                            let summary = \`\${HCI_EVENTS[eventCode] || 'Unknown Event'}, Len: \${eventLength}\`;
-                            let foundLocalAddress = null;
-
-                            if (eventCode === 0x0E && data.length >= 7) { 
-                                const cmdOpcode = (data[5] << 8) | data[4]; 
-                                summary += \` (for \${HCI_COMMANDS[cmdOpcode] || '0x' + cmdOpcode.toString(16)})\`; 
-                                
-                                // FIX: Detect Read BD_ADDR Complete
-                                if (cmdOpcode === 0x1009 && data.length >= 13) { // 6 header + 1 status + 6 addr = 13 bytes
-                                    const status = data[6];
-                                    if (status === 0x00) {
-                                        const addrSlice = data.slice(7, 13);
-                                        foundLocalAddress = Array.from(addrSlice).reverse().map(b => b.toString(16).padStart(2, '0')).join(':').toUpperCase();
-                                        summary += \` [Read BD_ADDR: \${foundLocalAddress}]\`;
-                                        destination = foundLocalAddress; // Self-correct destination for this packet
-                                    }
-                                }
-                            }
-                            else if (eventCode === 0x3E && data.length >= 4) {
-                                const subEventCode = data[3];
-                                summary += \` > \${LE_META_EVENTS[subEventCode] || 'Unknown Sub-event'}\`;
-                                const isEnhanced = subEventCode === 0x0A;
-                                const isLegacy = subEventCode === 0x01;
-                                
-                                // Enhanced events are longer due to additional RPA fields
-                                const minLength = isEnhanced ? 31 : 19;
-                                
-                                if ((isLegacy || isEnhanced) && data.length >= minLength) {
-                                    const status = data[4];
-                                    const connectionHandle = (data[6] << 8) | data[5];
-                                    const role = data[7];
-                                    const peerAddrType = data[8];
-                                    const peerAddressSlice = data.slice(9, 15);
-                                    const peerAddress = Array.from(peerAddressSlice).reverse().map(b => b.toString(16).padStart(2, '0')).join(':').toUpperCase();
-                                    
-                                    // For enhanced events, extract RPA addresses
-                                    let localRPA = null;
-                                    let peerRPA = null;
-                                    if (isEnhanced && data.length >= 27) {
-                                        const localRPASlice = data.slice(15, 21);
-                                        const peerRPASlice = data.slice(21, 27);
-                                        localRPA = Array.from(localRPASlice).reverse().map(b => b.toString(16).padStart(2, '0')).join(':').toUpperCase();
-                                        peerRPA = Array.from(peerRPASlice).reverse().map(b => b.toString(16).padStart(2, '0')).join(':').toUpperCase();
-                                    }
-                                    
-                                    // For enhanced events, parameters are at different offsets due to RPA fields
-                                    // Legacy (0x01): params at bytes 12-18
-                                    // Enhanced (0x0A): Local RPA (15-20), Peer RPA (21-26), params at bytes 27-33
-                                    const paramOffset = isEnhanced ? 15 : 0;
-                                    
-                                    // Connection parameters
-                                    const connInterval = ((data[13 + paramOffset] << 8) | data[12 + paramOffset]) * 1.25; // ms
-                                    const connLatency = (data[15 + paramOffset] << 8) | data[14 + paramOffset];
-                                    const supervisionTimeout = ((data[17 + paramOffset] << 8) | data[16 + paramOffset]) * 10; // ms
-                                    const masterClockAccuracy = data[18 + paramOffset];
-                                    
-                                    // Address type interpretation
-                                    const ADDRESS_TYPES = {
-                                        0x00: 'Public',
-                                        0x01: 'Random',
-                                        0x02: 'Public Identity',
-                                        0x03: 'Random Identity'
-                                    };
-                                    const addrTypeText = ADDRESS_TYPES[peerAddrType] || ('Unknown (0x' + peerAddrType.toString(16) + ')');
-                                    const isRPA = peerAddrType === 0x01 || peerAddrType === 0x03;
-
-                                    // Role interpretation
-                                    const roleText = role === 0x00 ? 'Master' : 'Slave';
-
-                                    // Clock accuracy mapping
-                                    const CLOCK_ACCURACY = [500, 250, 150, 100, 75, 50, 30, 20];
-                                    const clockAccuracyText = CLOCK_ACCURACY[masterClockAccuracy] || '?';
-
-                                    // Build parameters object with HTML badges
-                                    const parameters = [];
-                                    parameters.push('Status: ' + (status === 0x00 ? 'Success' : 'Error 0x' + status.toString(16)));
-                                    parameters.push('Role: ' + roleText);
-                                    parameters.push('Peer Address Type: ' + addrTypeText + (isRPA ? ' (RPA)' : ''));
-                                    if (peerRPA && peerRPA !== '00:00:00:00:00:00') {
-                                        parameters.push('Peer RPA: ' + peerRPA);
-                                    }
-                                    parameters.push('Connection Interval: ' + connInterval.toFixed(2) + ' ms');
-                                    parameters.push('Latency: ' + connLatency);
-                                    parameters.push('Supervision Timeout: ' + supervisionTimeout + ' ms');
-                                    parameters.push('Clock Accuracy: ±' + clockAccuracyText + ' ppm');
-
-                                    const paramsFormatted = parameters.join(' | ');
-
-                                    if (connectionHandle) { connectionMap.set(connectionHandle, { address: peerAddress, packetNum: packetNum }); }
-                                    // Destination is always the host for an event. The peer is the remote device.
-                                    summary += ' (Handle: 0x' + connectionHandle.toString(16) + ', Peer: ' + peerAddress + ')';
-                                    // Send connection event with timestamp and parameters
-                                    self.postMessage({ type: 'connectionEvent', event: { packetNum: packetNum, timestamp: timestampStr, handle: '0x' + connectionHandle.toString(16).padStart(4, '0'), address: peerAddress, eventType: 'connect', parameters: paramsFormatted, rawData: hexData } });
-                                }
-                            }
-                            else if (eventCode === 0x05 && data.length >= 7) { // Disconnect Complete Event
-                                const status = data[3];
-                                const handle = (data[5] << 8) | data[4];
-                                const reason = data[6];
-                                
-                                // Disconnect reason codes from Bluetooth Core Spec
-                                const DISCONNECT_REASONS = {
-                                    0x05: 'Authentication Failure',
-                                    0x08: 'Connection Timeout',
-                                    0x13: 'Remote User Terminated',
-                                    0x14: 'Remote Low Resources',
-                                    0x15: 'Remote Power Off',
-                                    0x16: 'Local Host Terminated',
-                                    0x1A: 'Unsupported Remote Feature',
-                                    0x22: 'LMP Response Timeout',
-                                    0x3B: 'Unacceptable Connection Parameters',
-                                    0x3D: 'Connection Terminated by MIC Failure'
-                                };
-
-                                const reasonText = DISCONNECT_REASONS[reason] || ('Unknown (0x' + reason.toString(16).padStart(2, '0') + ')');
-                                summary += ' (Handle: 0x' + handle.toString(16) + ', Reason: ' + reasonText + ')';
-
-                                // Get peer address from connection map
-                                const connInfo = connectionMap.get(handle);
-                                const peerAddress = connInfo ? connInfo.address : 'N/A';
-
-                                // Build parameters with HTML badges
-                                const parameters = [];
-                                parameters.push('Status: ' + (status === 0x00 ? 'Success' : 'Error 0x' + status.toString(16)));
-                                parameters.push('Reason Code: 0x' + reason.toString(16).padStart(2, '0'));
-                                parameters.push('Reason: ' + reasonText);
-                                
-                                const paramsFormatted = parameters.join(' | ');
-                                
-                                // Send disconnect event
-                                self.postMessage({ 
-                                    type: 'connectionEvent', 
-                                    event: { 
-                                        packetNum, 
-                                        timestamp: timestampStr, 
-                                        handle: \`0x\${handle.toString(16).padStart(4, '0')}\`, 
-                                        address: peerAddress, 
-                                        eventType: 'disconnect',
-                                        reason: reasonText,
-                                        reasonCode: reason,
-                                        parameters: paramsFormatted,
-                                        rawData: hexData 
-                                    } 
-                                });
-                                
-                                // Remove from connection map as connection is now closed
-                                connectionMap.delete(handle);
-                            }
-                            return { type: 'HCI Evt', summary, tags, source, destination, data: hexData, foundLocalAddress };
-                        default:
-                            source = 'Unknown';
-                            destination = 'Unknown';
-                            return { type: \`Unknown (0x\${packetType.toString(16)})\`, summary: 'Unknown packet type', tags, source, destination, data: hexData };
-                    }
-                }
-            `;
-                // Cache bust: 2025-12-07-11:55 - Fixed ReferenceError for localBtAddress in worker.
-                const blob = new Blob([btsnoopWorkerScript], { type: 'application/javascript' });
-                const workerURL = URL.createObjectURL(blob);
-                const worker = new Worker(workerURL);
-                let totalPacketsStored = 0;
-
-                worker.onmessage = async (event) => {
-                    const { type, packets, message, stack, connectionMap } = event.data;
-
-                    if (type === 'chunk') {
-                        console.log(`[BTSnoop Debug] Received chunk with ${packets.length} packets`);
-                        // OPTIMIZATION Phase 3: Accumulate in memory, save once at end
-                        for (const packet of packets) {
-                            btsnoopPackets.push(packet);
-                        }
-                        totalPacketsStored += packets.length;
-                        progressDiv.textContent = `Parsed ${totalPacketsStored.toLocaleString()} packets...`;
-                    } else if (type === 'connectionEvent') {
-                        // The worker sends the complete event object with the correct timestamp. Simply push it.
-                        btsnoopConnectionEvents.push(event.data.event);
-                        console.log(`[BTSnoop Debug] [MAIN.JS] Connection event added. Total: ${btsnoopConnectionEvents.length}`);
-                    } else if (type === 'localAddressFound') {
-                        // Update the global localBtAddress
-                        localBtAddress = event.data.address;
-                        console.log(`[BTSnoop] Found Local BT Address: ${localBtAddress}`);
-                        // Update highlights immediately so it is reflected in the UI
-                        if (storedHighlights) {
-                            storedHighlights.localBtAddress = localBtAddress;
-                        } else {
-                            storedHighlights = { localBtAddress: localBtAddress };
-                        }
-                    } else if (type === 'complete') {
-                        btsnoopConnectionMap = new Map(Object.entries(connectionMap));
-                        progressDiv.textContent = `Parsed ${totalPacketsStored.toLocaleString()} packets. finalizing...`;
-
-                        // Post-processing to resolve handles (in memory now)
-                        await resolveBtsnoopHandles(btsnoopConnectionMap);
-
-                        // OPTIMIZATION: Save all packets as a single blob (fast)
-                        progressDiv.textContent = `Saving ${totalPacketsStored.toLocaleString()} packets...`;
-                        await saveData('btsnoopPackets', btsnoopPackets);
-
-                        // Show the content view and hide the initial parsing view.
-                        const btsnoopToolbar = document.getElementById('btsnoopToolbar');
-                        btsnoopContentView.style.display = 'flex';
-                        btsnoopFilterContainer.style.display = 'block';
-                        btsnoopInitialView.style.display = 'none';
-                        if (btsnoopToolbar) btsnoopToolbar.style.display = 'block'; // Show toolbar with export button
-
-                        TimeTracker.stop('BTSnoop Processing');
-
-                        isBtsnoopProcessed = true; // Set the flag to true
-
-                        // Preserve existing highlights data instead of creating empty arrays
-                        if (storedHighlights) {
-                            renderHighlights(storedHighlights);
-                        }
-                        console.log(`[BTSnoop Debug] [MAIN.JS] About to render connection events. Count: ${btsnoopConnectionEvents.length}`);
-                        BtsnoopTab.renderBtsnoopConnectionEvents(btsnoopConnectionEvents);
-                        // The setupBtsnoopTab function will now handle the initial render correctly.
-                        setupBtsnoopTab();
-
-                        // FIX: Ensure CCC tab gets updated data if it's active or cached
-                        if (cachedFilteredResults && cachedFilteredResults.ccc !== null) {
-                            cachedFilteredResults.ccc = null; // Invalidate cache
-                        }
-                        // Refresh the current tab if it depends on this data (e.g., CCC or BTSnoop)
-                        const activeTab = document.querySelector('.tab-btn.active');
-                        if (activeTab && (activeTab.dataset.tab === 'ccc' || activeTab.dataset.tab === 'btsnoop')) {
-                            refreshActiveTab();
-                        }
-
-                        worker.terminate();
-                        URL.revokeObjectURL(workerURL); // Clean up the blob URL
-                        resolve();
-                    } else if (type === 'error') {
-                        reject(new Error(`BTSnoop Worker Error: ${message}\n${stack}`));
-                    }
-                };
-
-                worker.onerror = (err) => {
-                    console.error('Error from btsnoop-worker:', err);
-                    btsnoopInitialView.innerHTML = `<p>An unexpected error occurred during parsing: ${err.message}</p>`;
-                    URL.revokeObjectURL(workerURL);
-                    TimeTracker.stop('BTSnoop Processing');
-                    reject(err);
-                };
-
-                worker.postMessage({ fileBuffers, fileNames, localBtAddress: localBtAddress }, fileBuffers);
-
-            } catch (error) {
-                console.error('Error processing btsnoop log:', error);
-                btsnoopInitialView.innerHTML = `<p>Error: ${error.message}</p>`;
-                // FIX: Resolve the promise on error
-                if (window.resolveBtsnoopProcessing) {
-                    window.resolveBtsnoopProcessing();
-                    btsnoopProcessingPromise = null;
-                }
-                TimeTracker.stop('BTSnoop Processing');
-                reject(error);
-            }
-        });
     }
 
-    async function resolveBtsnoopHandles(connectionMap) {
-        // OPTIMIZATION Phase 3: Process in memory (Array) instead of DB Cursor
-        console.log('[Perf] Resolving btsnoop handles in memory...');
-        const start = performance.now();
-        let updates = 0;
-
-        for (let i = 0; i < btsnoopPackets.length; i++) {
-            const packet = btsnoopPackets[i];
-
-            if (packet.handle !== undefined && connectionMap.has(packet.handle)) {
-                const connInfo = connectionMap.get(packet.handle);
-                if (packet.direction === 'Controller -> Host' && String(packet.source).startsWith('Handle')) {
-                    packet.source = connInfo.address;
-                    updates++;
-                } else if (packet.direction === 'Host -> Controller' && String(packet.destination).startsWith('Handle')) {
-                    packet.destination = connInfo.address;
-                    updates++;
-                }
-            }
-
-            // Yield every 20k items to keep UI responsive
-            if (i % 20000 === 0 && i > 0) await new Promise(r => setTimeout(r, 0));
-        }
-
-        console.log(`[Perf] Resolved handles for ${updates} packets in ${(performance.now() - start).toFixed(2)}ms`);
-    }
+    // resolveBtsnoopHandles logic moved to BtsnoopTab.js
 
     // renderBtsnoopConnectionEvents and exportBtsnoopToXlsx moved to BtsnoopTab.js
 
     let currentBtsnoopRequest = null; // To manage batched loading
 
-    // This is the new, correct rendering function for btsnoop.
-    async function renderBtsnoopPackets() {
-        console.log('[BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).');
-        TimeTracker.start('BTSnoop Filtering');
-
-        // --- LIVE Scroll Restoration Logic ---
-        // Step 1: Capture the current scroll anchor BEFORE filtering
-        // Priority: 1) Selected packet, 2) Top visible packet, 3) null
-        if (!btsnoopAnchorPacketNumber && btsnoopLogContainer && btsnoopLogContainer.scrollTop > 0) {
-            // Find the top visible packet in the CURRENT filtered list
-            const scrollTop = btsnoopLogContainer.scrollTop;
-
-            // Binary search to find the packet at scrollTop
-            let topVisibleIndex = 0;
-            if (btsnoopRowPositions && btsnoopRowPositions.length > 0) {
-                let low = 0, high = btsnoopRowPositions.length - 1;
-                while (low <= high) {
-                    const mid = (low + high) >>> 1;
-                    if (btsnoopRowPositions[mid] < scrollTop) {
-                        low = mid + 1;
-                    } else {
-                        high = mid - 1;
-                    }
-                }
-                topVisibleIndex = Math.max(0, Math.min(high, filteredBtsnoopPackets.length - 1));
-            }
-
-            if (filteredBtsnoopPackets[topVisibleIndex]) {
-                btsnoopAnchorPacketNumber = filteredBtsnoopPackets[topVisibleIndex].number;
-                console.log('[BTSnoop Scroll] Captured anchor packet:', btsnoopAnchorPacketNumber);
-            }
-        }
-
-        // If we have a selected packet, always use it as the anchor
-        if (selectedBtsnoopPacket) {
-            btsnoopAnchorPacketNumber = selectedBtsnoopPacket.number;
-        }
-        // --- End Step 1 ---
-
-        const columnFilters = Array.from(btsnoopColumnFilters)
-            .map(input => ({
-                index: parseInt(input.dataset.column, 10),
-                value: input.value.toLowerCase()
-            }))
-            .filter(f => f.value);
-
-        // OPTIMIZATION Phase 3: Check in-memory first, then load from DB being careful of sync
-        let allPackets = btsnoopPackets;
-        if (!allPackets || allPackets.length === 0) {
-            const stored = await loadData('btsnoopPackets');
-            allPackets = stored && stored.value ? stored.value : [];
-        }
-
-        // SORT: Apply sorting to the data array BEFORE filtering
-        let sortedPackets = allPackets;
-
-        // Custom Sort Wrapper to handle META packets always staying at top of their file group?
-        // Actually for Collapsible Headers, we usually want chronological order, but grouped by file IF we were loading multiple files not merged.
-        // BUT here we simply sort everything. The META packets might get moved if we sort by timestamp.
-        // FIX: If we sort, we might lose the "Header at top" structure if we just mixed them.
-        // For now, let's assume if the user sorts, they might lose the "File grouping" structure unless we group by file first.
-        // Better: We just filter/sort normally. If the user sorts by Time, the File Headers (timestamp='') will drift.
-        // FIX: Assign the timestamp of the FIRST packet to the META packet so it stays with the group.
-        // For now, let's just proceed.
-
-        if (allPackets.length > 0 && btsnoopSortColumn !== null) {
-            const columnFields = ['number', 'timestamp', 'source', 'destination', 'type', 'summary', 'data'];
-            const sortField = columnFields[btsnoopSortColumn] || 'number';
-
-            sortedPackets = [...allPackets].sort((a, b) => {
-                // PRIMARY SORT: Group by Filename
-                // We ALWAYS group by filename to support collapsible headers
-                if (a.fileName > b.fileName) return 1;
-                if (a.fileName < b.fileName) return -1;
-
-                // SECONDARY SORT: Packet Order within file
-                // If one is META, it comes first
-                if (a.type === 'META') return -1;
-                if (b.type === 'META') return 1;
-
-                let aVal = a[sortField];
-                let bVal = b[sortField];
-
-                if (aVal === undefined) aVal = '';
-                if (bVal === undefined) bVal = '';
-
-                // Convert to strings for comparison
-                const aStr = String(aVal);
-                const bStr = String(bVal);
-
-                // Try numeric comparison
-                const aNum = parseFloat(aStr.replace(/[^0-9.-]/g, ''));
-                const bNum = parseFloat(bStr.replace(/[^0-9.-]/g, ''));
-
-                if (!isNaN(aNum) && !isNaN(bNum)) {
-                    return btsnoopSortOrder === 'asc' ? aNum - bNum : bNum - aNum;
-                }
-
-                // String comparison
-                return btsnoopSortOrder === 'asc'
-                    ? aStr.localeCompare(bStr)
-                    : bStr.localeCompare(aStr);
-            });
-        }
-
-
-        filteredBtsnoopPackets = [];
-        // Filtering
-        let currentFileCollapsed = false;
-        let currentFileName = '';
-
-        for (let i = 0; i < sortedPackets.length; i++) {
-            const packet = sortedPackets[i];
-
-            // 1. Handle META (File Header) Packets
-            if (packet.type === 'META') {
-                filteredBtsnoopPackets.push(packet);
-                currentFileName = packet.fileName;
-                currentFileCollapsed = btsnoopCollapsedFiles.has(currentFileName);
-                // META packets represent the file start; if collapsed, we skip subsequent packets UNTIL the next META
-                // BUT wait, if we sorted by Time, packets might be interleaved!
-                // If we want collapsible headers, we MUST NOT interleave files. 
-                // OR we accept that "collapsing" only works if the list is grouped by file.
-                // Assuming "Default" or "File" sort is implicitly maintained or files are concatenated chronologically by file.
-                continue;
-            }
-
-            // 2. If current file is collapsed, SKIP
-            // NOTE: This logic relies on packets being grouped by file.
-            // If the user sorts by Timestamp and files overlap, this "currentFileCollapsed" state logic will fail (it will hide packets from other files).
-            // Robust Fix: Check packet.fileName against collapsed set every time.
-            if (packet.fileName && btsnoopCollapsedFiles.has(packet.fileName)) {
-                continue;
-            }
-
-            // 3. Apply Tag Filters
-            const passesTags = activeBtsnoopFilters.size === 0 || packet.tags.some(tag => activeBtsnoopFilters.has(tag));
-            if (!passesTags) continue;
-
-            // 4. Apply Column Filters
-            let match = true;
-            if (columnFilters.length > 0) {
-                const columnData = [packet.number, packet.timestamp, packet.source || '', packet.destination || '', packet.type, packet.summary, packet.data];
-                match = columnFilters.every(filter => {
-                    return columnData[filter.index].toString().toLowerCase().includes(filter.value);
-                });
-            }
-
-            if (match) {
-                filteredBtsnoopPackets.push(packet);
-            }
-        }
-
-        // OPTIMIZATION Phase 3: Pre-calculate row positions for virtual scrolling
-        // This moves O(N) calculation from scroll event (16ms) to filter event (once).
-        btsnoopRowPositions = new Float32Array(filteredBtsnoopPackets.length); // Use TypedArray for memory efficiency
-        btsnoopTotalHeight = 0;
-
-        for (let i = 0; i < filteredBtsnoopPackets.length; i++) {
-            btsnoopRowPositions[i] = btsnoopTotalHeight;
-            const packet = filteredBtsnoopPackets[i];
-
-            if (packet.type === 'META') {
-                btsnoopTotalHeight += 30; // Match renderer height
-            } else {
-                const dataLength = packet.data?.length || 0;
-                const estimatedLines = Math.max(1, Math.ceil(dataLength / 100));
-                const height = 20 * estimatedLines;
-                btsnoopTotalHeight += height;
-            }
-        }
-
-        TimeTracker.stop('BTSnoop Filtering');
-
-        // Step 2: Calculate scroll position to restore anchor BEFORE rendering
-        let targetScrollTop = null;
-        let shouldCenterSelected = false;
-
-        // Step 2: Calculate target scroll position based on anchor
-        if (btsnoopAnchorPacketNumber !== null) {
-            // Find the index of the anchor packet in the filtered list
-            let foundPacketIndex = -1;
-
-            // Optimization: If we have many packets, linear scan is slow (100k packets -> 10ms).
-            // But acceptable for UI interaction.
-            for (let i = 0; i < filteredBtsnoopPackets.length; i++) {
-                if (filteredBtsnoopPackets[i].number === btsnoopAnchorPacketNumber) {
-                    foundPacketIndex = i;
-                    break;
-                }
-            }
-
-            if (foundPacketIndex !== -1) {
-                targetScrollTop = btsnoopRowPositions[foundPacketIndex];
-
-                // If this is the selected packet, we want to CENTER it
-                if (selectedBtsnoopPacket && btsnoopAnchorPacketNumber === selectedBtsnoopPacket.number) {
-                    const containerHeight = btsnoopLogContainer.clientHeight;
-                    // Center: target - (viewport/2) + (rowHeight/2)
-                    targetScrollTop = Math.max(0, targetScrollTop - (containerHeight / 2) + 10);
-                    shouldCenterSelected = true;
-                }
-            } else {
-                // Anchor packet no longer in filtered list. Reset anchor.
-                btsnoopAnchorPacketNumber = null;
-            }
-        }
-        // Note: We intentionally do NOT clear selectedBtsnoopPacket here
-        // The user's selection should persist until they explicitly select another packet
-
-        // Render the filtered results
-        renderBtsnoopVirtualLogs();
-
-        // Step 3: Restore scroll position AFTER rendering
-        if (targetScrollTop !== null && btsnoopLogContainer) {
-            // CRITICAL: Clear any pending anchor-clear timers from previous manual scrolls!
-            // If we don't do this, a leftover timer might fire after we set our new anchor
-            // and wipe it out.
-            clearTimeout(window.btsnoopAnchorClearTimer);
-
-            requestAnimationFrame(() => {
-                // FORCE LAYOUT UPDATE: Read scrollHeight to ensure the new sizer height is applied
-                const _ = btsnoopLogContainer.scrollHeight;
-
-                // Set flag to prevent scroll listener from clearing anchor
-                isProgrammaticBtsnoopScroll = true;
-                btsnoopLogContainer.scrollTop = targetScrollTop;
-
-                // Debug clamping
-                if (Math.abs(btsnoopLogContainer.scrollTop - targetScrollTop) > 5) {
-                    console.warn('[BTSnoop Scroll] WARNING: Scroll clamping detected!',
-                        'Target:', targetScrollTop,
-                        'Actual:', btsnoopLogContainer.scrollTop,
-                        'ScrollHeight:', btsnoopLogContainer.scrollHeight,
-                        'SizerHeight:', (document.getElementById('btsnoopLogSizer')?.style.height)
-                    );
-                } else {
-                    console.log('[BTSnoop Scroll] Scroll applied successfully. Target:', targetScrollTop, 'Actual:', btsnoopLogContainer.scrollTop);
-                }
-
-                // CRITICAL: Force immediate re-render at the new position
-                // Otherwise the viewport might be empty until the scroll event fires
-                renderBtsnoopVirtualLogs();
-
-                if (shouldCenterSelected) {
-                    console.log('[BTSnoop Scroll] Centered selected packet in viewport at scroll position', targetScrollTop);
-                } else {
-                    console.log('[BTSnoop Scroll] Restored scroll to', targetScrollTop);
-                }
-
-                // Clear flag after a short delay
-                setTimeout(() => {
-                    isProgrammaticBtsnoopScroll = false;
-                }, 200);
-            });
-        }
-    }
-
-    function createBtsnoopFilterHeader() {
-        const header = document.getElementById('btsnoopHeader');
-        if (!header) return;
-
-        // Force rebuild if columns count doesn't match (e.g. valid after code update without full reload if user re-runs tab setup)
-        // Or if we just want to be robust. 
-        // 8 is the new number of columns (No, File, Time, Src, Dst, Type, Summ, Data)
-        // Header grid has children equal to No. of Columns * 2 (Titles + Filters) = 16
-        if (header.hasChildNodes()) {
-            const grid = header.querySelector('.btsnoop-header-grid');
-            if (grid && grid.children.length === 14) {
-                return; // Already has correct 8 columns (8 titles + 8 filters)
-            }
-            // content mismatch, clear it
-            header.innerHTML = '';
-        }
-
-        // Use a single grid container for both titles and filters to ensure alignment
-        const headerGrid = document.createElement('div');
-        headerGrid.className = 'btsnoop-header-grid';
-        // Revert to 7 columns
-        headerGrid.style.gridTemplateColumns = '60px 120px 160px 160px 80px minmax(200px, 2fr) minmax(200px, 3fr)';
-
-        const columns = ['No.', 'Timestamp', 'Source', 'Destination', 'Type', 'Summary', 'Data'];
-
-        // 1. Create Title Cells
-        columns.forEach((text, i) => {
-            const cell = document.createElement('div');
-            cell.className = 'btsnoop-header-cell sortable';
-            cell.style.cursor = 'pointer';
-            cell.title = 'Click to sort';
-            cell.dataset.column = i;
-
-            // Add sort indicator
-            const sortIndicator = document.createElement('span');
-            sortIndicator.className = 'sort-indicator';
-            if (i === btsnoopSortColumn) {
-                sortIndicator.textContent = btsnoopSortOrder === 'asc' ? ' ▲' : ' ▼';
-                sortIndicator.style.color = '#a0cfff';
-            } else {
-                sortIndicator.textContent = ' ⇅';
-                sortIndicator.style.opacity = '0.3';
-            }
-
-            cell.innerHTML = `
-                ${text}
-                <div class="resize-handle-col"></div>
-            `;
-            cell.appendChild(sortIndicator);
-
-            // Add click handler for sorting
-            cell.addEventListener('click', (e) => {
-                // Ignore if clicking resize handle
-                if (e.target.classList.contains('resize-handle-col')) return;
-
-                // Toggle sort order
-                if (btsnoopSortColumn === i) {
-                    btsnoopSortOrder = btsnoopSortOrder === 'asc' ? 'desc' : 'asc';
-                } else {
-                    btsnoopSortColumn = i;
-                    btsnoopSortOrder = 'desc';
-                }
-
-                console.log(`[BTSnoop Sort] Sorting column ${i} (${columns[i]}) - ${btsnoopSortOrder}`);
-
-                // Update all indicators
-                const allCells = headerGrid.querySelectorAll('.btsnoop-header-cell');
-                allCells.forEach((c, idx) => {
-                    const indicator = c.querySelector('.sort-indicator');
-                    if (indicator) {
-                        if (idx === btsnoopSortColumn) {
-                            indicator.textContent = btsnoopSortOrder === 'asc' ? ' ▲' : ' ▼';
-                            indicator.style.color = '#a0cfff';
-                            indicator.style.opacity = '1';
-                        } else {
-                            indicator.textContent = ' ⇅';
-                            indicator.style.color = '';
-                            indicator.style.opacity = '0.3';
-                        }
-                    }
-                });
-
-                // Reset scroll to top so we can see the new first items
-                // CRITICAL: Clear the anchor packet so scroll restoration doesn't interfere
-                btsnoopAnchorPacketNumber = null;
-                if (btsnoopLogContainer) {
-                    btsnoopLogContainer.scrollTop = 0;
-                }
-
-                // Trigger re-render (sorting happens inside renderBtsnoopPackets)
-                renderBtsnoopPackets();
-            });
-
-            headerGrid.appendChild(cell);
-        });
-
-        // 2. Create Filter Cells
-        columns.forEach((text, i) => {
-            const cell = document.createElement('div');
-            cell.className = 'btsnoop-filter-cell';
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.dataset.column = i;
-            input.id = `btsnoop - filter - col - ${i} `;
-            input.name = `btsnoop - filter - col - ${i} `; // Added name attribute
-            input.placeholder = `Filter ${text}...`;
-            cell.appendChild(input);
-            headerGrid.appendChild(cell);
-        });
-
-        header.appendChild(headerGrid);
-
-        btsnoopColumnFilters = document.querySelectorAll('.btsnoop-filter-cell input');
-        // FIX: Attach all filter listeners here, after the elements have been created.
-        btsnoopColumnFilters.forEach(input => {
-            input.addEventListener('input', handleBtsnoopFilterInput);
-        });
-        attachLayerFilterListeners(btsnoopFilterButtons, activeBtsnoopFilters, () => renderBtsnoopPackets());
-
-        // --- Column Resize Logic (Simplified for Grid) ---
-        // Note: Resizing grid columns dynamically requires updating the grid-template-columns style.
-        // For now, we'll rely on the CSS Grid's minmax/fr units, but basic resizing support can be added
-        // by updating the style on the container.
-        let thBeingResized = null;
-        let startX, startWidths;
-
-        headerGrid.addEventListener('mousedown', (e) => {
-            if (e.target.classList.contains('resize-handle-col')) {
-                thBeingResized = e.target.parentElement; // The .btsnoop-header-cell
-                startX = e.pageX;
-
-                // Get current computed widths of all columns
-                const computedStyle = window.getComputedStyle(headerGrid);
-                const gridTemplateColumns = computedStyle.gridTemplateColumns.split(' ');
-                startWidths = gridTemplateColumns.map(w => parseFloat(w));
-
-                document.addEventListener('mousemove', onMouseMove);
-                document.addEventListener('mouseup', onMouseUp);
-                e.preventDefault();
-            }
-        });
-
-        function onMouseMove(e) {
-            if (thBeingResized) {
-                const diffX = e.pageX - startX;
-                // Find the index of the column being resized
-                const cells = Array.from(headerGrid.children);
-                const cellIndex = cells.indexOf(thBeingResized);
-                // The index matches the column index directly for the first row
-                if (cellIndex >= 0 && cellIndex < startWidths.length) {
-                    const newWidth = Math.max(50, startWidths[cellIndex] + diffX); // Min 50px
-
-                    // Update the grid-template-columns for BOTH header and body
-                    const newTemplate = startWidths.map((w, i) => i === cellIndex ? `${newWidth}px` : `${w}px`).join(' ');
-
-                    headerGrid.style.gridTemplateColumns = newTemplate;
-                    currentBtsnoopGridTemplate = newTemplate; // Persist for new rows
-
-                    // Update body rows by updating a shared style or iterating (less efficient)
-                    // Better: Update a CSS variable or a specific style rule.
-                    // For simplicity, we'll update the body rows directly if they exist.
-                    const bodyRows = document.querySelectorAll('.btsnoop-row');
-                    bodyRows.forEach(row => row.style.gridTemplateColumns = newTemplate);
-
-                    // Also update the stylesheet rule if possible to persist for new rows
-                    // (Skipped for now, direct style update works for visible rows)
-                }
-            }
-        }
-
-        function onMouseUp() {
-            thBeingResized = null;
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-        }
-    }
-
-    function renderBtsnoopVirtualLogs() {
-        const sizer = document.getElementById('btsnoopLogSizer');
-        const viewport = document.getElementById('btsnoopLogViewport');
-        const container = document.getElementById('btsnoopLogContainer');
-
-        if (viewport) viewport.style.position = 'relative'; // Ensure relative positioning logic
-
-        if (!container || !sizer || !viewport) return;
-
-        // Use cached total height
-        sizer.style.height = `${btsnoopTotalHeight}px`;
-
-        const scrollTop = container.scrollTop;
-        const containerHeight = container.clientHeight;
-        const viewportBottom = scrollTop + containerHeight;
-
-        // 1. Binary Search for Start Index (O(log N))
-        let startIndex = 0;
-        let low = 0, high = btsnoopRowPositions.length - 1;
-
-        while (low <= high) {
-            const mid = (low + high) >>> 1;
-            if (btsnoopRowPositions[mid] < scrollTop) {
-                low = mid + 1;
-            } else {
-                high = mid - 1;
-            }
-        }
-        startIndex = Math.max(0, high);
-
-        // Adjust start index with buffer
-        startIndex = Math.max(0, startIndex - BUFFER_LINES);
-
-        // 2. Find End Index (Linear scan from start, O(viewport_items))
-        let endIndex = startIndex;
-        for (let i = startIndex; i < filteredBtsnoopPackets.length; i++) {
-            if (btsnoopRowPositions[i] > viewportBottom) {
-                endIndex = i;
-                break;
-            }
-            endIndex = i + 1; // Include this item
-        }
-        endIndex = Math.min(filteredBtsnoopPackets.length, endIndex + BUFFER_LINES);
-
-        // Ensure we always render at least some rows
-        if (endIndex <= startIndex) {
-            endIndex = Math.min(filteredBtsnoopPackets.length, startIndex + 50);
-        }
-
-        // Note: Scroll position is now managed entirely by renderBtsnoopPackets()
-        // We removed the duplicate scroll logic here to avoid conflicts
-
-
-        // Recycle or create DOM elements for the rows
-        const visibleRows = [];
-        for (let i = startIndex; i < endIndex; i++) {
-            const packet = filteredBtsnoopPackets[i];
-            if (!packet) continue;
-
-            // Recycle or create a row element
-            let row = btsnoopRowPool.pop();
-            if (!row) { // Create a new row if the pool is empty
-                row = document.createElement('div');
-                row.className = 'btsnoop-row';
-                // Create cells
-                for (let j = 0; j < 7; j++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'btsnoop-cell';
-                    // ... style ...
-                    row.appendChild(cell);
-                }
-            }
-
-            // Handle META packet (Collapsible Header)
-            if (packet.type === 'META') {
-                row.className = 'btsnoop-row btsnoop-meta-row';
-                row.innerHTML = ''; // Clear default cells
-                const headerDiv = document.createElement('div');
-                headerDiv.className = 'btsnoop-file-header';
-                const isCollapsed = btsnoopCollapsedFiles.has(packet.fileName);
-                headerDiv.textContent = `${isCollapsed ? '▶' : '▼'} ${packet.fileName}`;
-                headerDiv.onclick = (e) => {
-                    e.stopPropagation();
-                    if (btsnoopCollapsedFiles.has(packet.fileName)) {
-                        btsnoopCollapsedFiles.delete(packet.fileName);
-                    } else {
-                        btsnoopCollapsedFiles.add(packet.fileName);
-                    }
-                    // Re-render
-                    renderBtsnoopPackets();
-                };
-                row.appendChild(headerDiv);
-
-                // Position
-                // Position
-                row.style.position = 'absolute';
-                row.style.top = '0'; // Use transform for consistent positioning
-                row.style.left = '0';
-                row.style.transform = `translateY(${btsnoopRowPositions[i]}px)`;
-                row.style.width = '100%';
-                row.style.height = '30px';
-                row.style.display = 'block'; // Override 'grid' if recycled from data row
-
-                // Assuming 20px for now.
-                visibleRows.push(row);
-                continue;
-            } else {
-                row.className = 'btsnoop-row'; // Reset if reused
-                row.style.height = ''; // Reset height (let content dictate, or set based on estimatedLines)
-                // Note: We don't strictly set height for data rows, we let them grow. 
-                // However, we position them absolutely. 
-                row.style.position = 'absolute';
-                row.style.top = `${btsnoopRowPositions[i]}px`;
-                row.style.width = '100%';
-
-                if (row.children.length !== 7) {
-                    row.innerHTML = '';
-                    for (let j = 0; j < 7; j++) {
-                        const cell = document.createElement('div');
-                        cell.className = 'btsnoop-cell';
-                        row.appendChild(cell);
-                    }
-                }
-            }
-
-            // Populate the row with data
-            row.style.position = 'absolute';
-            row.style.top = `${btsnoopRowPositions[i]}px`;
-            row.style.width = '100%';
-
-            const cells = row.children; // Get all div cells
-            const cellData = [
-                packet.number, packet.timestamp,
-                packet.source || (packet.direction === 'Controller -> Host' ? 'Controller' : 'Host'),
-                packet.destination || (packet.direction === 'Host -> Controller' ? 'Controller' : localBtAddress),
-                packet.type, packet.summary, packet.data
-            ];
-
-            // Apply selection style
-            if (selectedBtsnoopPacket && selectedBtsnoopPacket.number === packet.number) {
-                row.classList.add('selected');
-            } else {
-                row.classList.remove('selected');
-            }
-            // Apply alternating row background
-            if (packet.number % 2 === 0) {
-                row.classList.add('even-row');
-                row.classList.remove('odd-row');
-            } else {
-                row.classList.add('odd-row');
-                row.classList.remove('even-row');
-            }
-            // Store packet data for click handling
-            row.dataset.packetNumber = packet.number;
-
-            for (let j = 0; j < 7; j++) {
-                // FIX: Ensure data is converted to string and handle undefined/null
-                const dataStr = (cellData[j] !== undefined && cellData[j] !== null) ? String(cellData[j]) : '';
-                cells[j].textContent = dataStr;
-                cells[j].title = dataStr + " (Ctrl+Click to copy)"; // Full text on hover
-                cells[j].dataset.logText = dataStr; // Store raw text for copying
-                cells[j].style.color = '#e0e0e0'; // Ensure visibility
-                cells[j].style.fontFamily = "'JetBrains Mono', 'Consolas', 'Menlo', 'Courier New', monospace";
-                cells[j].style.fontSize = '13px';
-                // Special styling for Data column (last column) - allow wrapping
-                if (j === 6) {
-                    cells[j].style.whiteSpace = 'pre-wrap';
-                    cells[j].style.wordBreak = 'break-all';
-                    cells[j].style.minHeight = '20px';
-                    cells[j].style.height = 'auto';
-                } else {
-                    cells[j].style.whiteSpace = 'nowrap';
-                }
-                // ...
-                // Ensure the class is added (not duplicated if recycling)
-                if (!cells[j].classList.contains('btsnoop-copy-cell')) {
-                    cells[j].classList.add('btsnoop-copy-cell');
-                }
-            }
-
-            // Position the row correctly in the viewport using cumulative position
-            row.style.position = 'absolute';
-            row.style.top = '0';
-            row.style.left = '0';
-            row.style.width = '100%';
-            row.style.transform = `translateY(${btsnoopRowPositions[i]}px)`;
-            row.style.minHeight = '20px';
-            row.style.height = 'auto';
-            row.style.display = 'grid';
-
-            // FIX: Apply the current column widths if they have been resized
-            if (currentBtsnoopGridTemplate) {
-                row.style.gridTemplateColumns = currentBtsnoopGridTemplate;
-            }
-            else {
-                row.style.gridTemplateColumns = '60px 120px 160px 160px 80px minmax(200px, 2fr) minmax(200px, 3fr)';
-            }
-            visibleRows.push(row);
-        }
-
-        console.log('[BTSnoop Debug] 6. Created', visibleRows.length, 'visible rows');
-
-        // Return unused rows to the pool and update the viewport
-        while (viewport.firstChild) {
-            btsnoopRowPool.push(viewport.removeChild(viewport.firstChild));
-        }
-        visibleRows.forEach(row => viewport.appendChild(row));
-
-        console.log('[BTSnoop Debug] 7. Viewport now has', viewport.children.length, 'children');
-    }
-
-    function handleBtsnoopFilterInput(e) {
-        clearTimeout(btsnoopColumnFilterDebounceTimer);
-        btsnoopColumnFilterDebounceTimer = setTimeout(() => {
-            renderBtsnoopPackets();
-        }, 300); // 300ms debounce delay
-    }
+    // [DELETED] Duplicate BTSnoop functions (renderBtsnoopPackets, createBtsnoopFilterHeader, renderBtsnoopVirtualLogs, handleBtsnoopFilterInput) removed to use BtsnoopTab.js module.
 
     function handleViewportInteraction(event) {
         const target = event.target;
@@ -4673,9 +3191,8 @@ self.onmessage = async (event) => {
             if (isCopyBtn) {
                 logText = target.dataset.logText;
             } else if (copyTarget) {
-                // Check if this is part of a Table Row (TR) or BTSnoop Row (Div-based)
+                // Check if this is part of a Table Row (TR)
                 const trRow = copyTarget.closest('tr'); // Standard tables
-                const btsnoopRow = copyTarget.closest('.btsnoop-row'); // BTSnoop Virtual Table
 
                 if (trRow) {
                     // Standard Table Row: Aggregate all cells
@@ -4683,11 +3200,6 @@ self.onmessage = async (event) => {
                     // Use double space separator for tabular data
                     logText = cells.map(c => c.dataset.logText || c.textContent.trim()).join('  ');
                     console.log(`[Copy] Aggregated Table Row(${cells.length} cols): `, logText.length, 'chars');
-                } else if (btsnoopRow) {
-                    // BTSnoop Row: Aggregate all BTSnoop cells
-                    const cells = Array.from(btsnoopRow.querySelectorAll('.btsnoop-cell'));
-                    logText = cells.map(c => c.dataset.logText || c.textContent).join('  ');
-                    console.log('[Copy] Aggregated BTSnoop Row:', logText.length, 'chars');
                 } else {
                     // Fallback to single cell copy (e.g., Virtual Log Line span)
                     logText = copyTarget.dataset.logText || copyTarget.textContent;
@@ -4890,43 +3402,7 @@ self.onmessage = async (event) => {
                 }
             }
         }
-        // 4. Handle BTSnoop Row Selection (Virtual List)
-        const btsnoopRow = target.closest('.btsnoop-row');
-        if (btsnoopRow) {
-            // Check for text selection
-            if (window.getSelection().toString().length > 0) return;
-
-            const packetNum = parseInt(btsnoopRow.dataset.packetNumber, 10);
-            if (!isNaN(packetNum)) {
-                const packet = filteredBtsnoopPackets.find(p => p.number === packetNum);
-                if (packet) {
-                    if (selectedBtsnoopPacket === packet) {
-                        selectedBtsnoopPacket = null; // Toggle off
-                        btsnoopAnchorPacketNumber = null; // Clear anchor
-                    } else {
-                        selectedBtsnoopPacket = packet;
-                        btsnoopAnchorPacketNumber = packet.number; // Update anchor
-                    }
-                    console.log('[Interaction] Selected BTSnoop Packet:', selectedBtsnoopPacket ? selectedBtsnoopPacket.number : 'None');
-                    renderBtsnoopVirtualLogs();
-                }
-            }
-            return;
-        }
-
-        // 5. Handle BTSnoop Deselection (Click outside)
-        else if (selectedBtsnoopPacket && !target.closest('.btsnoop-copy-cell') && !target.closest('.btsnoop-header-cell')) {
-            // FIX: Don't deselect if clicking on UI controls (filters, tabs, inputs)
-            if (target.closest('.filter-icon') || target.closest('input') || target.closest('.tab-btn') || target.closest('#btsnoopFilterContainer')) {
-                return;
-            }
-
-            // Clicked outside BTSnoop table while selected -> Clear selection
-            console.log('[Interaction] Cleared BTSnoop Selection (Clicked outside)');
-            selectedBtsnoopPacket = null;
-            btsnoopAnchorPacketNumber = null; // Clear anchor
-            renderBtsnoopVirtualLogs();
-        }
+        // [DELETED] BTSnoop Row Selection (Sections 4 & 5) removed to use BtsnoopTab.js module.
     }
 
     // --- Memory Cleanup on Exit ---
@@ -4989,15 +3465,17 @@ self.onmessage = async (event) => {
     }
 
     // --- Expose for Testing ---
+    // --- Expose for Testing ---
     window._debug = {
-        get btsnoopPackets() { return btsnoopPackets; },
-        set btsnoopPackets(v) { btsnoopPackets = v; },
+        // Delegate to module getters/setters if available, or just use getters
+        get btsnoopPackets() { return BtsnoopTab.getBtsnoopPackets(); },
+        // set btsnoopPackets(v) { ... } // Read-only via debug to avoid state desync
         get isBtsnoopProcessed() { return isBtsnoopProcessed; },
         set isBtsnoopProcessed(v) { isBtsnoopProcessed = v; },
-        renderBtsnoopPackets,
+        // renderBtsnoopPackets: () => BtsnoopTab.renderBtsnoopPackets(), // If needed, but better to trigger via setup
         setupBtsnoopTab,
-        get selectedBtsnoopPacket() { return selectedBtsnoopPacket; },
-        set selectedBtsnoopPacket(v) { selectedBtsnoopPacket = v; }
+        get selectedBtsnoopPacket() { return BtsnoopTab.getSelectedBtsnoopPacket(); },
+        // set selectedBtsnoopPacket(v) { BtsnoopTab.setSelectedBtsnoopPacket(v); }
     };
 
     initializeApp();

@@ -68,7 +68,13 @@ function runFilter(lines, config) {
                 continue;
             }
         }
-        if (line.level && !logLevelsSet.has(line.level)) continue;
+        // Log level filter - treat lines without a level as 'V' (Verbose)
+        const lineLevel = line.level || 'V';
+        // DEBUG: Check for specific patterns to see if level inheritance works
+        if (line.originalText.includes('Continuation Line') || line.originalText.includes('java.lang.')) {
+            // console.log(`[FilterWorker Debug] Line: "${line.originalText.substring(0, 30)}..." Level: ${lineLevel} (Inherited?)`);
+        }
+        if (!logLevelsSet.has(lineLevel)) continue;
 
         if (!headerHasMatches && currentHeaderIndex !== -1) {
             indices.push(currentHeaderIndex);

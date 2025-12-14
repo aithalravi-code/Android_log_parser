@@ -59,6 +59,13 @@ export async function processLogFile(eventData, postMessage) {
     let minTimestamp, maxTimestamp;
     const workerDebugLogs = [];
 
+    // State for continuation lines (lines without headers)
+    let lastValidDateObj = null;
+    let lastValidDate = 'N/A';
+    let lastValidTime = 'N/A';
+    let lastValidTimestamp = '';
+
+
     const stats = { total: 0, E: 0, W: 0, I: 0, D: 0, V: 0 };
     const services = {
         'Bluetooth': { on: /(bluetooth is on|Bluetooth.*Turning On)/i, off: /(bluetooth is off|Bluetooth.*Turning Off)/i, history: [] },
@@ -169,6 +176,15 @@ export async function processLogFile(eventData, postMessage) {
                     finalTid = uid;
                 }
 
+
+                // Update state for continuation lines
+                lastValidDateObj = lineDateObj;
+                lastValidDate = logcatDate;
+                lastValidTime = logcatTime;
+                lastValidDate = logcatDate;
+                lastValidTime = logcatTime;
+                lastValidTimestamp = fullTimestamp;
+
                 parsedLine = { isMeta: false, dateObj: lineDateObj, date: logcatDate, time: logcatTime, timestamp: fullTimestamp, level: finalLevel, pid: finalPid, tid: finalTid, uid: finalUid, tag: finalTag, message: message.trim(), originalText: lineText };
                 if (stats[finalLevel] !== undefined) stats[finalLevel]++;
             } else if (match.groups.customFullDate) { // Custom YYYY-MM-DD format
@@ -183,6 +199,14 @@ export async function processLogFile(eventData, postMessage) {
                 if (!minTimestamp || fullTimestamp < minTimestamp) minTimestamp = fullTimestamp;
                 if (!maxTimestamp || fullTimestamp > maxTimestamp) maxTimestamp = fullTimestamp;
 
+                // Update state for continuation lines
+                lastValidDateObj = lineDateObj;
+                lastValidDate = mmdd;
+                lastValidTime = timeWithMs;
+                lastValidDate = mmdd;
+                lastValidTime = timeWithMs;
+                lastValidTimestamp = fullTimestamp;
+
                 parsedLine = { isMeta: false, dateObj: lineDateObj, date: mmdd, time: timeWithMs, timestamp: fullTimestamp, level: 'I', tag: 'CustomLog', message: customMessage.trim(), originalText: lineText };
                 stats.I++;
             }
@@ -195,6 +219,14 @@ export async function processLogFile(eventData, postMessage) {
                 const fullTimestamp = weaverDate + ' ' + weaverTime.slice(0, 12); // Trim to ms for consistency
                 if (!minTimestamp || fullTimestamp < minTimestamp) minTimestamp = fullTimestamp;
                 if (!maxTimestamp || fullTimestamp > maxTimestamp) maxTimestamp = fullTimestamp;
+
+                // Update state
+                lastValidDateObj = lineDateObj;
+                lastValidDate = weaverDate;
+                lastValidTime = weaverTime;
+                lastValidDate = weaverDate;
+                lastValidTime = weaverTime;
+                lastValidTimestamp = fullTimestamp;
 
                 parsedLine = { isMeta: false, dateObj: lineDateObj, date: weaverDate, time: weaverTime, timestamp: fullTimestamp, level: 'D', pid: weaverPid, tag: weaverTag.trim(), message: weaverMessage.trim(), originalText: lineText };
                 stats.D++;
@@ -222,6 +254,14 @@ export async function processLogFile(eventData, postMessage) {
                 const fullTimestamp = gpsDate + ' ' + gpsTime;
                 if (!minTimestamp || fullTimestamp < minTimestamp) minTimestamp = fullTimestamp;
                 if (!maxTimestamp || fullTimestamp > maxTimestamp) maxTimestamp = fullTimestamp;
+
+                // Update state
+                lastValidDateObj = lineDateObj;
+                lastValidDate = gpsDate;
+                lastValidTime = gpsTime;
+                lastValidDate = gpsDate;
+                lastValidTime = gpsTime;
+                lastValidTimestamp = fullTimestamp;
 
                 parsedLine = {
                     isMeta: false,
@@ -254,6 +294,14 @@ export async function processLogFile(eventData, postMessage) {
                 if (!minTimestamp || fullTimestamp < minTimestamp) minTimestamp = fullTimestamp;
                 if (!maxTimestamp || fullTimestamp > maxTimestamp) maxTimestamp = fullTimestamp;
 
+                // Update state
+                lastValidDateObj = lineDateObj;
+                lastValidDate = simpleDate;
+                lastValidTime = stdTime;
+                lastValidDate = simpleDate;
+                lastValidTime = stdTime;
+                lastValidTimestamp = fullTimestamp;
+
                 parsedLine = {
                     isMeta: false,
                     dateObj: lineDateObj,
@@ -270,7 +318,16 @@ export async function processLogFile(eventData, postMessage) {
         } else { // Unmatched line logic
             const levelMatch = lineText.match(/\s([VDIWE])\s/);
             const level = levelMatch ? levelMatch[1] : 'V';
-            parsedLine = { isMeta: false, dateObj: null, date: 'N/A', time: 'N/A', originalText: lineText, level: level, lineNumber: i + 1 };
+
+            // FIX: If we have a previous valid timestamp, assume this is a continuation line
+            // and inherit the time. This fixes issues with exception stack traces and other 
+            // multi-line logs being discarded or sorted incorrectly.
+            const date = lastValidDate !== 'N/A' ? lastValidDate : 'N/A';
+            const time = lastValidTime !== 'N/A' ? lastValidTime : 'N/A';
+            const timestamp = lastValidTimestamp !== '' ? lastValidTimestamp : '';
+            const dateObj = lastValidDateObj;
+
+            parsedLine = { isMeta: false, dateObj: dateObj, date: date, time: time, timestamp: timestamp, originalText: lineText, level: level, lineNumber: i + 1 };
 
             // FIX: Explicitly check for Verbose level to ensure it is counted
             if (stats[level] !== undefined) {

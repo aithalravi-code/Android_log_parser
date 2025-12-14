@@ -1,7 +1,7 @@
 import { escapeHtml, formatParam } from '../../utils/html.js';
 import { makeTableResizable } from '../../table-resize.js';
 import { makeSortable } from '../../table-sort.js';
-import * as XLSX from 'xlsx';
+// import * as XLSX from 'xlsx';
 
 let cccStatsData = [];
 let cccColumnFilters = new Map();
@@ -710,7 +710,7 @@ export async function setup(cccMessages, connectionMap, ensureBtsnoopProcessedFn
     render(cccStatsData);
 }
 
-function render(messages) {
+export function render(messages) {
     console.log('[CccTab] render() called, messages length:', messages?.length || 0, 'isCccTableInitialized:', isCccTableInitialized);
     cccStatsData = messages || [];
 
@@ -817,6 +817,55 @@ function render(messages) {
                 // Create workbook
                 const ws = XLSX.utils.json_to_sheet(exportData);
                 const wb = XLSX.utils.book_new();
+
+                // Helper to auto-fit columns
+                const autoFitColumns = (ws) => {
+                    if (!ws || !ws['!ref']) return;
+                    const range = XLSX.utils.decode_range(ws['!ref']);
+                    const colWidths = [];
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        let maxLen = 0;
+                        for (let R = range.s.r; R <= range.e.r; ++R) {
+                            const cellRef = XLSX.utils.encode_cell({ c: C, r: R });
+                            if (ws[cellRef] && ws[cellRef].v) {
+                                maxLen = Math.max(maxLen, String(ws[cellRef].v).length);
+                            }
+                        }
+                        colWidths[C] = { wch: Math.min(maxLen + 2, 50) };
+                    }
+                    ws['!cols'] = colWidths;
+                };
+
+                // Helper to apply styles
+                const applyStyles = (ws) => {
+                    if (!ws || !ws['!ref']) return;
+                    const range = XLSX.utils.decode_range(ws['!ref']);
+                    const thinBorder = { style: 'thin', color: { rgb: "000000" } };
+                    const borderStyle = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+
+                    for (let R = range.s.r; R <= range.e.r; ++R) {
+                        for (let C = range.s.c; C <= range.e.c; ++C) {
+                            const cellRef = XLSX.utils.encode_cell({ c: C, r: R });
+                            if (!ws[cellRef]) continue;
+
+                            const style = {
+                                font: { name: "Arial", sz: 10 },
+                                border: borderStyle,
+                                alignment: { vertical: "top", wrapText: true }
+                            };
+
+                            if (R === 0) {
+                                style.font = { name: "Arial", sz: 10, bold: true, color: { rgb: "000000" } };
+                                style.fill = { fgColor: { rgb: "E0E0E0" } };
+                                style.alignment = { horizontal: "center", vertical: "center", wrapText: true };
+                            }
+                            ws[cellRef].s = style;
+                        }
+                    }
+                };
+
+                autoFitColumns(ws);
+                applyStyles(ws);
                 XLSX.utils.book_append_sheet(wb, ws, "CCC_Analysis");
 
                 // Generate default filename with timestamp

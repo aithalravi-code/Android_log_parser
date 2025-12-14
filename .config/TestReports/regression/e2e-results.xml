@@ -1,38 +1,110 @@
-<testsuites id="" name="" tests="13" failures="0" skipped="0" errors="0" time="10.659655">
-<testsuite name="file-upload.spec.js" timestamp="2025-12-13T21:52:30.831Z" hostname="chromium" tests="13" failures="0" skipped="0" time="46.045" errors="0">
-<testcase name="UI Elements › should display initial UI correctly" classname="file-upload.spec.js" time="3.521">
-</testcase>
-<testcase name="UI Elements › should have all required UI elements" classname="file-upload.spec.js" time="4.611">
-</testcase>
-<testcase name="UI Elements › should load page within 3 seconds" classname="file-upload.spec.js" time="3.632">
+<testsuites id="" name="" tests="3" failures="3" skipped="0" errors="0" time="18.55817">
+<testsuite name="btsnoop_layout.spec.js" timestamp="2025-12-14T14:14:57.697Z" hostname="chromium" tests="1" failures="1" skipped="0" time="12.332" errors="0">
+<testcase name="BTSnoop Layout Alignment › Should verify that File Header does not overlap Table Header or Data Rows" classname="btsnoop_layout.spec.js" time="12.332">
+<failure message="btsnoop_layout.spec.js:17:5 Should verify that File Header does not overlap Table Header or Data Rows" type="FAILURE">
+<![CDATA[  [chromium] › btsnoop_layout.spec.js:17:5 › BTSnoop Layout Alignment › Should verify that File Header does not overlap Table Header or Data Rows 
+
+    TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.
+    Call log:
+      - waiting for locator('.btsnoop-file-header') to be visible
+
+        at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/btsnoop_layout.spec.js:35:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../.config/TestReports/regression/artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../.config/TestReports/regression/artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../.config/TestReports/regression/artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-chromium/error-context.md
+]]>
+</failure>
 <system-out>
-<![CDATA[✅ Page loaded in 612ms
+<![CDATA[
+[[ATTACHMENT|artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-chromium/video.webm]]
+
+[[ATTACHMENT|artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-chromium/error-context.md]]
 ]]>
 </system-out>
 </testcase>
-<testcase name="Tab Navigation › should switch between tabs" classname="file-upload.spec.js" time="3.477">
-</testcase>
-<testcase name="Tab Navigation › should have connectivity tab" classname="file-upload.spec.js" time="4.621">
-</testcase>
-<testcase name="Tab Navigation › should have stats tab" classname="file-upload.spec.js" time="3.157">
-</testcase>
-<testcase name="Filter Controls › should have log level filter buttons" classname="file-upload.spec.js" time="4.688">
-</testcase>
-<testcase name="Filter Controls › should have AND/OR logic toggle" classname="file-upload.spec.js" time="4.52">
-</testcase>
-<testcase name="Filter Controls › should toggle between AND/OR logic" classname="file-upload.spec.js" time="3.588">
-</testcase>
-<testcase name="Filter Controls › should have search input" classname="file-upload.spec.js" time="2.531">
-</testcase>
-<testcase name="Performance Tracker › should have performance tracker available in console" classname="file-upload.spec.js" time="2.987">
+</testsuite>
+<testsuite name="btsnoop_layout.spec.js" timestamp="2025-12-14T14:14:57.697Z" hostname="firefox" tests="1" failures="1" skipped="0" time="12.801" errors="0">
+<testcase name="BTSnoop Layout Alignment › Should verify that File Header does not overlap Table Header or Data Rows" classname="btsnoop_layout.spec.js" time="12.801">
+<failure message="btsnoop_layout.spec.js:17:5 Should verify that File Header does not overlap Table Header or Data Rows" type="FAILURE">
+<![CDATA[  [firefox] › btsnoop_layout.spec.js:17:5 › BTSnoop Layout Alignment › Should verify that File Header does not overlap Table Header or Data Rows 
+
+    TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.
+    Call log:
+      - waiting for locator('.btsnoop-file-header') to be visible
+
+        at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/btsnoop_layout.spec.js:35:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../.config/TestReports/regression/artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../.config/TestReports/regression/artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../.config/TestReports/regression/artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-firefox/error-context.md
+]]>
+</failure>
 <system-out>
-<![CDATA[Performance tracker available: false
+<![CDATA[
+[[ATTACHMENT|artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-firefox/test-failed-1.png]]
+
+[[ATTACHMENT|artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-firefox/video.webm]]
+
+[[ATTACHMENT|artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-firefox/error-context.md]]
 ]]>
 </system-out>
 </testcase>
-<testcase name="Accessibility › should be keyboard navigable" classname="file-upload.spec.js" time="2.945">
-</testcase>
-<testcase name="Accessibility › should have proper document title" classname="file-upload.spec.js" time="1.767">
+</testsuite>
+<testsuite name="btsnoop_layout.spec.js" timestamp="2025-12-14T14:14:57.697Z" hostname="webkit" tests="1" failures="1" skipped="0" time="14.45" errors="0">
+<testcase name="BTSnoop Layout Alignment › Should verify that File Header does not overlap Table Header or Data Rows" classname="btsnoop_layout.spec.js" time="14.45">
+<failure message="btsnoop_layout.spec.js:17:5 Should verify that File Header does not overlap Table Header or Data Rows" type="FAILURE">
+<![CDATA[  [webkit] › btsnoop_layout.spec.js:17:5 › BTSnoop Layout Alignment › Should verify that File Header does not overlap Table Header or Data Rows 
+
+    TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.
+    Call log:
+      - waiting for locator('.btsnoop-file-header') to be visible
+
+        at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/btsnoop_layout.spec.js:35:20)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)
+        at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../.config/TestReports/regression/artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../.config/TestReports/regression/artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../.config/TestReports/regression/artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-webkit/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-webkit/test-failed-1.png]]
+
+[[ATTACHMENT|artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-webkit/video.webm]]
+
+[[ATTACHMENT|artifacts/btsnoop_layout-BTSnoop-Lay-aaca3-p-Table-Header-or-Data-Rows-webkit/error-context.md]]
+]]>
+</system-out>
 </testcase>
 </testsuite>
 </testsuites>

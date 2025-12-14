@@ -1,5 +1,5 @@
 // BTSnoop Tab Module - Handles all BTSnoop log processing, rendering, and filtering
-import * as XLSX from 'xlsx'; // Assuming global or bundler handles this, based on main.js
+// import * as XLSX from 'xlsx';
 
 // --- State Variables ---
 let btsnoopPackets = [];
@@ -63,6 +63,11 @@ export function getSelectedBtsnoopPacket() {
 export function setSelectedBtsnoopPacket(packet) {
     selectedBtsnoopPacket = packet;
 }
+
+export function getFilteredBtsnoopPackets() {
+    return filteredBtsnoopPackets;
+}
+
 
 /**
  * Setup the BTSnoop tab - attaches listeners and prepares the view.
@@ -153,7 +158,7 @@ export async function processForBtsnoop(fileTasks, { db, getDb, saveData, loadDa
         }
 
         // Check if worker code has changed    // Versioning for worker cache invalidation
-        const btsnoopWorkerVersion = '2025-12-07-21:50'; // Updated for Address Resolution & UTC Fix
+        const btsnoopWorkerVersion = '2025-12-14-18:00'; // Updated for Handle Resolution Fix
         const storedVersion = localStorage.getItem('btsnoopWorkerVersion');
         if (storedVersion !== btsnoopWorkerVersion) {
             console.log('[BTSnoop] Worker code changed (v' + btsnoopWorkerVersion + '), clearing ALL cache...');
@@ -221,7 +226,13 @@ export async function processForBtsnoop(fileTasks, { db, getDb, saveData, loadDa
                     localBtAddress = event.data.address;
                     // Note: We might need to expose this boostrap info back or use it locally
                 } else if (type === 'complete') {
-                    btsnoopConnectionMap = new Map(Object.entries(connectionMap));
+                    btsnoopConnectionMap = new Map();
+                    // FIX: Convert object string keys to Numbers for the Map
+                    if (connectionMap) {
+                        for (const [k, v] of Object.entries(connectionMap)) {
+                            btsnoopConnectionMap.set(Number(k), v);
+                        }
+                    }
                     progressDiv.textContent = `Parsed ${totalPacketsStored.toLocaleString()} packets. Finalizing...`;
 
                     await resolveBtsnoopHandles(btsnoopConnectionMap);
@@ -756,11 +767,15 @@ export async function renderBtsnoopPackets(deps = {}) {
                 : String(bVal).localeCompare(String(aVal));
         });
     }
+    // DEBUG: Check for META packets in sorted packets
+    const metaPacketsInSorted = sortedPackets.filter(p => p.type === 'META');
+    console.log('[BTSnoop Debug] META packets in sortedPackets:', metaPacketsInSorted.length, metaPacketsInSorted);
 
     // FILTERING
     filteredBtsnoopPackets = [];
     for (const packet of sortedPackets) {
         if (packet.type === 'META') {
+            console.log('[BTSnoop Debug] Adding META packet to filtered:', packet.fileName);
             filteredBtsnoopPackets.push(packet);
             continue;
         }
@@ -787,7 +802,7 @@ export async function renderBtsnoopPackets(deps = {}) {
             btsnoopTotalHeight += 30;
         } else {
             const dataLength = packet.data?.length || 0;
-            const estimatedLines = Math.max(1, Math.ceil(dataLength / 100));
+            const estimatedLines = Math.max(1, Math.ceil(dataLength / 50)); // 420px width fits ~50 chars
             btsnoopTotalHeight += 20 * estimatedLines;
         }
     }
@@ -832,6 +847,7 @@ export async function renderBtsnoopPackets(deps = {}) {
             }
         });
     }
+    // NOTE: Header is now inside scroll container, so no padding adjustment needed
 }
 
 function renderBtsnoopVirtualLogs() {
@@ -860,6 +876,12 @@ function renderBtsnoopVirtualLogs() {
     endIndex = Math.min(filteredBtsnoopPackets.length, endIndex + BUFFER_LINES);
     if (endIndex <= startIndex) endIndex = Math.min(filteredBtsnoopPackets.length, startIndex + 50);
 
+    // Debug: Log the render range
+    console.log('[BTSnoop Debug] Render range:', startIndex, 'to', endIndex, 'scrollTop:', scrollTop, 'totalPackets:', filteredBtsnoopPackets.length);
+    if (filteredBtsnoopPackets[0]) {
+        console.log('[BTSnoop Debug] First packet type:', filteredBtsnoopPackets[0].type, 'at position:', btsnoopRowPositions[0]);
+    }
+
     const visibleRows = [];
     for (let i = startIndex; i < endIndex; i++) {
         const packet = filteredBtsnoopPackets[i];
@@ -873,6 +895,7 @@ function renderBtsnoopVirtualLogs() {
         }
 
         if (packet.type === 'META') {
+            console.log('[BTSnoop Debug] Rendering META row at position:', btsnoopRowPositions[i], 'index:', i);
             row.className = 'btsnoop-row btsnoop-meta-row';
             row.innerHTML = '';
             const headerDiv = document.createElement('div');
@@ -893,6 +916,8 @@ function renderBtsnoopVirtualLogs() {
             row.style.width = '100%';
             row.style.height = '30px';
             row.style.display = 'block';
+            row.style.zIndex = '15'; // Ensure file header is visible above data rows
+            row.style.backgroundColor = '#333';
         } else {
             row.className = 'btsnoop-row';
             if (selectedBtsnoopPacket && selectedBtsnoopPacket.number === packet.number) row.classList.add('selected');
@@ -916,25 +941,34 @@ function renderBtsnoopVirtualLogs() {
                 cells[j].style.color = '#e0e0e0';
                 cells[j].style.fontFamily = "'JetBrains Mono', monospace";
                 cells[j].style.fontSize = '13px';
+                cells[j].style.overflow = 'hidden'; // Prevent all cell overflow
+                cells[j].style.minWidth = '0'; // Allow shrinking in grid
                 if (j === 6) { // Data column
                     cells[j].style.whiteSpace = 'pre-wrap';
                     cells[j].style.wordBreak = 'break-all';
                     cells[j].style.minHeight = '20px';
                     cells[j].style.height = 'auto';
+                    cells[j].style.maxWidth = '100%'; // Constrain to cell width
+                    cells[j].style.textOverflow = 'ellipsis';
                 } else {
                     cells[j].style.whiteSpace = 'nowrap';
+                    cells[j].style.textOverflow = 'ellipsis';
                 }
             }
+
+            const dataLength = packet.data?.length || 0;
+            const estimatedLines = Math.max(1, Math.ceil(dataLength / 50)); // 420px width fits ~50 chars
+            const rowHeight = 20 * estimatedLines;
 
             row.style.position = 'absolute';
             row.style.top = '0'; // using transform
             row.style.left = '0';
             row.style.width = '100%';
             row.style.transform = `translateY(${btsnoopRowPositions[i]}px)`;
-            row.style.minHeight = '20px';
-            row.style.height = 'auto';
+            row.style.height = `${rowHeight}px`; // Enforce strict height matching calculation
+            row.style.overflow = 'hidden'; // Clip content to prevent overlap
             row.style.display = 'grid';
-            row.style.gridTemplateColumns = currentBtsnoopGridTemplate || '60px 120px 160px 160px 80px minmax(200px, 2fr) minmax(200px, 3fr)';
+            row.style.gridTemplateColumns = currentBtsnoopGridTemplate || '60px 120px 160px 160px 80px 400px 420px';
         }
         visibleRows.push(row);
     }
@@ -954,7 +988,7 @@ function createBtsnoopFilterHeader() {
 
     const headerGrid = document.createElement('div');
     headerGrid.className = 'btsnoop-header-grid';
-    headerGrid.style.gridTemplateColumns = '60px 120px 160px 160px 80px minmax(200px, 2fr) minmax(200px, 3fr)';
+    headerGrid.style.gridTemplateColumns = '60px 120px 160px 160px 80px 400px 420px';
 
     const columns = ['No.', 'Timestamp', 'Source', 'Destination', 'Type', 'Summary', 'Data'];
 
@@ -1104,17 +1138,112 @@ function attachHeaderButtonListeners() {
 
     const exportBtn = document.getElementById('exportBtsnoopXlsxBtn');
     if (exportBtn) {
-        exportBtn.addEventListener('click', () => exportBtsnoopToXlsx());
+        // Use cloneNode to strip existing listeners (prevent stacking)
+        const newExportBtn = exportBtn.cloneNode(true);
+        exportBtn.parentNode.replaceChild(newExportBtn, exportBtn);
+        newExportBtn.addEventListener('click', () => {
+            console.log('[BTSnoop] Export button clicked.');
+            exportBtsnoopToXlsx();
+        });
+    } else {
+        console.warn('[BTSnoop] Export button (exportBtsnoopXlsxBtn) not found in DOM.');
     }
 }
 
 export function exportBtsnoopToXlsx() {
-    if (!filteredBtsnoopPackets.length) return alert("No packets to export.");
-    const data = filteredBtsnoopPackets.map(p => [p.number, p.timestamp, p.source, p.destination, p.type, p.summary, p.data]);
-    const ws = XLSX.utils.aoa_to_sheet([['No.', 'Time', 'Src', 'Dst', 'Type', 'Summary', 'Data'], ...data]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'BTSnoop');
-    XLSX.writeFile(wb, 'btsnoop_packets.xlsx');
+    try {
+        console.log('[BTSnoop Export] Starting export...');
+        if (typeof XLSX === 'undefined') {
+            throw new Error('XLSX library not loaded. Please check internet connection or CDN.');
+        }
+
+        const allFilteredPackets = getFilteredBtsnoopPackets();
+        console.log(`[BTSnoop Export] Got ${allFilteredPackets ? allFilteredPackets.length : 'undefined'} packets from filter.`);
+
+        if (!allFilteredPackets) {
+            throw new Error('Failed to retrieve filtered packets.');
+        }
+
+        // Filter out META packets (file headers) before exporting
+        const dataPacketsToExport = allFilteredPackets.filter(p => p && (!p.type || p.type !== 'META'));
+        console.log(`[BTSnoop Export] Packet count after removing META: ${dataPacketsToExport.length}`);
+
+        if (!dataPacketsToExport.length) return alert("No BTSnoop data packets to export. Please adjust filters.");
+
+        // Prepare data
+        const headers = ['No.', 'Timestamp', 'Source', 'Destination', 'Type', 'Summary', 'Data'];
+        const data = dataPacketsToExport.map(p => [
+            p.number,
+            p.timestamp,
+            p.source,
+            p.destination,
+            p.type,
+            p.summary,
+            p.data
+        ]);
+
+        // Create worksheet
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+
+        // Define column widths (in characters) - THIS WORKS
+        ws['!cols'] = [
+            { wch: 8 },   // No.
+            { wch: 20 },  // Timestamp
+            { wch: 25 },  // Source
+            { wch: 25 },  // Destination
+            { wch: 12 },  // Type
+            { wch: 50 },  // Summary
+            { wch: 80 }   // Data (wider for hex)
+        ];
+
+        // Enable auto-filter on header row - THIS WORKS
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        ws['!autofilter'] = { ref: XLSX.utils.encode_range(range) };
+
+        // Freeze the header row - THIS WORKS
+        ws['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft', state: 'frozen' };
+
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+
+        // Helper to apply styles (borders, headers, wrapping)
+        const applyStyles = (ws) => {
+            if (!ws || !ws['!ref']) return;
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            const thinBorder = { style: 'thin', color: { rgb: "000000" } };
+            const borderStyle = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+
+            for (let R = range.s.r; R <= range.e.r; ++R) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const cellRef = XLSX.utils.encode_cell({ c: C, r: R });
+                    if (!ws[cellRef]) continue;
+
+                    const style = {
+                        font: { name: "Arial", sz: 10 },
+                        border: borderStyle,
+                        alignment: { vertical: "top", wrapText: true }
+                    };
+
+                    if (R === 0) {
+                        style.font = { name: "Arial", sz: 10, bold: true, color: { rgb: "000000" } };
+                        style.fill = { fgColor: { rgb: "E0E0E0" } };
+                        style.alignment = { horizontal: "center", vertical: "center", wrapText: true };
+                    }
+                    ws[cellRef].s = style;
+                }
+            }
+        };
+
+        applyStyles(ws);
+        XLSX.utils.book_append_sheet(wb, ws, 'BTSnoop Packets');
+
+        // Write file
+        XLSX.writeFile(wb, 'btsnoop_packets.xlsx');
+        console.log('[BTSnoop Export] Export successful.');
+    } catch (error) {
+        console.error('[BTSnoop Export] Failed:', error);
+        alert('Export failed: ' + error.message);
+    }
 }
 
 function handleBtsnoopClick(e) {

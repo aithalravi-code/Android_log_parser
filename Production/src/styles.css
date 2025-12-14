@@ -1085,7 +1085,10 @@ input[type="file"]:hover {
     margin-right: 10px;
     text-align: right;
     font-family: 'Roboto Mono', monospace;
-    overflow: visible;
+    overflow: hidden;
+    /* FIX: Prevent overlap */
+    text-overflow: ellipsis;
+    /* FIX: Show dots if too long */
     white-space: nowrap;
     flex-shrink: 0;
     /* Prevent squishing */
@@ -1121,6 +1124,8 @@ input[type="file"]:hover {
     font-weight: bold;
     margin-right: 10px;
     color: #fff;
+    line-height: 20px;
+    /* Vertically center text */
 }
 
 /* Level Specific Colors */
@@ -1195,9 +1200,37 @@ input[type="file"]:hover {
 .scrollable-table-container {
     max-height: 400px;
     /* Adjust height as needed */
-    overflow-y: auto;
+    overflow-y: scroll;
+    /* Always show scrollbar to prevent layout shift */
+    overflow-x: hidden;
+    /* Disable horizontal scroll - table should fit */
     border: 1px solid #e0e0e0;
     border-radius: 6px;
+    position: relative;
+    /* Context for sticky headers */
+}
+
+/* FIX: Prevent double scrollbar and ensure proper table layout */
+.scrollable-table-container .highlight-table {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    /* Essential for accurate column resizing */
+    border-collapse: collapse;
+    max-height: none;
+    overflow: visible;
+    border: none;
+}
+
+/* Ensure sticky headers work and have background */
+.scrollable-table-container .highlight-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background-color: #333333 !important;
+    /* Ensure opacity over scrolling content */
+    box-shadow: 0 1px 0 #444;
+    /* Bottom border for sticky header */
 }
 
 /* Color-code the direction for quick scanning */
@@ -1221,17 +1254,7 @@ input[type="file"]:hover {
 }
 
 /* Header specific styling */
-.btsnoop-header-grid {
-    display: grid;
-    grid-template-columns: 60px 120px 160px 160px 80px minmax(200px, 2fr) minmax(200px, 3fr);
-    width: 100%;
-    min-width: 1200px;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background-color: #f2f2f2;
-    border-bottom: 1px solid #ccc;
-}
+/* .btsnoop-header-grid moved to bottom for consolidation */
 
 .btsnoop-header-cell {
     padding: 8px 5px;
@@ -1266,7 +1289,7 @@ input[type="file"]:hover {
     /* Virtual scroll requires absolute positioning, so we cannot use display: contents.
        Instead, each row is its own grid container. */
     display: grid;
-    grid-template-columns: 60px 120px 160px 160px 80px minmax(200px, 2fr) minmax(200px, 3fr);
+    grid-template-columns: 60px 120px 160px 160px 80px 400px 420px;
     width: 100%;
     min-width: 1200px;
     /* Match header width */
@@ -1313,25 +1336,27 @@ input[type="file"]:hover {
     background-color: #4285f4;
 }
 
-/* BTSnoop Header Horizontal Scroll */
+/* BTSnoop Header - Sticky inside scroll container */
 #btsnoopHeader {
-    overflow-x: auto;
-    overflow-y: hidden;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    /* Higher than header-grid (20) and meta-row (15) */
     width: 100%;
-}
-
-#btsnoopHeader::-webkit-scrollbar {
-    height: 0;
-    display: none;
+    background-color: #1e1e1e;
+    /* Solid background to cover content when scrolling */
 }
 
 /* Allow Data column (7th column) to wrap */
 .btsnoop-cell:nth-child(7) {
     white-space: pre-wrap !important;
     word-break: break-all;
-    overflow: visible;
+    overflow: hidden;
+    /* Changed from visible to prevent spillover */
     min-height: 20px;
     height: auto;
+    min-width: 0;
+    /* Allow shrinking in grid */
 }
 
 /* Adjust row height to accommodate wrapped content */
@@ -1809,6 +1834,15 @@ input[type="file"]:hover {
     border: 1px solid #3c4043 !important;
     padding: 8px;
     color: #e8eaed !important;
+    box-sizing: border-box;
+    /* FIX: Ensure padding is included in width */
+}
+
+/* Ensure text truncation works initially, matching table-resize.js behavior */
+.highlight-table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 #btsnoopTab tr:hover,
@@ -1843,10 +1877,7 @@ input[type="file"]:hover {
 }
 
 /* BTSnoop Virtual View (Div-based) Dark Mode */
-.btsnoop-header-grid {
-    background-color: #333333;
-    border-bottom: 2px solid #444;
-}
+/* .btsnoop-header-grid moved to bottom for consolidation */
 
 .btsnoop-header-cell {
     color: #ffffff;
@@ -1969,6 +2000,7 @@ input[type="file"]::file-selector-button:hover {
     vertical-align: middle;
     /* Ensure alignment */
 }
+
 
 /* Dark Mode fixes for filter rows in Highlight Tables and BTSnoop */
 
@@ -2189,28 +2221,71 @@ input[type="file"]::file-selector-button:hover {
     color: #a0cfff;
 }
 
+
+
+
+
+/* ============================================================================= */
+/* Fix App Versions Table - Flexbox Layout (Required for ccc-table compatibility) */
+/* ============================================================================= */
+#appVersionsTable tbody {
+    display: block !important;
+}
+
+#appVersionsTable tr {
+    display: flex !important;
+    width: 100%;
+}
+
+/* Ensure cells don't shrink and respect width */
+#appVersionsTable th,
+#appVersionsTable td {
+    display: block !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+}
+
 /* BTSnoop Collapsible File Header */
 .btsnoop-file-header {
     background-color: #333333;
     color: #FF9800;
     /* Orange to match other file headers */
     font-weight: bold;
-    padding: 5px 10px;
+    padding: 0 10px;
+    /* Reduce vertical padding to fit in 30px */
     cursor: pointer;
     user-select: none;
     display: flex;
     align-items: center;
     border-bottom: 1px solid #444;
+    height: 30px !important;
+    /* Force exact height matches JS */
+    max-height: 30px !important;
+    box-sizing: border-box;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
 
 .btsnoop-file-header:hover {
     background-color: #444444;
 }
 
-.btsnoop-meta-row {
+.btsnoop-row.btsnoop-meta-row {
     display: block !important;
-    z-index: 5;
-    /* Ensure headers stay above other content if overlapping occurs */
+    /* Override .btsnoop-row grid !important - higher specificity */
+    z-index: 15 !important;
+    /* Higher than data rows but lower than header (20) */
+    background-color: #333 !important;
+    /* Ensure opacity to cover anything behind if scrolling weirdly */
+    width: 100% !important;
+    /* Force full width */
+    position: absolute !important;
+    /* Required for virtual scroll positioning */
+    height: 30px !important;
+    /* Fixed height for meta rows */
+    grid-template-columns: none !important;
+    /* Remove grid template */
 }
 
 /* Global sticky table headers for all tables */
@@ -2225,6 +2300,11 @@ table thead tr:nth-child(2) th {
     top: 37px !important;
     /* Stack filter row below header row */
     z-index: 9 !important;
+}
+
+/* Ensure Dashboard Card tables are full width */
+.dashboard-card table {
+    width: 100%;
 }
 
 /* CCC Tooltip Styles */
@@ -2322,6 +2402,34 @@ table thead tr:nth-child(2) th {
     word-break: break-all;
 }
 
+/* BTSnoop Virtual Scroll Container Styles */
+#btsnoopLogContainer {
+    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+    position: relative;
+    width: 100%;
+}
+
+#btsnoopLogSizer {
+    position: absolute;
+    top: 70px;
+    /* Offset below sticky header */
+    left: 0;
+    width: 100%;
+    min-width: 1200px;
+    pointer-events: none;
+}
+
+#btsnoopLogViewport {
+    position: absolute;
+    top: 70px;
+    /* Offset below sticky header */
+    left: 0;
+    width: 100%;
+    min-width: 1200px;
+}
+
 /* Visual indicator for lines with CCC data */
 .log-line.ccc-line {
     background: rgba(79, 195, 247, 0.05);
@@ -2334,4 +2442,116 @@ table thead tr:nth-child(2) th {
     background: rgba(79, 195, 247, 0.15);
     /* Slightly stronger on hover */
     cursor: pointer;
+}
+
+/* --- BTSnoop Table Grid Layout --- */
+.btsnoop-header-grid {
+    display: grid;
+    /* Match JS default: '60px 120px 160px 160px 80px 400px 420px' */
+    grid-template-columns: 60px 120px 160px 160px 80px 400px 420px;
+    background-color: #1e1e1e;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    border-bottom: 2px solid #555;
+    font-weight: bold;
+    color: #e8eaed;
+    /* Properties consolidated from line 1256 */
+    width: 100%;
+    min-width: 1200px;
+    box-sizing: border-box !important;
+    /* Ensure padding from scrollbar sync doesn't break layout */
+    overflow-x: hidden;
+}
+
+.btsnoop-header-cell {
+    padding: 8px 10px;
+    border-right: 1px solid #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    position: relative;
+    background-color: #1e1e1e;
+    box-sizing: border-box !important;
+    /* Ensure opacity */
+}
+
+.btsnoop-filter-cell {
+    padding: 4px;
+    border-right: 1px solid #333;
+    background-color: #2a2a2a;
+    border-bottom: 1px solid #555;
+}
+
+.btsnoop-filter-cell input {
+    width: 100%;
+    box-sizing: border-box;
+    background: #121212;
+    border: 1px solid #555;
+    color: white;
+    padding: 4px;
+    font-size: 0.85rem;
+}
+
+.btsnoop-row {
+    display: grid !important;
+    /* Force grid over block */
+    /* Must match header default until JS overrides */
+    grid-template-columns: 60px 120px 160px 160px 80px 400px 420px;
+    border-bottom: 1px solid #333;
+    box-sizing: border-box !important;
+    width: 100%;
+    min-width: 0;
+    /* Allow grid to shrink */
+    overflow: hidden;
+    /* Prevent content overflow */
+}
+
+.btsnoop-row:hover {
+    background-color: #2c3e50;
+}
+
+.btsnoop-row.selected {
+    background-color: #1a73e8 !important;
+    /* Google Blue selection */
+    color: white !important;
+}
+
+.btsnoop-cell {
+    padding: 4px 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-right: 1px solid #333;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box !important;
+    min-width: 0;
+    /* Critical: Allow grid cells to shrink below content size */
+    /* Vertically center single lines */
+}
+
+/* Chart Interaction Styles */
+.chart-tooltip {
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    font-family: monospace;
+    transition: opacity 0.1s;
+}
+
+.chart-line {
+    z-index: 900;
+    pointer-events: none;
+}
+
+.chart-svg {
+    overflow: visible;
+    /* Allow labels to be seen if strictly outside */
+}
+
+/* Ensure plot containers are relative for absolute positioning of tooltips */
+
+.stats-card>div[id$="PlotContainer"] {
+    position: relative;
 }

@@ -97,23 +97,56 @@ function makeTableResizable(tableId) {
                         }
                     }
 
-                    // Update all tbody cells in this column
-                    const tbody = table.querySelector('tbody');
-                    if (tbody) {
-                        const rows = tbody.querySelectorAll('tr');
-                        const headerCells = Array.from(headerRow.children);
-                        const cellIndex = headerCells.indexOf(thBeingResized);
+                    // Check if table uses CSS Grid (for appVersionsTable)
+                    const tableStyle = window.getComputedStyle(table);
+                    const isGridTable = tableStyle.display === 'grid';
 
-                        rows.forEach(row => {
-                            const cell = row.children[cellIndex];
-                            if (cell) {
-                                cell.style.width = `${newWidth}px`;
-                                cell.style.minWidth = `${newWidth}px`;
-                                cell.style.maxWidth = `${newWidth}px`;
-                                cell.style.overflow = 'hidden';
-                                cell.style.textOverflow = 'ellipsis';
-                            }
+                    if (isGridTable) {
+                        // Build new grid-template-columns from all header widths
+                        const allHeaders = Array.from(headerRow.children);
+                        const columnWidths = allHeaders.map(th => {
+                            const w = th.style.width || `${th.offsetWidth}px`;
+                            return w;
                         });
+                        const gridColumns = columnWidths.join(' ');
+
+                        // Update table's grid-template-columns (for display: contents headers)
+                        table.style.gridTemplateColumns = gridColumns;
+
+                        // Update all tbody rows' grid-template-columns
+                        const tbody = table.querySelector('tbody');
+                        if (tbody) {
+                            const rows = tbody.querySelectorAll('tr');
+                            rows.forEach(row => {
+                                row.style.gridTemplateColumns = gridColumns;
+                            });
+                        }
+                    } else {
+                        // Traditional table: update all tbody cells in this column
+                        const tbody = table.querySelector('tbody');
+                        if (tbody) {
+                            const rows = tbody.querySelectorAll('tr');
+                            const headerCells = Array.from(headerRow.children);
+                            const cellIndex = headerCells.indexOf(thBeingResized);
+
+                            rows.forEach(row => {
+                                const cell = row.children[cellIndex];
+                                if (cell) {
+                                    cell.style.width = `${newWidth}px`;
+                                    cell.style.minWidth = `${newWidth}px`;
+                                    cell.style.maxWidth = `${newWidth}px`;
+                                    // For flex-based layouts, also set flex properties
+                                    cell.style.flex = `0 0 ${newWidth}px`;
+                                    cell.style.flexBasis = `${newWidth}px`;
+                                    cell.style.overflow = 'hidden';
+                                    cell.style.textOverflow = 'ellipsis';
+                                }
+                            });
+                        }
+
+                        // Also update the header cell flex properties
+                        thBeingResized.style.flex = `0 0 ${newWidth}px`;
+                        thBeingResized.style.flexBasis = `${newWidth}px`;
                     }
                 }
             };
