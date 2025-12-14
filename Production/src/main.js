@@ -1283,10 +1283,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // New Function: Export Stats Tab to Multi-sheet Excel
     // Export Stats Tab to Multi-sheet Excel (using ExportManager)
+    // Export Stats Tab to Multi-sheet Excel (using ExportManager)
     function exportStatsToExcel() {
         try {
+            // FIX: Filter logs based on selected time range
+            let exportLogs = originalLogLines;
+            if (startTimeInput.value && endTimeInput.value) {
+                const start = new Date(startTimeInput.value).getTime();
+                const end = new Date(endTimeInput.value).getTime();
+                if (!isNaN(start) && !isNaN(end)) {
+                    exportLogs = originalLogLines.filter(line => {
+                        const t = new Date(line.timestamp).getTime();
+                        return t >= start && t <= end;
+                    });
+                    console.log(`[Export] Filtering by time: ${new Date(start).toLocaleString()} - ${new Date(end).toLocaleString()} (${exportLogs.length} lines)`);
+                }
+            }
+
             ExportManager.exportStatsToExcel({
-                logLines: originalLogLines,
+                logLines: exportLogs,
                 minLogDate: minLogDate,
                 maxLogDate: maxLogDate,
                 filename: 'android_log_stats.xlsx'
@@ -2077,8 +2092,9 @@ self.onmessage = async (event) => {
         }));
 
         // Parse inputs as UTC to match worker's UTC-based timestamps
-        const startTime = startTimeInput.value ? new Date(startTimeInput.value + ':00Z') : null;
-        const endTime = endTimeInput.value ? new Date(endTimeInput.value + ':00Z') : null;
+        // FIX: Append 'Z' to treat the "datetime-local" string as a UTC time
+        const startTime = startTimeInput.value ? new Date(startTimeInput.value + 'Z') : null;
+        const endTime = endTimeInput.value ? new Date(endTimeInput.value + 'Z') : null;
 
         return {
             activeLogLevels: activeLogLevels,
@@ -2095,22 +2111,8 @@ self.onmessage = async (event) => {
         // Use FilterManager for filtering
         const filterConfig = getFilterConfig();
 
-        // Add time filter handling for compatibility
-        if (filterConfig.isTimeFilterActive && (filterConfig.startTime || filterConfig.endTime)) {
-            // Filter by time using dateObj
-            linesToFilter = linesToFilter.filter(line => {
-                if (line.isMeta) return true; // Always include meta lines
-                if (!line.dateObj) return true; // Include lines without dates
+        // Time filter is handled within FilterManager
 
-                const startTime = filterConfig.startTime;
-                const endTime = filterConfig.endTime;
-
-                if (startTime && line.dateObj < startTime) return false;
-                if (endTime && line.dateObj > endTime) return false;
-
-                return true;
-            });
-        }
 
         // Use FilterManager.applyMainFilters
         return FilterManager.applyMainFilters(
@@ -2470,32 +2472,43 @@ self.onmessage = async (event) => {
             }
         });
 
-        timeRangeSlider.noUiSlider.on('end', () => {
-            isTimeFilterActive = true;
+        timeRangeSlider.noUiSlider.on('end', (values) => {
+            const [currentStart, currentEnd] = values.map(v => Number(v));
+            // Reset filter active flag if we are covering the full range (with slight buffer for float precision)
+            const isFullRange = (Math.abs(currentStart - minTime) < 1000) && (Math.abs(currentEnd - maxTime) < 1000);
+            isTimeFilterActive = !isFullRange;
             refreshActiveTab(); // Apply filters only when the user finishes sliding
         });
 
         // When input fields are changed, update the slider
         [startTimeInput, endTimeInput].forEach(input => {
-            input.addEventListener('change', async () => {
-                isUpdatingFromInput = true;
-                isTimeFilterActive = true;
-                const startVal = startTimeInput.value ? new Date(startTimeInput.value + ':00Z').getTime() : minTime;
-                const endVal = endTimeInput.value ? new Date(endTimeInput.value + ':00Z').getTime() : maxTime;
-                timeRangeSlider.noUiSlider.set([startVal, endVal]);
-                isUpdatingFromInput = false;
-                await refreshActiveTab(); // Apply filters after input change
+            [startTimeInput, endTimeInput].forEach(input => {
+                input.addEventListener('change', async () => {
+                    isUpdatingFromInput = true;
+                    // Match UTC logic
+                    const startVal = startTimeInput.value ? new Date(startTimeInput.value + 'Z').getTime() : minTime;
+                    const endVal = endTimeInput.value ? new Date(endTimeInput.value + 'Z').getTime() : maxTime;
+
+                    // Check if full range
+                    const isFullRange = (Math.abs(startVal - minTime) < 1000) && (Math.abs(endVal - maxTime) < 1000);
+                    isTimeFilterActive = !isFullRange;
+
+                    timeRangeSlider.noUiSlider.set([startVal, endVal]);
+                    isUpdatingFromInput = false;
+                    await refreshActiveTab(); // Apply filters after input change
+                });
             });
         });
     }
 
     function dateToISO(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const hours = String(date.getUTCHours()).padStart(2, '0');
+        const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+        const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
     }
 
     function logcatToISO(logcatTimestamp) {
@@ -2521,7 +2534,7 @@ self.onmessage = async (event) => {
         const minutes = parseInt(logcatTimestamp.substring(9, 11), 10);
         const seconds = parseInt(logcatTimestamp.substring(12, 14), 10);
         const milliseconds = parseInt(logcatTimestamp.substring(15, 18), 10);
-        const date = new Date(year, month, day, hours, minutes, seconds, milliseconds);
+        const date = new Date(Date.UTC(year, month, day, hours, minutes, seconds, milliseconds));
         return isNaN(date) ? null : date;
     }
 
@@ -2664,11 +2677,8 @@ self.onmessage = async (event) => {
     }
     // --- Event Listeners for Time Filters ---
     if (startTimeInput) {
-        startTimeInput.addEventListener('change', () => timeRangeSlider.noUiSlider.set([new Date(startTimeInput.value + ':00Z').getTime(), null]));
-    }
-
-    if (endTimeInput) {
-        endTimeInput.addEventListener('change', () => timeRangeSlider.noUiSlider.set([null, new Date(endTimeInput.value + ':00Z').getTime()]));
+        startTimeInput.addEventListener('change', () => timeRangeSlider.noUiSlider.set([new Date(startTimeInput.value + 'Z').getTime(), null]));
+        endTimeInput.addEventListener('change', () => timeRangeSlider.noUiSlider.set([null, new Date(endTimeInput.value + 'Z').getTime()]));
     }
     if (logLevelToggleBtn) {
         logLevelToggleBtn.addEventListener('click', () => {

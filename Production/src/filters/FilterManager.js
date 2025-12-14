@@ -93,7 +93,8 @@ export function applyMainFilters(lines, collapseState, activeCollapseSet, filter
         isAndLogic = false,
         liveSearchQuery = '',
         startTime = null,
-        endTime = null
+        endTime = null,
+        isTimeFilterActive = false
     } = filterConfig;
 
     const filtered = [];
@@ -151,14 +152,18 @@ export function applyMainFilters(lines, collapseState, activeCollapseSet, filter
 
         // Time range filter
         if (startTime || endTime) {
-            // FIX: If line has no timestamp (e.g. plain text dump), ALWAYS include it.
-            // The user explicitly requested to see lines "with no time stamp".
-            if (!line.timestamp) {
-                // fall through to include
+            // FIX: Use dateObj if available (re-parsing if it's a string from worker)
+            // If line has no dateObj, we generally include it (context/meta).
+            if (!line.dateObj) {
+                // If time filter is explicitly active, exclude lines without date
+                if (isTimeFilterActive && startTime) continue;
             } else {
-                const lineTime = line.timestamp;
-                if (startTime && lineTime < startTime) continue;
-                if (endTime && lineTime > endTime) continue;
+                const lineTime = new Date(line.dateObj).getTime();
+                // Ensure valid date
+                if (!isNaN(lineTime)) {
+                    if (startTime && lineTime < startTime.getTime()) continue;
+                    if (endTime && lineTime > endTime.getTime()) continue;
+                }
             }
         }
 
