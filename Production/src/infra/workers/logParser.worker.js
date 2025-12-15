@@ -143,6 +143,15 @@ export async function processLogFile(eventData, postMessage) {
         let parsedLine = { lineNumber: i + 1 }; // Add line number
         let lineDateObj = null;
 
+        // DEBUG: Track matches
+        if (i < 20000 && i > 16400) { // Only log SYSTEM LOG section
+            if (match) {
+                if (i % 100 === 0) console.log(`[Worker] Line ${i} MATCHED:`, lineText.substring(0, 80));
+            } else {
+                if (i % 100 === 0) console.log(`[Worker] Line ${i} NO MATCH:`, lineText.substring(0, 80));
+            }
+        }
+
         if (match) {
             if (match.groups.logcatDate) { // Standard logcat format
                 const { logcatDate, logcatTime, level, tag, level2, tag2, message, tid, uid } = match.groups;
@@ -493,6 +502,14 @@ export async function processLogFile(eventData, postMessage) {
     if (workerDebugLogs.length > 0) {
         postMessage({ status: 'debug', logs: workerDebugLogs, filePath: path });
     }
+
+    // DEBUG: Log parsing summary
+    console.log('[Worker] PARSING SUMMARY for', path);
+    console.log('[Worker] Total lines processed:', lines.length);
+    console.log('[Worker] Parsed lines created:', parsedLines.length);
+    console.log('[Worker] Stats:', stats);
+    console.log('[Worker] Tags found:', tagSet.size);
+
     // Send a final success message with summary data, but without the huge parsedLines array
     postMessage({ status: 'success', tags: Array.from(tagSet), minTimestamp, maxTimestamp, filePath: path, stats, highlights: { ...highlights, accounts: Array.from(highlights.accounts) }, appVersions: Array.from(appVersions), batteryDataPoints, thermalDataPoints, cccMessages });
 }

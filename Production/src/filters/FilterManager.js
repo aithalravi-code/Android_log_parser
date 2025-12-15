@@ -97,7 +97,10 @@ export function applyMainFilters(lines, collapseState, activeCollapseSet, filter
         isTimeFilterActive = false
     } = filterConfig;
 
+    console.log('[FilterManager] START - Input lines:', lines.length, 'Active levels:', Array.from(activeLogLevels));
+
     const filtered = [];
+    let rejectedByLevel = 0, rejectedByKeyword = 0, rejectedByLiveSearch = 0, rejectedByTime = 0, rejectedByCollapse = 0;
 
     // Pre-calculate active keywords to avoid doing it in the loop
     let activeKeywords = [];
@@ -132,6 +135,7 @@ export function applyMainFilters(lines, collapseState, activeCollapseSet, filter
         // Log level filter - treat lines without a level as 'V' (Verbose)
         const lineLevel = line.level || 'V';
         if (!activeLogLevels.has(lineLevel)) {
+            rejectedByLevel++;
             continue;
         }
 
@@ -139,26 +143,39 @@ export function applyMainFilters(lines, collapseState, activeCollapseSet, filter
         if (activeKeywords.length > 0) {
             const matches = activeKeywords.map(kw => kw.regex.test(line.originalText));
             if (isAndLogic) {
-                if (!matches.every(m => m)) continue;
+                if (!matches.every(m => m)) {
+                    rejectedByKeyword++;
+                    continue;
+                }
             } else {
-                if (!matches.some(m => m)) continue;
+                if (!matches.some(m => m)) {
+                    rejectedByKeyword++;
+                    continue;
+                }
             }
         }
 
         // Live search filter
         if (liveRegex && !liveRegex.test(line.originalText)) {
+            rejectedByLiveSearch++;
             continue;
         }
 
-        // Time range filter
-        if (startTime || endTime) {
+        // Time range filter - ONLY apply if the filter is explicitly active
+        if (isTimeFilterActive && (startTime || endTime)) {
             // Only filter lines with valid dates
             if (line.dateObj) {
                 const lineTime = new Date(line.dateObj).getTime();
                 // Ensure valid date
                 if (!isNaN(lineTime)) {
-                    if (startTime && lineTime < startTime.getTime()) continue;
-                    if (endTime && lineTime > endTime.getTime()) continue;
+                    if (startTime && lineTime < startTime.getTime()) {
+                        rejectedByTime++;
+                        continue;
+                    }
+                    if (endTime && lineTime > endTime.getTime()) {
+                        rejectedByTime++;
+                        continue;
+                    }
                 }
             }
             // Lines without dateObj are included (they may be metadata or context)
@@ -177,12 +194,16 @@ export function applyMainFilters(lines, collapseState, activeCollapseSet, filter
         // If content matches, we've enabled the header.
         // NOW we check if we should hide the content line itself.
         if (collapseState.isInside) {
+            rejectedByCollapse++;
             continue;
         }
 
         filtered.push(line);
     }
 
+    console.log('[FilterManager] END - Output lines:', filtered.length,
+        '| Rejected by: Level=', rejectedByLevel, 'Keyword=', rejectedByKeyword,
+        'LiveSearch=', rejectedByLiveSearch, 'Time=', rejectedByTime, 'Collapse=', rejectedByCollapse);
     return filtered;
 }
 

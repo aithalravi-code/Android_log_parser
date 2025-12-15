@@ -1252,6 +1252,7 @@ self.onmessage = async (event) => {
 
                 if (data.status === 'chunk') {
                     // Append the chunk of lines
+                    console.log(`[Main] Received chunk for ${data.filePath}: ${data.parsedLines.length} lines, total now: ${resultForFile.parsedLines.length + data.parsedLines.length}`);
                     resultForFile.parsedLines.push(...data.parsedLines);
                 } else if (data.status === 'success') {
                     // This is the final message for this file. Merge summary data.
@@ -1852,6 +1853,8 @@ self.onmessage = async (event) => {
 
             logContainer.scrollTop = newScrollTop;
         }
+
+        console.log('[Main] After filtering: filteredLogLines.length =', filteredLogLines.length);
 
         // Final render call
         handleMainLogScroll(); // Use the throttled function for the final render
