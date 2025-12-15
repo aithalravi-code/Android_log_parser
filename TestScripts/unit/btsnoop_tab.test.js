@@ -96,8 +96,21 @@ describe('BtsnoopTab', () => {
             vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('2025-12-07-21:50');
 
             const deps = {
-                db: {},
+                db: {
+                    transaction: () => {
+                        const tx = {
+                            objectStore: () => ({ clear: () => { } }),
+                            oncomplete: null,
+                            onerror: null
+                        };
+                        // Trigger oncomplete async
+                        setTimeout(() => { if (tx.oncomplete) tx.oncomplete(); }, 0);
+                        return tx;
+                    }
+                },
                 getDb: () => ({}),
+                saveData: vi.fn(),
+                loadData: vi.fn(),
                 TimeTracker: { start: vi.fn(), stop: vi.fn() },
                 btsnoopInitialView: document.getElementById('btsnoopInitialView'),
                 btsnoopContentView: document.getElementById('btsnoopContentView'),

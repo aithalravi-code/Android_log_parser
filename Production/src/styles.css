@@ -325,20 +325,7 @@ input[type="file"]:hover {
     /* Allow text selection */
 }
 
-.log-line {
-    height: 20px;
-    line-height: 20px;
-    padding: 0 1rem;
-    white-space: pre;
-    position: relative;
-    border-bottom: 1px solid #3c4043;
-    /* Brighter separator */
-    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-    /* Classic monospace stack */
-    display: flex;
-    /* Fix overlap by putting line number and content on same line */
-    align-items: center;
-}
+/* .log-line definition removed (consolidated below) */
 
 /* Force white text on selection for ALL children */
 .log-line.selected,
@@ -392,6 +379,11 @@ input[type="file"]:hover {
     cursor: pointer;
     position: relative;
     transition: all 0.2s;
+    /* Prevent excessive horizontal stretching */
+    word-break: break-all;
+    /* Allow breaking long hex strings */
+    white-space: normal;
+    /* Allow wrapping to multiple lines */
 }
 
 .keyword-chip.active {
@@ -1024,133 +1016,143 @@ input[type="file"]:hover {
 /* Log Line Structure */
 /* Log Line Structure */
 /* Log Line Structure */
-.log-line-content {
+/* --- Android Studio Font --- */
+.log-line,
+.btsnoop-table {
+    font-family: 'JetBrains Mono', 'Consolas', 'Menlo', 'Courier New', monospace;
+    font-size: 13px;
+}
+
+
+.log-line {
     display: flex;
     align-items: center;
+    padding: 2px 5px;
+    border-bottom: 1px solid #333;
+    cursor: pointer;
+    min-height: 20px;
+    box-sizing: border-box;
+}
+
+.log-line:hover {
+    background-color: #444;
+}
+
+#btsnoopLogViewport .log-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+
+.log-line-content {
+    display: flex;
+    flex-direction: row;
     white-space: nowrap;
-    flex: 1 1 auto;
-    /* Fill remaining space */
-    min-width: 0;
-    /* Allow shrinking */
-    width: auto;
-    /* Remove 100% width forcing */
 }
 
 .line-number {
     display: inline-block;
-    width: 50px;
-    /* Slight increase for 4+ digits */
-    min-width: 50px;
-    color: #666;
+    width: 60px;
     text-align: right;
-    margin-right: 15px;
-    user-select: none;
-    flex: 0 0 50px;
-    /* Rigid width */
+    padding-right: 10px;
+    color: #888;
+    flex-shrink: 0;
+    font-size: 11px;
 }
 
 .log-meta {
-    width: 210px;
-    /* Increased from 150px to fit full timestamp */
-    min-width: 210px;
-    display: inline-block;
+    flex: 0 0 160px;
+    /* Do not grow, do not shrink, base width 160px */
+    white-space: nowrap;
     color: #9aa0a6;
-    margin-right: 10px;
     overflow: hidden;
-    text-overflow: clip;
-    flex-shrink: 0;
-    /* Prevent squishing */
-    font-family: 'Roboto Mono', monospace;
-    /* Ensure monospace */
-}
-
-/* Updated PID/TID/UID column - fixed width to prevent jitter, but wide enough */
-.log-line {
-    height: 20px;
-    line-height: 20px;
-    padding: 0 1rem;
-    white-space: pre;
-    position: relative;
-    border-bottom: 1px solid #3c4043;
-    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-    /* Classic monospace stack */
-    display: flex;
-    align-items: center;
 }
 
 .log-pid-tid {
-    width: 180px;
-    min-width: 180px;
-    display: inline-block;
-    margin-right: 10px;
-    text-align: right;
-    font-family: 'Roboto Mono', monospace;
-    overflow: hidden;
-    /* FIX: Prevent overlap */
-    text-overflow: ellipsis;
-    /* FIX: Show dots if too long */
+    flex: 0 0 100px;
+    /* Fixed width for PID-TID */
     white-space: nowrap;
-    flex-shrink: 0;
-    /* Prevent squishing */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: right;
+    margin-right: 10px;
 }
 
 .log-tag {
-    width: 200px;
-    /* Increased from 140px to prevent truncation */
-    min-width: 200px;
-    display: inline-block;
-    margin-right: 10px;
+    flex: 0 0 180px;
+    /* Fixed width for the tag */
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-weight: 500;
-    flex-shrink: 0;
-    /* Prevent squishing */
+    color: #E0E0E0;
 }
 
 .log-message {
-    flex: 1;
-    display: inline-block;
-    overflow: visible;
-    white-space: pre;
+    flex-grow: 1;
+    /* Take up remaining space */
+    white-space: nowrap;
 }
 
-/* Log Level Box */
+/* --- Log Level Background Boxes --- */
 .log-level-box {
     display: inline-block;
-    width: 24px;
-    flex-shrink: 0;
-    text-align: center;
-    border-radius: 2px;
+    padding: 0 5px;
+    margin: 0 5px;
+    border-radius: 3px;
+    color: #FFFFFF;
+    /* White text by default */
     font-weight: bold;
-    margin-right: 10px;
-    color: #fff;
-    line-height: 20px;
-    /* Vertically center text */
+    flex-shrink: 0;
+    /* Don't shrink */
+    width: 20px;
+    /* Fixed width for alignment */
+    text-align: center;
 }
 
-/* Level Specific Colors */
-.log-level-V {
-    background-color: #BDBDBD;
-    color: #000;
+.log-level-box.log-level-E {
+    background-color: #D32F2F;
 }
 
-.log-level-D {
-    background-color: #2196F3;
+.log-level-box.log-level-W {
+    background-color: #FFC107;
+    color: #000000;
 }
 
-.log-level-I {
-    background-color: #4CAF50;
+/* Black text on Amber */
+.log-level-box.log-level-I {
+    background-color: #388E3C;
 }
 
-.log-level-W {
-    background-color: #FF9800;
-    color: #000;
-    /* Black text for better contrast on orange */
+.log-level-box.log-level-D {
+    background-color: #1976D2;
 }
 
-.log-level-E {
-    background-color: #F44336;
+.log-level-box.log-level-V {
+    background-color: #757575;
 }
+
+/* Adjusted Text Colors for Dark Mode Visibility */
+.log-line-E {
+    color: #FF5252;
+}
+
+/* Red 400 */
+.log-line-W {
+    color: #FFD740;
+}
+
+/* Amber A200 */
+.log-line-I {
+    color: #69F0AE;
+}
+
+/* Green A200 */
+.log-line-D {
+    color: #448AFF;
+}
+
+/* Blue A200 */
 
 .dist-bar.log-line-V {
     color: #202124;
@@ -1244,73 +1246,106 @@ input[type="file"]:hover {
     /* Light Green for incoming packets */
 }
 
-/* --- CSS Grid Layout for BTSnoop --- */
-.btsnoop-grid-container {
-    display: grid;
-    grid-template-columns: 60px 120px 160px 160px 80px minmax(200px, 2fr) minmax(200px, 3fr);
+/* --- Table-based Layout for BTSnoop --- */
+#btsnoopContentView {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.btsnoop-table {
+    /* A single class for both header and body tables */
     width: 100%;
     min-width: 1200px;
-    /* Ensure horizontal scroll if needed */
+    /* Ensure table is wide enough to trigger horizontal scroll */
+    table-layout: auto;
+    /* FIX: Allow table to expand with content, enabling horizontal scroll */
+    border-collapse: collapse;
 }
 
-/* Header specific styling */
-/* .btsnoop-header-grid moved to bottom for consolidation */
+/* Note: #btsnoopLogContainer, #btsnoopLogSizer, and #btsnoopLogViewport styles
+       are managed in the logic or inherited from generic .log-container/sizer/viewport
+    */
 
-.btsnoop-header-cell {
-    padding: 8px 5px;
-    border-right: 1px solid #e0e0e0;
-    text-align: left;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    position: relative;
-    font-weight: bold;
-    color: #3c4043;
-    background-color: #f2f2f2;
-}
-
-.btsnoop-filter-cell {
-    padding: 4px;
-    background-color: #f2f2f2;
-    border-right: 1px solid #e0e0e0;
-    border-bottom: 1px solid #ccc;
-}
-
-.btsnoop-filter-cell input {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 4px;
-    border: 1px solid #dadce0;
-    border-radius: 4px;
-}
-
-/* Body row styling */
+/* BTSnoop row styling */
 .btsnoop-row {
-    /* Virtual scroll requires absolute positioning, so we cannot use display: contents.
-       Instead, each row is its own grid container. */
-    display: grid;
-    grid-template-columns: 60px 120px 160px 160px 80px 400px 420px;
-    width: 100%;
-    min-width: 1200px;
-    /* Match header width */
+    position: absolute;
+    /* Required for virtual scrolling */
+    left: 0;
+    right: 0;
     height: 20px;
-    /* Match LINE_HEIGHT */
-    box-sizing: border-box;
+    /* Fixed height is crucial for virtual scrolling performance */
+    background-color: #2C2C2C;
+    /* Dark background for rows */
+    display: block;
+    padding: 0;
+    border-bottom: 1px solid #444;
 }
 
-.btsnoop-cell {
-    padding: 0 5px;
-    /* Reduced padding for tighter rows */
-    border-right: 1px solid #444;
-    border-bottom: 1px solid #333;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    line-height: 20px;
-    /* Center text vertically */
-    color: #e0e0e0;
-    background-color: #2C2C2C;
+.btsnoop-row:nth-child(even) {
+    background-color: #343434;
+    /* Slightly lighter for even rows */
 }
+
+.btsnoop-row table {
+    width: 100%;
+    min-width: 1200px;
+    /* Match header table min-width */
+    margin: 0;
+    border-spacing: 0;
+}
+
+#btsnoopHeaderTable th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    text-align: left;
+    border-bottom: 2px solid #ccc;
+}
+
+.btsnoop-table th,
+.btsnoop-table td,
+.btsnoop-table .log-line-cell {
+    padding: 2px 5px;
+    overflow: hidden;
+    box-sizing: border-box;
+    vertical-align: top;
+    white-space: nowrap;
+    /* Keep content on one line */
+    text-overflow: ellipsis;
+    /* Truncate with ... */
+}
+
+/* Define column widths for both header and body */
+.btsnoop-table col:nth-child(1) {
+    width: 60px;
+}
+
+.btsnoop-table col:nth-child(2) {
+    width: 120px;
+}
+
+.btsnoop-table col:nth-child(3) {
+    width: 160px;
+}
+
+.btsnoop-table col:nth-child(4) {
+    width: 160px;
+}
+
+.btsnoop-table col:nth-child(5) {
+    width: 80px;
+}
+
+.btsnoop-table col:nth-child(6) {
+    width: 40%;
+}
+
+/* Summary */
+.btsnoop-table col:nth-child(7) {
+    width: 60%;
+}
+
+/* Data */
 
 .btsnoop-row:hover .btsnoop-cell {
     background-color: #444;
@@ -1318,71 +1353,6 @@ input[type="file"]:hover {
 
 .btsnoop-row.selected .btsnoop-cell {
     background-color: #2c3e50;
-    color: #fff;
-}
-
-/* Resize handle */
-.resize-handle-col {
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 5px;
-    cursor: col-resize;
-    z-index: 1;
-}
-
-.resize-handle-col:hover {
-    background-color: #4285f4;
-}
-
-/* BTSnoop Header - Sticky inside scroll container */
-#btsnoopHeader {
-    position: sticky;
-    top: 0;
-    z-index: 30;
-    /* Higher than header-grid (20) and meta-row (15) */
-    width: 100%;
-    background-color: #1e1e1e;
-    /* Solid background to cover content when scrolling */
-}
-
-/* Allow Data column (7th column) to wrap */
-.btsnoop-cell:nth-child(7) {
-    white-space: pre-wrap !important;
-    word-break: break-all;
-    overflow: hidden;
-    /* Changed from visible to prevent spillover */
-    min-height: 20px;
-    height: auto;
-    min-width: 0;
-    /* Allow shrinking in grid */
-}
-
-/* Adjust row height to accommodate wrapped content */
-.btsnoop-row {
-    min-height: 20px;
-    height: auto !important;
-}
-
-/* Alternating row backgrounds for BTSnoop */
-.btsnoop-row.even-row .btsnoop-cell {
-    background-color: #2C2C2C;
-    /* Darker gray */
-}
-
-.btsnoop-row.odd-row .btsnoop-cell {
-    background-color: #333333;
-    /* Lighter gray */
-}
-
-/* Hover and selection override alternating colors */
-.btsnoop-row:hover .btsnoop-cell {
-    background-color: #444 !important;
-}
-
-.btsnoop-row.selected .btsnoop-cell {
-    background-color: #2c3e50 !important;
     color: #fff;
 }
 
@@ -2554,4 +2524,253 @@ table thead tr:nth-child(2) th {
 
 .stats-card>div[id$="PlotContainer"] {
     position: relative;
+}
+
+:root {
+    --line-height: 20px;
+}
+
+/* --- Android Studio Font --- */
+.log-line,
+.btsnoop-table {
+    font-family: 'JetBrains Mono', 'Consolas', 'Menlo', 'Courier New', monospace;
+    font-size: 13px;
+}
+
+/* FIX: Make the log line a flex container to prevent overlap */
+.log-line {
+    display: flex;
+    align-items: center;
+    padding: 2px 5px;
+    border-bottom: 1px solid #333;
+    cursor: pointer;
+    min-height: var(--line-height);
+    box-sizing: border-box;
+}
+
+/* BTSnoop rows need absolute positioning for virtual scrolling */
+#btsnoopLogViewport .log-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+
+.log-line:hover {
+    background-color: #444;
+}
+
+/* Adjusted Text Colors for Dark Mode Visibility */
+.log-line-E {
+    color: #FF5252;
+}
+
+/* Red 400 */
+.log-line-W {
+    color: #FFD740;
+}
+
+/* Amber A200 */
+.log-line-I {
+    color: #69F0AE;
+}
+
+/* Green A200 */
+.log-line-D {
+    color: #448AFF;
+}
+
+/* Blue A200 */
+
+/* Line numbers - fixed width to prevent misalignment */
+.line-number {
+    display: inline-block;
+    width: 60px;
+    text-align: right;
+    padding-right: 10px;
+    color: #888;
+    flex-shrink: 0;
+    font-size: 11px;
+}
+
+/* --- Table-based Layout for BTSnoop --- */
+#btsnoopContentView {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* --- Log Level Background Boxes --- */
+.log-level-box {
+    display: inline-block;
+    padding: 0 5px;
+    margin: 0 5px;
+    border-radius: 3px;
+    color: #FFFFFF;
+    /* White text by default */
+    font-weight: bold;
+    flex-shrink: 0;
+    /* Don't shrink */
+    width: 20px;
+    /* Fixed width for alignment */
+    text-align: center;
+}
+
+.log-level-box.log-level-E {
+    background-color: #D32F2F;
+}
+
+.log-level-box.log-level-W {
+    background-color: #FFC107;
+    color: #000000;
+}
+
+/* Black text on Amber */
+.log-level-box.log-level-I {
+    background-color: #388E3C;
+}
+
+.log-level-box.log-level-D {
+    background-color: #1976D2;
+}
+
+.log-level-box.log-level-V {
+    background-color: #757575;
+}
+
+/* --- Android Studio Style Log Lines --- */
+.log-line-content {
+    display: flex;
+    flex-direction: row;
+    white-space: nowrap;
+}
+
+.log-meta {
+    flex: 0 0 160px;
+    /* Do not grow, do not shrink, base width 160px */
+    white-space: nowrap;
+}
+
+.log-pid-tid {
+    flex: 0 0 100px;
+    /* Fixed width for PID-TID */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.log-tag {
+    flex: 0 0 180px;
+    /* Fixed width for the tag */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #E0E0E0;
+}
+
+.log-message {
+    flex-grow: 1;
+    /* Take up remaining space */
+    white-space: nowrap;
+}
+
+/* --- Enable horizontal scrolling for all log containers --- */
+.log-container {
+    overflow-x: auto;
+    /* This was correct */
+    overflow-y: auto;
+}
+
+.btsnoop-table {
+    /* A single class for both header and body tables */
+    width: 100%;
+    min-width: 1200px;
+    /* Ensure table is wide enough to trigger horizontal scroll */
+    table-layout: auto;
+    /* FIX: Allow table to expand with content, enabling horizontal scroll */
+    border-collapse: collapse;
+}
+
+/* BTSnoop row styling */
+.btsnoop-row {
+    display: block;
+    padding: 0;
+    border-bottom: 1px solid #444;
+}
+
+.btsnoop-row table {
+    width: 100%;
+    min-width: 1200px;
+    /* Match header table min-width */
+    margin: 0;
+    border-spacing: 0;
+}
+
+#btsnoopHeaderTable th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    text-align: left;
+    border-bottom: 2px solid #ccc;
+}
+
+.btsnoop-table th,
+.btsnoop-table td,
+.btsnoop-table .log-line-cell {
+    padding: 2px 5px;
+    overflow: hidden;
+    box-sizing: border-box;
+    vertical-align: top;
+    white-space: nowrap;
+    /* Keep content on one line */
+    text-overflow: ellipsis;
+    /* Truncate with ... */
+}
+
+/* Define column widths for both header and body */
+.btsnoop-table col:nth-child(1) {
+    width: 60px;
+}
+
+.btsnoop-table col:nth-child(2) {
+    width: 120px;
+}
+
+.btsnoop-table col:nth-child(3) {
+    width: 160px;
+}
+
+.btsnoop-table col:nth-child(4) {
+    width: 160px;
+}
+
+.btsnoop-table col:nth-child(5) {
+    width: 80px;
+}
+
+.btsnoop-table col:nth-child(6) {
+    width: 40%;
+}
+
+/* Summary */
+.btsnoop-table col:nth-child(7) {
+    width: 60%;
+}
+
+/* Data */
+
+/* --- Fixes for Final Table Layout --- */
+.btsnoop-row {
+    position: absolute;
+    /* Required for virtual scrolling */
+    left: 0;
+    right: 0;
+    height: var(--line-height);
+    /* Fixed height is crucial for virtual scrolling performance */
+    background-color: #2C2C2C;
+    /* Dark background for rows */
+}
+
+.btsnoop-row:nth-child(even) {
+    background-color: #343434;
+    /* Slightly lighter for even rows */
 }

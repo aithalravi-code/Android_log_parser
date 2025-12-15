@@ -103,12 +103,18 @@ const FUNCTION_IDS = {
 
 const APDU_COMMANDS = {
     '00A4': 'SELECT',
+    '8030': 'SPAKE2+_REQUEST',
+    '8032': 'SPAKE2+_VERIFY',
+    '84D4': 'WRITE_DATA',
+    '84CA': 'GET_DATA',
+    '84C0': 'GET_RESPONSE',
+    '803C': 'CONTROL_FLOW',
     '8080': 'AUTH0',
     '8081': 'AUTH1',
-    '803C': 'CONTROL_FLOW',
     '8071': 'CREATE_RANGING_KEY',
     '8072': 'TERMINATE_RANGING_SESSION',
-    '8073': 'EXCHANGE_RANGING_DATA'
+    '8073': 'EXCHANGE_RANGING_DATA',
+    '86E2': 'EXCHANGE'
 };
 
 const RKE_STATUS_MAP = {
@@ -154,7 +160,11 @@ export const CCC_CONSTANTS = {
         0x11: "DK Event Notification"
     },
     SUPPLEMENTARY_MSGS: {
-        0x0D: "Time_Sync"
+        0x0D: "Time_Sync",
+        0x0E: "First_Approach_RQ",
+        0x0F: "First_Approach_RS",
+        0x14: "RKE_Auth_RQ",
+        0x15: "RKE_Auth_RS"
     },
     FRAMEWORK_MSGS: {
         0x04: "OP_CONTROL_FLOW",
@@ -577,7 +587,20 @@ export const decodePayload = (type, subtype, payload) => {
                         '00': 'Deselect SE',
                         '01': 'BLE Pairing Ready',
                         '02': 'Require Capability Exchange',
-                        '03': 'Request Standard Transaction'
+                        '03': 'Request Standard Transaction',
+                        '04': 'Request Owner Pairing',
+                        '80': 'General Error',
+                        '81': 'Device SE Busy',
+                        '82': 'Device SE Transaction State Lost',
+                        '83': 'Device Busy',
+                        '84': 'Command Temporarily Blocked',
+                        '85': 'Unsupported Channel Bitmask',
+                        '86': 'OP Device Not Inside Vehicle',
+                        '87': 'Device Resource Available',
+                        'FC': 'OOB Mismatch',
+                        'FD': 'BLE Pairing Failed',
+                        'FE': 'FA Crypto Operation Failed',
+                        'FF': 'Wrong Parameters'
                     };
                     const codeDesc = commandStatusMap[code.toUpperCase()] || 'Unknown Status';
                     params = formatParam('Status', codeDesc) + formatParam('Code', '0x' + code.toUpperCase());
@@ -668,6 +691,73 @@ export const decodePayload = (type, subtype, payload) => {
 
                 return { innerMsg, params };
             }
+        }
+    }
+
+    if (type === 0x05) {
+        if (subtype === 0x0D) {
+            innerMsg = "Time_Sync";
+            params = parseTLV(payload, {
+                '57': 'Counter_Value',
+                '58': 'UWB_Device_Time_Uncertainty',
+                '59': 'UWB_Clock_Skew_Measurement_available',
+                '5A': 'Device_max_PPM',
+                '5B': 'Success',
+                '5C': 'RetryDelay'
+            });
+        }
+        if (subtype === 0x0E) {
+            innerMsg = "First_Approach_RQ";
+            // First_Approach_RQ contains two encrypted blocks (AES-128-CCM):
+            // Block 1: E1_Payload (8 bytes) + IV1 (8 bytes) + Tag1 (4 bytes) - encrypted DK_Identifier with Kble_intro
+            // Block 2: E2_Payload (38 bytes) + IV2 (8 bytes) + Tag2 (4 bytes) - encrypted BTAddrA||Ca||ra with Kble_oob
+            if (payload.length >= 140) {
+                // Block 1: DK_Identifier encrypted with Kble_intro
+                const e1 = payload.substring(0, 16);
+                const iv1 = payload.substring(16, 32);
+                const tag1 = payload.substring(32, 40);
+
+                // Block 2: BTAddrA||Ca||ra encrypted with Kble_oob
+                const e2 = payload.substring(40, 116);
+                const iv2 = payload.substring(116, 132);
+                const tag2 = payload.substring(132, 140);
+
+                params = `<div class="tlv-block">${formatParam('E1 (DK_Identifier)', e1)}</div>` +
+                    `<div class="tlv-indent">${formatParam('IV1', iv1)} ${formatParam('Tag1', tag1)}</div>` +
+                    `<div class="tlv-block">${formatParam('E2 (BTAddr||Ca||ra)', e2)}</div>` +
+                    `<div class="tlv-indent">${formatParam('IV2', iv2)} ${formatParam('Tag2', tag2)}</div>`;
+            } else {
+                params = formatParam('Raw Data', payload);
+            }
+        }
+        if (subtype === 0x0F) {
+            innerMsg = "First_Approach_RS";
+            // E_Payload(Variable), IV(8), Tag(4)
+            // Tag is last 4 bytes (8 chars), IV is before that (8 bytes/16 chars)
+            if (payload.length >= 24) {
+                let tagStart = payload.length - 8;
+                let ivStart = tagStart - 16;
+                let ePayload = payload.substring(0, ivStart);
+                let iv = payload.substring(ivStart, tagStart);
+                let tag = payload.substring(tagStart);
+
+                let p1 = formatParam('E_Payload', ePayload);
+                let p2 = formatParam('IV', iv);
+                let p3 = formatParam('Tag', tag);
+                params = `${p1} ${p2} ${p3}`;
+            } else {
+                params = formatParam('Raw Data', payload);
+            }
+        }
+        if (subtype === 0x14) {
+            innerMsg = "RKE_Auth_RQ";
+            // RKE Challenge (16 bytes)
+            params = formatParam('RKE Challenge', payload);
+        }
+        if (subtype === 0x15) {
+            innerMsg = "RKE_Auth_RS";
+            // Arbitrary Data Attestation (Variable)
+            params = formatParam('Arbitrary Data', payload);
         }
     }
 

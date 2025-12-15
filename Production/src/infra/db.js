@@ -5,7 +5,8 @@ const DB_VERSION = 2;
 const LOG_STORE_NAME = 'logStore';
 const BTSNOOP_STORE_NAME = 'btsnoopStore';
 
-let db = null;
+// Wrap db in object to prevent minification issues
+const state = { db: null };
 
 /**
  * Open the IndexedDB database
@@ -16,21 +17,27 @@ export function openDb() {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
         request.onerror = (event) => reject('Error opening IndexedDB');
         request.onsuccess = (event) => {
-            db = event.target.result;
-            resolve(db);
+            state.db = event.target.result;
+            resolve(state.db);
         };
         request.onupgradeneeded = (event) => {
-            const db = event.target.result;
-            if (!db.objectStoreNames.contains(LOG_STORE_NAME)) {
-                db.createObjectStore(LOG_STORE_NAME, { keyPath: 'key' });
+            const database = event.target.result;
+            if (!database.objectStoreNames.contains(LOG_STORE_NAME)) {
+                database.createObjectStore(LOG_STORE_NAME, { keyPath: 'key' });
             }
-            if (!db.objectStoreNames.contains(BTSNOOP_STORE_NAME)) {
-                const btsnoopStore = db.createObjectStore(BTSNOOP_STORE_NAME, { keyPath: 'number' });
+            if (!database.objectStoreNames.contains(BTSNOOP_STORE_NAME)) {
+                const btsnoopStore = database.createObjectStore(BTSNOOP_STORE_NAME, { keyPath: 'number' });
                 btsnoopStore.createIndex('tags', 'tags', { multiEntry: true });
             }
         };
     });
 }
+
+/**
+ * Get the database instance
+ * @returns {IDBDatabase|null}
+ */
+export const getDb = () => state.db;
 
 /**
  * Perform a database action (get or put)
@@ -41,8 +48,9 @@ export function openDb() {
  */
 function dbAction(type, key, value = null) {
     return new Promise((resolve, reject) => {
-        if (!db) return reject('DB not open');
-        const transaction = db.transaction([LOG_STORE_NAME], type);
+        const database = getDb();
+        if (!database) return reject('DB not open');
+        const transaction = database.transaction([LOG_STORE_NAME], type);
         const store = transaction.objectStore(LOG_STORE_NAME);
         const request = type === 'readwrite' ? store.put({ key, value }) : store.get(key);
         transaction.oncomplete = () => resolve(request.result);
@@ -71,21 +79,16 @@ export const loadData = (key) => dbAction('readonly', key);
  */
 export const clearData = () => {
     return new Promise((resolve, reject) => {
-        if (!db) return reject('DB not open');
+        const database = getDb();
+        if (!database) return reject('DB not open');
         // Get all store names from the database
-        const storeNames = Array.from(db.objectStoreNames);
-        const transaction = db.transaction(storeNames, 'readwrite');
+        const storeNames = Array.from(database.objectStoreNames);
+        const transaction = database.transaction(storeNames, 'readwrite');
         storeNames.forEach(name => transaction.objectStore(name).clear());
         transaction.oncomplete = () => resolve();
         transaction.onerror = (event) => reject('DB clear error: ' + event.target.error);
     });
 };
-
-/**
- * Get the database instance
- * @returns {IDBDatabase|null}
- */
-export const getDb = () => db;
 
 /**
  * Get store names

@@ -22,6 +22,8 @@ import * as FilterManager from './filters/FilterManager.js';
 import * as ExportManager from './export/ExportManager.js';
 import LogParserWorker from './infra/workers/logParser.worker.js?worker&inline'; // Inline for file:// support
 import FilterWorker from './infra/workers/filter.worker.js?worker&inline'; // Inline for file:// support
+import { openDb, saveData, loadData, clearData, getDb } from './infra/db.js';
+import { TooltipManager } from './ui/TooltipManager.js';
 
 // Register Chart.js components
 Chart.register(...registerables);
@@ -35,57 +37,9 @@ window.CccTab = CccTab; // Expose for testing
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- IndexedDB Helper ---
-    const DB_NAME = 'logViewerDB';
-    const DB_VERSION = 2;
-    const LOG_STORE_NAME = 'logStore';
-    const BTSNOOP_STORE_NAME = 'btsnoopStore';
-    let db;
+    // --- IndexedDB Helper ---
+    // Moved to infra/db.js
 
-    function openDb() {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open(DB_NAME, DB_VERSION);
-            request.onerror = (event) => reject('Error opening IndexedDB');
-            request.onsuccess = (event) => {
-                db = event.target.result;
-                resolve(db);
-            };
-            request.onupgradeneeded = (event) => {
-                const db = event.target.result;
-                if (!db.objectStoreNames.contains(LOG_STORE_NAME)) {
-                    db.createObjectStore(LOG_STORE_NAME, { keyPath: 'key' });
-                }
-                if (!db.objectStoreNames.contains(BTSNOOP_STORE_NAME)) {
-                    const btsnoopStore = db.createObjectStore(BTSNOOP_STORE_NAME, { keyPath: 'number' });
-                    btsnoopStore.createIndex('tags', 'tags', { multiEntry: true });
-                }
-            };
-        });
-    }
-
-    function dbAction(type, key, value = null) {
-        return new Promise((resolve, reject) => {
-            if (!db) return reject('DB not open');
-            const transaction = db.transaction([LOG_STORE_NAME], type);
-            const store = transaction.objectStore(LOG_STORE_NAME);
-            const request = type === 'readwrite' ? store.put({ key, value }) : store.get(key);
-            transaction.oncomplete = () => resolve(request.result);
-            transaction.onerror = (event) => reject('DB transaction error: ' + event.target.error);
-        });
-    }
-
-    const saveData = (key, value) => dbAction('readwrite', key, value);
-    const loadData = (key) => dbAction('readonly', key);
-    const clearData = () => {
-        return new Promise((resolve, reject) => {
-            if (!db) return reject('DB not open');
-            // Get all store names from the database
-            const storeNames = Array.from(db.objectStoreNames);
-            const transaction = db.transaction(storeNames, 'readwrite');
-            storeNames.forEach(name => transaction.objectStore(name).clear());
-            transaction.oncomplete = () => resolve();
-            transaction.onerror = (event) => reject('DB clear error: ' + event.target.error);
-        });
-    };
 
     // --- UI Elements ---
     // --- UI Elements ---
@@ -354,174 +308,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- CCC Hover Tooltip Logic ---
-    const cccTooltip = document.createElement('div');
-    cccTooltip.className = 'ccc-tooltip';
-    document.body.appendChild(cccTooltip);
+    const tooltipManager = new TooltipManager(() => cccMessages);
 
-    function showTooltip(event, line, cccMsg) {
-        // Fallback: If cccMsg is not passed (from property), try to find it in global array
-        if (!cccMsg && line && line.lineNumber) {
-            // console.log('[Tooltip] Fallback lookup for line:', line.lineNumber);
-            // Use relaxed matching (timestamps match or within same line logic)
-            cccMsg = cccMessages.find(m => m.lineNumber === line.lineNumber);
-        }
-
-        if (!cccMsg) {
-            // console.log('[Tooltip] No CCC message found explicitly or via fallback.');
-            hideTooltip();
-            return;
-        }
-
-        // UX Improvement: If we are showing the custom UI, immediately remove native 'title' attributes 
-        // from the hovered elements to prevent double-tooltips (native + custom).
-        if (event.target) {
-            // Remove from specific target if it has one
-            if (event.target.hasAttribute('title')) event.target.removeAttribute('title');
-
-            // Also clean up siblings/parents just in case the mouse is slightly offset or bubbling
-            const lineEl = event.target.closest('.log-line');
-            if (lineEl) {
-                const titleEls = lineEl.querySelectorAll('[title]');
-                titleEls.forEach(el => el.removeAttribute('title'));
-            }
-        }
-
-        // Decode the payload if not already decoded
-        let decoded = cccMsg._decoded;
-        if (!decoded) {
-            try {
-                decoded = CccTab.decodePayload(cccMsg.type, cccMsg.subtype, cccMsg.payload);
-                cccMsg._decoded = decoded; // Cache it
-            } catch (err) {
-                console.error('[Tooltip] Decode failed:', err);
-                decoded = { innerMsg: "Error decoding", params: err.message };
-            }
-        }
-
-        const categoryName = CccTab.CCC_CONSTANTS.MESSAGE_TYPES[cccMsg.type] || `Unknown (0x${cccMsg.type.toString(16).padStart(2, '0').toUpperCase()})`;
-        let typeName = `Unknown`;
-        if (cccMsg.type === 0x02) typeName = CccTab.CCC_CONSTANTS.UWB_RANGING_MSGS[cccMsg.subtype] || typeName;
-        else if (cccMsg.type === 0x03) typeName = CccTab.CCC_CONSTANTS.DK_EVENT_CATEGORIES[cccMsg.subtype] || typeName;
-        else if (cccMsg.type === 0x01 && CccTab.CCC_CONSTANTS.SE_MSGS && CccTab.CCC_CONSTANTS.SE_MSGS[cccMsg.subtype]) typeName = CccTab.CCC_CONSTANTS.SE_MSGS[cccMsg.subtype];
-        else if (cccMsg.type === 0x05) typeName = CccTab.CCC_CONSTANTS.SUPPLEMENTARY_MSGS[cccMsg.subtype] || typeName;
-        else if (cccMsg.type === 0x00 && CccTab.CCC_CONSTANTS.FRAMEWORK_MSGS && CccTab.CCC_CONSTANTS.FRAMEWORK_MSGS[cccMsg.subtype]) typeName = CccTab.CCC_CONSTANTS.FRAMEWORK_MSGS[cccMsg.subtype];
-
-        const innerMessage = decoded.innerMsg || "-";
-
-        // Clean up params HTML for tooltip (remove nested divs if needed, or style them)
-        // The decodePayload returns HTML with .tlv-block classes. We can use them directly if styles allow.
-        const paramsHtml = decoded.params || "No parameters";
-
-        cccTooltip.innerHTML = `
-            <div class="ccc-tooltip-header">CCC Packet Details</div>
-            <div class="ccc-tooltip-row"><span class="ccc-tooltip-label">Category:</span><span class="ccc-tooltip-value">${categoryName}</span></div>
-            <div class="ccc-tooltip-row"><span class="ccc-tooltip-label">Type:</span><span class="ccc-tooltip-value">${typeName}</span></div>
-            <div class="ccc-tooltip-row"><span class="ccc-tooltip-label">Message:</span><span class="ccc-tooltip-value">${innerMessage}</span></div>
-            <div class="ccc-tooltip-row" style="flex-direction: column;">
-                <span class="ccc-tooltip-label" style="margin-bottom: 2px;">Parameters:</span>
-                <span class="ccc-tooltip-value" style="font-size: 0.85em;">${paramsHtml}</span>
-            </div>
-        `;
-
-        cccTooltip.style.display = 'block';
-        moveTooltip(event);
-    }
-
-    function moveTooltip(event) {
-        const x = event.clientX + 15;
-        const y = event.clientY + 15;
-
-        // Boundary checks
-        const rect = cccTooltip.getBoundingClientRect();
-        let finalX = x;
-        let finalY = y;
-
-        if (x + rect.width > window.innerWidth) {
-            finalX = event.clientX - rect.width - 10;
-        }
-        if (y + rect.height > window.innerHeight) {
-            finalY = event.clientY - rect.height - 10;
-        }
-
-        cccTooltip.style.left = `${finalX}px`;
-        cccTooltip.style.top = `${finalY}px`;
-    }
-
-    function hideTooltip() {
-        cccTooltip.style.display = 'none';
-    }
-
-    // Event Delegation for Tooltip
     if (logContainer) {
-        logContainer.addEventListener('mouseover', (e) => {
-            const lineEl = e.target.closest('.log-line');
-            if (lineEl) {
-                const index = parseInt(lineEl.dataset.lineIndex, 10);
-                if (!isNaN(index) && filteredLogLines[index]) {
-                    const line = filteredLogLines[index];
-                    showTooltip(e, line, line.cccMessage);
-                }
-            } else {
-                hideTooltip();
-            }
-        });
-
-        logContainer.addEventListener('mousemove', (e) => {
-            if (cccTooltip.style.display === 'block') {
-                moveTooltip(e);
-            }
-        });
-
-        logContainer.addEventListener('mouseout', (e) => {
-            // Only hide if we left the log line or the container
-            // Actually, mouseover on another element will trigger checks.
-            // If we move out of a CCC line to a non-CCC line, the mouseover listener above will hide it.
-            // But if we move out of the container completely:
-            if (!e.relatedTarget || !logContainer.contains(e.relatedTarget)) {
-                hideTooltip();
-            }
-        });
+        tooltipManager.attachTo(logContainer, (index) => filteredLogLines[index]);
     }
-
-
-
 
     // --- Enable Tooltip for Connectivity Tab (CCC Focus) ---
-    // The connectivity tab uses a separate viewport: connectivityLogViewport
-    // We need to attach listeners there as well.
-    // However, connectivityLogViewport might not be in the DOM yet or defined at this scope.
-    // We should attach it dynamically or use document-level delegation if possible, but localized is better.
-    // Let's hook into setupConnectivityTab or just poll for it/attach if it exists.
-    // Since main.js runs after DOMContentLoaded, we can try finding it.
-
+    // Poll for connectivity container or attach if exists
     const connectivityContainer = document.getElementById('connectivityLogContainer');
     if (connectivityContainer) {
-        connectivityContainer.addEventListener('mouseover', (e) => {
-            const lineEl = e.target.closest('.log-line');
-            if (lineEl) {
-                const index = parseInt(lineEl.dataset.lineIndex, 10);
-                // Note: Connectivity tab uses filteredConnectivityLogLines
-                if (!isNaN(index) && filteredConnectivityLogLines[index]) {
-                    const line = filteredConnectivityLogLines[index];
-                    showTooltip(e, line, line.cccMessage);
-                }
-            } else {
-                hideTooltip();
-            }
-        });
-
-        connectivityContainer.addEventListener('mousemove', (e) => {
-            if (cccTooltip.style.display === 'block') {
-                moveTooltip(e);
-            }
-        });
-
-        connectivityContainer.addEventListener('mouseout', (e) => {
-            if (!e.relatedTarget || !connectivityContainer.contains(e.relatedTarget)) {
-                hideTooltip();
-            }
-        });
+        tooltipManager.attachTo(connectivityContainer, (index) => filteredConnectivityLogLines[index]);
+    } else {
+        // Fallback or wait for it to be created if it's dynamic
+        // For now, we assume it's static or we might need a MutationObserver if it's created late.
+        // Assuming it's in HTML but maybe hidden.
     }
+
 
     // --- Tab Navigation ---
     tabs.forEach(tab => {
@@ -582,180 +385,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================================
     // --- Style Injection for Log Levels ---
     // =================================================================================
-    // Inject CSS for log level colors directly, as we can't edit the CSS file.
-    function injectLogLevelStyles() {
-        const style = document.createElement('style');
-        style.textContent = `
-        /* --- Android Studio Font --- */
-        .log - line, .btsnoop - table {
-        font - family: 'JetBrains Mono', 'Consolas', 'Menlo', 'Courier New', monospace;
-        font - size: 13px;
-    }
-            /* FIX: Make the log line a flex container to prevent overlap */
-            .log - line {
-        display: flex;
-        align - items: center;
-        padding: 2px 5px;
-        border - bottom: 1px solid #333;
-        cursor: pointer;
-        min - height: ${LINE_HEIGHT} px;
-        box - sizing: border - box;
-    }
+    // Styles have been moved to styles.css
 
-    /* BTSnoop rows need absolute positioning for virtual scrolling */
-    #btsnoopLogViewport.log - line {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100 %;
-    }
-            
-            .log - line:hover {
-        background - color: #444;
-    }
-            /* Adjusted Text Colors for Dark Mode Visibility */
-            .log - line - E { color: #FF5252; } /* Red 400 */
-            .log - line - W { color: #FFD740; } /* Amber A200 */
-            .log - line - I { color: #69F0AE; } /* Green A200 */
-            .log - line - D { color: #448AFF; } /* Blue A200 */
-
-            /* Line numbers - fixed width to prevent misalignment */
-            .line - number {
-        display: inline - block;
-        width: 60px;
-        text - align: right;
-        padding - right: 10px;
-        color: #888;
-        flex - shrink: 0;
-        font - size: 11px;
-    }
-
-    /* --- Table-based Layout for BTSnoop --- */
-    #btsnoopContentView {
-        display: flex;
-        flex - direction: column;
-        height: 100 %;
-    }
-            /* --- Log Level Background Boxes --- */
-            .log - level - box {
-        display: inline - block;
-        padding: 0 5px;
-        margin: 0 5px;
-        border - radius: 3px;
-        color: #FFFFFF; /* White text by default */
-        font - weight: bold;
-        flex - shrink: 0; /* Don't shrink */
-        width: 20px; /* Fixed width for alignment */
-        text - align: center;
-    }
-            .log - level - box.log - level - E { background - color: #D32F2F; }
-            .log - level - box.log - level - W { background - color: #FFC107; color: #000000; } /* Black text on Amber */
-            .log - level - box.log - level - I { background - color: #388E3C; }
-            .log - level - box.log - level - D { background - color: #1976D2; }
-            .log - level - box.log - level - V { background - color: #757575; }
-
-            /* --- Android Studio Style Log Lines --- */
-            .log - line - content {
-        display: flex;
-        flex - direction: row;
-        white - space: nowrap;
-    }
-            .log - meta {
-        flex: 0 0 160px; /* Do not grow, do not shrink, base width 160px */
-        white - space: nowrap;
-    }
-            .log - pid - tid {
-        flex: 0 0 100px; /* Fixed width for PID-TID */
-        white - space: nowrap;
-        overflow: hidden;
-        text - overflow: ellipsis;
-    }
-            .log - tag {
-        flex: 0 0 180px; /* Fixed width for the tag */
-        white - space: nowrap;
-        overflow: hidden;
-        text - overflow: ellipsis;
-        color: #E0E0E0;
-    }
-            .log - message {
-        flex - grow: 1; /* Take up remaining space */
-        white - space: nowrap;
-    }
-
-            /* --- Enable horizontal scrolling for all log containers --- */
-            .log - container {
-        overflow - x: auto; /* This was correct */
-        overflow - y: auto;
-    }
-
-    #btsnoopContentView {
-        display: flex;
-        flex - direction: column;
-        height: 100 %;
-    }
-            .btsnoop - table { /* A single class for both header and body tables */
-        width: 100 %;
-        min - width: 1200px; /* Ensure table is wide enough to trigger horizontal scroll */
-        table - layout: auto; /* FIX: Allow table to expand with content, enabling horizontal scroll */
-        border - collapse: collapse;
-    }
-
-    /* NOTE: #btsnoopLogContainer, #btsnoopLogSizer, and #btsnoopLogViewport styles
-       have been moved to styles.css to avoid conflicts with top: 70px offset */
-
-            /* BTSnoop row styling */
-            .btsnoop - row {
-        display: block;
-        padding: 0;
-        border - bottom: 1px solid #444;
-    }
-            
-            .btsnoop - row table {
-        width: 100 %;
-        min - width: 1200px; /* Match header table min-width */
-        margin: 0;
-        border - spacing: 0;
-    }
-
-    #btsnoopHeaderTable th {
-        background - color: #f2f2f2;
-        font - weight: bold;
-        text - align: left;
-        border - bottom: 2px solid #ccc;
-    }
-            .btsnoop - table th, .btsnoop - table td, .btsnoop - table.log - line - cell {
-        padding: 2px 5px;
-        overflow: hidden;
-        box - sizing: border - box;
-        vertical - align: top;
-        white - space: nowrap; /* Keep content on one line */
-        text - overflow: ellipsis; /* Truncate with ... */
-    }
-            /* Define column widths for both header and body */
-            .btsnoop - table col: nth - child(1) { width: 60px; }
-            .btsnoop - table col: nth - child(2) { width: 120px; }
-            .btsnoop - table col: nth - child(3) { width: 160px; }
-            .btsnoop - table col: nth - child(4) { width: 160px; }
-            .btsnoop - table col: nth - child(5) { width: 80px; }
-            .btsnoop - table col: nth - child(6) { width: 40 %; } /* Summary */
-            .btsnoop - table col: nth - child(7) { width: 60 %; } /* Data */
-
-            /* --- Fixes for Final Table Layout --- */
-            .btsnoop - row {
-        position: absolute; /* Required for virtual scrolling */
-        left: 0;
-        right: 0;
-        height: ${LINE_HEIGHT} px; /* Fixed height is crucial for virtual scrolling performance */
-        background - color: #2C2C2C; /* Dark background for rows */
-    }
-            .btsnoop - row: nth - child(even) {
-        background - color: #343434; /* Slightly lighter for even rows */
-    }
-
-    `;
-        document.head.appendChild(style);
-    }
-    injectLogLevelStyles();
 
     // =================================================================================
     // --- OPTIMIZATION: Helper Functions ---
@@ -1456,7 +1087,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         // Clear IndexedDB if requested
-        if (clearStorage && db) {
+        if (clearStorage && getDb()) {
             await clearData();
         }
 
@@ -3142,8 +2773,7 @@ self.onmessage = async (event) => {
 
         // Pass dependencies explicitly to module
         const deps = {
-            db,
-            getDb: () => db,
+            getDb,
             saveData,
             loadData,
             TimeTracker,
@@ -3447,7 +3077,7 @@ self.onmessage = async (event) => {
             }
 
             initializeDynamicElements();
-            injectLogLevelStyles();
+            // injectLogLevelStyles(); // Removed: Styles moved to styles.css
 
             // No persistence check - we cleared everything
             if (skeletonLoader) skeletonLoader.style.display = 'none';
