@@ -152,12 +152,8 @@ export function applyMainFilters(lines, collapseState, activeCollapseSet, filter
 
         // Time range filter
         if (startTime || endTime) {
-            // FIX: Use dateObj if available (re-parsing if it's a string from worker)
-            // If line has no dateObj, we generally include it (context/meta).
-            if (!line.dateObj) {
-                // If time filter is explicitly active, exclude lines without date
-                if (isTimeFilterActive && startTime) continue;
-            } else {
+            // Only filter lines with valid dates
+            if (line.dateObj) {
                 const lineTime = new Date(line.dateObj).getTime();
                 // Ensure valid date
                 if (!isNaN(lineTime)) {
@@ -165,6 +161,7 @@ export function applyMainFilters(lines, collapseState, activeCollapseSet, filter
                     if (endTime && lineTime > endTime.getTime()) continue;
                 }
             }
+            // Lines without dateObj are included (they may be metadata or context)
         }
 
         // --- MATCH FOUND ---

@@ -237,13 +237,13 @@ export async function processLogFile(eventData, postMessage) {
                 parsedLine = {
                     isMeta: false,
                     dateObj: null, date: '', time: '', timestamp: '',
-                    level: 'I', // Default to Info
+                    level: 'V', // Process status lines have no level - use V (Verbose) to avoid confusion
                     pid: psPid, tid: psTid, uid: psUser, // Map User to UID column
                     tag: psTag,
                     message: lineText, // Full line as message since it's a status dump
                     originalText: lineText
                 };
-                stats.I++;
+                stats.V++; // Count as Verbose instead of Info
             }
             else if (match.groups.gpsDate) { // GPS Custom Line
                 const { gpsDate, gpsTime, gpsPid, gpsExtra, gpsTag, gpsMessage } = match.groups;
