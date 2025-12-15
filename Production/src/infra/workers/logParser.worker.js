@@ -30,7 +30,7 @@ export async function processLogFile(eventData, postMessage) {
         '(?<logcatDate>\\d{2}-\\d{2})\\s(?<logcatTime>\\d{2}:\\d{2}:\\d{2}\\.\\d{3,})' + // MM-DD HH:mm:ss.SSS
         '\\s+' + // Separator
         '(?:' + // Start PID/TID/UID group
-        '(?<pid>[\\w-]+)\\s+(?<tid>\\d+)\\s+(?:(?<uid>[\\w-]+)\\s+)?(?<level>[A-Z])\\s+(?<tag>[^\\s]+?)\\s*:\\s+' + // PID TID [UID] Level Tag :
+        '(?<pid>[\\w-]+)\\s+(?<tid>[\\w-]+)\\s+(?<uid>[\\w-]+)\\s+(?<level>[A-Z])\\s+(?<tag>[^\\s]+?)\\s*:\\s+' + // UID PID TID Level Tag : (bugreport format with all 3 IDs)
         '|' + // OR
         '(?<pid2>\\d+)\\s+(?<level2>[A-Z])\\s+(?<tag2>[^\\s|]+?)(?:\\||:)\\s*' + // PID Level Tag| or Tag:
         ')' + // End PID/TID/UID group
