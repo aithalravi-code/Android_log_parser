@@ -73,9 +73,9 @@ export default defineConfig({
     ],
 
     webServer: {
-        command: 'npm run dev',
+        command: 'npm run preview', // Use production build for stable CI testing
         url: 'http://127.0.0.1:5173',
         reuseExistingServer: !process.env.CI,
-        timeout: 300000, // 5 minutes for CI (slower environment)
+        timeout: 120000, // 2 minutes should be plenty for preview server
     },
 });
