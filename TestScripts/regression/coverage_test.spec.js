@@ -23,10 +23,10 @@ test.describe('Coverage Test', () => {
         await page.goto('/log_parser.html');
 
         // Wait for app to load - use correct selector
-        await page.waitForSelector('#fileInput', { timeout: 10000 });
+        await page.waitForSelector('#logFilesInput', { timeout: 10000 });
 
         // Verify main elements exist
-        await expect(page.locator('#fileInput')).toBeVisible();
+        await expect(page.locator('#logFilesInput')).toBeVisible();
 
         // Coverage will be collected in afterEach hook
     });

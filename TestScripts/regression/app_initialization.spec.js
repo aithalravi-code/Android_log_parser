@@ -27,7 +27,7 @@ test.describe('App Initialization', () => {
         await page.goto('/log_parser.html');
 
         // Wait for app to initialize
-        await page.waitForSelector('#app', { timeout: 5000 });
+        await page.waitForSelector('.container', { timeout: 5000 });
 
         // Give it a moment to fully initialize
         await page.waitForTimeout(1000);
@@ -53,7 +53,7 @@ test.describe('App Initialization', () => {
         await page.goto('/log_parser.html');
 
         // Verify key elements loaded
-        await expect(page.locator('#fileInput')).toBeVisible();
+        await expect(page.locator('#logFilesInput')).toBeVisible();
         await expect(page.locator('#tabs')).toBeVisible();
         await expect(page.locator('#logsTab')).toBeVisible();
     });

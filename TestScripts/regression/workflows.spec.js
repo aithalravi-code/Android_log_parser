@@ -205,7 +205,7 @@ test.describe('Performance Under Load', () => {
         }
 
         // App should still be responsive
-        await expect(page.locator('#app')).toBeVisible();
+        await expect(page.locator('.container')).toBeVisible();
     });
 
     test('should handle rapid tab switching', async ({ page }) => {
@@ -227,7 +227,7 @@ test.describe('Performance Under Load', () => {
         }
 
         // Should still work
-        await expect(page.locator('#app')).toBeVisible();
+        await expect(page.locator('.container')).toBeVisible();
     });
 });
 
@@ -259,7 +259,7 @@ test.describe('State Recovery', () => {
         await page.waitForTimeout(1000);
 
         // App should recover
-        await expect(page.locator('#app')).toBeVisible();
+        await expect(page.locator('.container')).toBeVisible();
         const canLoadMore = await page.locator('#logFilesInput').isEnabled();
         expect(canLoadMore).toBe(true);
     });

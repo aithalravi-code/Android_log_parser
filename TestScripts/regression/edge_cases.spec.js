@@ -20,7 +20,7 @@ test.describe('Error Handling', () => {
         await page.waitForTimeout(1000);
 
         // App should not crash - just ignore invalid file
-        const appElement = await page.locator('#app');
+        const appElement = await page.locator('.container');
         await expect(appElement).toBeVisible();
 
         // Check no critical errors (some warnings may be OK)
@@ -43,8 +43,8 @@ test.describe('Error Handling', () => {
         await page.waitForTimeout(1000);
 
         // App should still be functional
-        await expect(page.locator('#app')).toBeVisible();
-        await expect(page.locator('#fileInput')).toBeVisible();
+        await expect(page.locator('.container')).toBeVisible();
+        await expect(page.locator('#logFilesInput')).toBeVisible();
     });
 
     test('should handle malformed ZIP file', async ({ page }) => {
@@ -63,7 +63,7 @@ test.describe('Error Handling', () => {
         await page.waitForTimeout(2000);
 
         // Should not crash the page
-        await expect(page.locator('#app')).toBeVisible();
+        await expect(page.locator('.container')).toBeVisible();
 
         // No uncaught errors
         const uncaughtErrors = pageErrors.filter(e =>
@@ -114,11 +114,11 @@ test.describe('Filter Edge Cases', () => {
         // Special characters that might break regex
         await searchInput.fill('[.*');
         await page.waitForTimeout(300);
-        await expect(page.locator('#app')).toBeVisible();
+        await expect(page.locator('.container')).toBeVisible();
 
         await searchInput.fill('(test)');
         await page.waitForTimeout(300);
-        await expect(page.locator('#app')).toBeVisible();
+        await expect(page.locator('.container')).toBeVisible();
     });
 });
 

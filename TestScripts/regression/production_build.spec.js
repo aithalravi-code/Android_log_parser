@@ -51,7 +51,7 @@ test.describe('Production Build Verification', () => {
         await page.goto(prodPath);
 
         // Test basic functionality
-        await expect(page.locator('#fileInput')).toBeVisible();
+        await expect(page.locator('#logFilesInput')).toBeVisible();
 
         // Verify state is accessible
         const hasState = await page.evaluate(() => typeof window._appState !== 'undefined');
