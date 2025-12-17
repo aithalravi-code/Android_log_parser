@@ -54,7 +54,7 @@ test.describe('App Initialization', () => {
 
         // Verify key elements loaded
         await expect(page.locator('#logFilesInput')).toBeVisible();
-        await expect(page.locator('#tabs')).toBeVisible();
+        await expect(page.locator('.tab-nav')).toBeVisible();
         await expect(page.locator('#logsTab')).toBeVisible();
     });
 

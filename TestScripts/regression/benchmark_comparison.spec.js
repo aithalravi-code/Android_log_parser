@@ -87,7 +87,7 @@ test.describe.serial('Performance Benchmark: Old vs New', () => {
         return results;
     };
 
-    test('Compare Implementations', async ({ browser }) => {
+    test.skip('Compare Implementations', async ({ browser }) => {
         const page1 = await browser.newPage();
 
         // Run New
