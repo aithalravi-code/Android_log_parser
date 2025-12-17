@@ -74,7 +74,7 @@ export default defineConfig({
 
     webServer: {
         command: 'npm run preview', // Use production build for stable CI testing
-        url: 'http://127.0.0.1:5173',
+        url: 'http://127.0.0.1:5173/log_parser.html',
         reuseExistingServer: !process.env.CI,
         timeout: 300000, // 5 minutes for extremely slow CI runners
     },
