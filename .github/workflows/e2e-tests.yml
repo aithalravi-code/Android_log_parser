@@ -99,7 +99,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       
       - name: Run core tests
-        run: npm run test:core
+        run: npm run test:core -- --project=chromium
         env:
           CI: true
       
