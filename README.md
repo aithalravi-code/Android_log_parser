@@ -1,75 +1,73 @@
 # Android Log Parser
 
-Advanced Android Log & BTSnoop Analyzer with comprehensive testing framework.
+A comprehensive web-based Android log analysis tool for parsing, filtering, and visualizing Android logcat, BTSnoop, and bugreport files.
+
+## 🌐 Live Demo
+
+**Try it online**: [https://aithalravi-code.github.io/Android_log_parser/](https://aithalravi-code.github.io/Android_log_parser/)
 
 ## Features
 
-- **Log Analysis**: Parse and analyze Android logcat files
-- **BTSnoop Support**: Bluetooth HCI packet analysis
-- **CCC Analysis**: Car Connectivity Consortium protocol decoding
-- **Performance Optimized**: Handle millions of log lines efficiently
-- **Comprehensive Testing**: Unit, regression, and performance tests
+- 📱 Parse Android logcat files with advanced filtering
+- 🔵 BTSnoop packet analysis and visualization
+- 📊 Statistics dashboard with charts (CPU, battery, temperature)
+- 🔍 Real-time search and filtering
+- 📋 Export to Excel/CSV
+- 🎯 CCC (Car Connectivity Consortium) Digital Key analysis
+- 🚀 Fast client-side processing (no server needed)
 
-## Project Structure
+## Usage
 
-```
-Android_log_parser/
-├── Production/          # Production-ready source code
-├── Development/         # Experimental features
-├── TestScripts/         # Unit, regression, performance tests
-├── TestReports/         # Test execution results
-├── Skills/              # Project capabilities documentation
-├── Specifications/      # Requirements and specs
-├── .config/             # All configuration files
-└── docs/                # Documentation
-```
+### Online
+Simply visit the [live demo](https://aithalravi-code.github.io/Android_log_parser/) and upload your log files.
 
-See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for detailed structure information.
-
-## Quick Start
-
-### Installation
+### Local Development
 ```bash
 npm install
+npm run dev  # Start dev server at http://localhost:5173
 ```
 
-### Development
+### Production Build
 ```bash
-npm run dev              # Start dev server
+npm run build  # Creates dist/log_parser.html (single file)
 ```
 
-### Testing
+## Testing
+
 ```bash
-npm run test:unit        # Run unit tests
-npm run test:regression  # Run E2E tests
-npm run test:all         # Run all tests
+npm run test              # Run all tests
+npm run test:unit         # Unit tests only
+npm run test:regression   # E2E tests (Playwright)
+npm run coverage          # Generate coverage report
 ```
 
-### Building
-```bash
-npm run build            # Build for production
-```
+## Test Coverage
 
-## Documentation
+- **Function Coverage**: 72.36% ✅
+- **Lines Coverage**: 40.92%
+- **E2E Tests**: 24 comprehensive regression tests
 
-- [Project Structure](PROJECT_STRUCTURE.md) - Detailed folder organization
-- [Testing Guide](docs/guides/TESTING.md) - How to run and write tests
-- [Architecture](docs/architecture/) - System design documentation
+## Tech Stack
 
-## Development Workflow
+- **Frontend**: Vanilla JavaScript, Vite
+- **Charts**: Chart.js
+- **Testing**: Vitest (unit), Playwright (E2E)
+- **Export**: XLSX for Excel exports
 
-1. **Develop** features in `Development/`
-2. **Test** thoroughly with unit and E2E tests
-3. **Move** stable code to `Production/`
-4. **Build** and deploy from `Production/`
+## File Support
 
-## Contributing
-
-1. Create features in `Development/`
-2. Write tests in `TestScripts/`
-3. Ensure all tests pass
-4. Move to `Production/` when stable
+- Android logcat files (`.log`, `.txt`)
+- BTSnoop files (`.cfa`, `.log`)
+- Bugreport archives (`.zip`)
+- CCC Digital Key logs
 
 ## License
 
 See LICENSE file for details.
+
+## Contributing
+
+Contributions welcome! Please run tests before submitting PRs:
+```bash
+npm run test
+```
