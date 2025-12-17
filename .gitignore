@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-package-lock.json
+# package-lock.json (Tracked for CI/CD)
 
 # Development folder - Local experiments only (NOT tracked)
 Development/
@@ -44,7 +44,8 @@ test_*.txt
 # Build outputs (except Production/dist which is tracked for distribution)
 dist/
 !Production/dist/
-build/
+# build/ <- Removed to allow .config/build/
+/build/
 # Production/dist/ is TRACKED for easy client-side distribution
 
 # IDE
