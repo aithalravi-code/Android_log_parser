@@ -15,6 +15,7 @@
     "devDependencies": {
         "@playwright/test": "^1.40.1",
         "@vitest/ui": "^1.0.4",
+        "allure-playwright": "^2.15.1",
         "fake-indexeddb": "^5.0.2",
         "vite": "^5.0.8",
         "vite-plugin-singlefile": "^2.0.2",
