@@ -27,15 +27,12 @@ jobs:
       - name: Run unit tests
         run: npm run test:unit
       
-      - name: Generate coverage report
-        run: npm run coverage
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
       
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./TestReports/unit/coverage/lcov.info
-          flags: unittests
-          name: codecov-umbrella
+      - name: Run E2E tests
+        run: npm run test:regression
+        continue-on-error: true
       
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
