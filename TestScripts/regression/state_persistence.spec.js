@@ -104,10 +104,16 @@ test.describe('State Persistence', () => {
         // Reload
         await page.reload();
         await page.waitForLoadState('domcontentloaded');
-        await page.waitForTimeout(2000);
 
-        // Should have the latest data
-        const restoredCount = await getLogCount(page);
+        // Poll for data restoration (CI can be slow)
+        let restoredCount = 0;
+        for (let i = 0; i < 20; i++) { // Wait up to 10s
+            restoredCount = await getLogCount(page);
+            if (restoredCount > 0) break;
+            await page.waitForTimeout(500);
+        }
+
+        // Restored count should match expected
         expect(restoredCount).toBe(secondCount);
     });
 
