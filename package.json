@@ -1,45 +1,21 @@
 {
     "name": "android-log-parser",
     "version": "1.0.0",
-    "description": "Android log parser and analyzer",
+    "description": "Android Log Parser with E2E Testing",
     "type": "module",
-    "main": "Production/src/main.js",
     "scripts": {
         "dev": "vite --config .config/build/vite.config.js",
-        "build": "vite build -c .config/build/vite.config.js",
-        "preview": "vite preview -c .config/build/vite.config.js",
-        "test": "npm run test:unit && npm run test:regression",
-        "test:unit": "vitest run --config .config/test/vitest.config.js",
+        "build": "vite build --config .config/build/vite.config.js",
+        "preview": "vite preview --config .config/build/vite.config.js",
+        "test:unit": "vitest --config .config/test/vitest.config.js",
         "test:regression": "playwright test -c .config/test/playwright.config.js",
-        "coverage": "vitest run --coverage --config .config/test/vitest.config.js",
-        "clean": "rm -rf TestReports && rm -rf dist && rm -rf coverage && rm -rf allure-results && rm -rf allure-report && rm -rf temp/*",
-        "screenshots": "node TestScripts/screenshots/capture-docs.js"
+        "test:ci": "playwright test -c .config/test/playwright.config.ci.js",
+        "test:core": "playwright test -c .config/test/playwright.config.ci.js complete_workflows log_filtering_advanced"
     },
-    "keywords": [
-        "android",
-        "logcat",
-        "parser",
-        "btsnoop",
-        "ccc"
-    ],
-    "author": "",
-    "license": "ISC",
     "devDependencies": {
-        "@playwright/test": "^1.57.0",
-        "@vitest/coverage-v8": "^1.6.0",
-        "@vitest/ui": "^1.6.0",
-        "allure-playwright": "^2.15.1",
-        "fake-indexeddb": "^6.2.5",
-        "jsdom": "^24.0.0",
-        "playwright": "^1.57.0",
-        "vite": "^5.4.21",
-        "vite-plugin-singlefile": "^2.0.6",
-        "vitest": "^1.6.0"
-    },
-    "dependencies": {
-        "chart.js": "^4.5.1",
-        "jszip": "^3.10.1",
-        "nouislider": "^15.8.1",
-        "xlsx": "^0.18.5"
+        "@playwright/test": "^1.40.1",
+        "@vitest/ui": "^1.0.4",
+        "vite": "^5.0.8",
+        "vitest": "^1.0.4"
     }
 }

@@ -20,7 +20,7 @@ test.describe('BTSnoop Collapsible Headers', () => {
     });
 
     test('Should display collapsible file headers for multiple BTSnoop logs', async ({ page }) => {
-        await page.goto('index.html');
+        await page.goto('log_parser.html');
         await page.waitForLoadState('networkidle');
 
         page.on('console', msg => console.log(`[Browser] ${msg.text()}`));
@@ -88,7 +88,7 @@ test.describe('BTSnoop Collapsible Headers', () => {
         await expect(page.locator('#progressBar').first()).toBeHidden({ timeout: 60000 });
 
         // Give it a small buffer for state updates
-        await page.waitForTimeout(1000);
+        await page.waitForTimeout(5000);
 
         // 4. Switch to BTSnoop Tab
         console.log('Switching to BTSnoop tab...');
@@ -139,7 +139,7 @@ test.describe('BTSnoop Collapsible Headers', () => {
         // The virtual scroll should re-render.
         // We expect the next row to be the second header (since file 1 is collapsed, and data hidden).
         // Wait for potential re-render
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(1500);
 
         const allHeaders = await page.locator('.btsnoop-file-header').allTextContents();
         console.log('All Headers Visible:', allHeaders);
@@ -166,7 +166,7 @@ test.describe('BTSnoop Collapsible Headers', () => {
 
         // Click to Collapse All
         await toggleBtn.click();
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(1500);
 
         const allHeadersCollapsed = await page.locator('.btsnoop-file-header').allTextContents();
         console.log('Headers after Collapse All:', allHeadersCollapsed);
@@ -175,7 +175,7 @@ test.describe('BTSnoop Collapsible Headers', () => {
 
         // Click to Expand All
         await toggleBtn.click();
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(1500);
 
         const allHeadersExpanded = await page.locator('.btsnoop-file-header').allTextContents();
         console.log('Headers after Expand All:', allHeadersExpanded);

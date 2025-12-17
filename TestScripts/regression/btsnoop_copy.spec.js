@@ -4,8 +4,15 @@ import fs from 'fs';
 
 test.describe('BTSnoop Layout & Interaction', () => {
     test.beforeEach(async ({ page }) => {
-        // Go to the app
-        await page.goto('log_parser.html');
+        // Go to the app and clear state
+        await page.goto('http://localhost:5173/log_parser.html');
+        await page.evaluate(() => {
+            return new Promise((resolve) => {
+                const request = indexedDB.deleteDatabase('logParserDB');
+                request.onsuccess = () => resolve(true);
+                request.onerror = () => resolve(false);
+            });
+        });
         await page.waitForLoadState('networkidle');
     });
 
@@ -54,7 +61,7 @@ test.describe('BTSnoop Layout & Interaction', () => {
             };
             page.on('console', listener);
         });
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(1500);
 
         // 4. Click BTSnoop tab
         const btsnoopTab = page.locator('[data-tab="btsnoop"]');
@@ -73,13 +80,13 @@ test.describe('BTSnoop Layout & Interaction', () => {
 
         // 7. Perform Copy (Ctrl + Click)
         // Force click to bypass "intercepts pointer events" if rows overlap slightly in virtual list
-        await page.waitForTimeout(1000); // Wait for layout to settle
+        await page.waitForTimeout(5000); // Wait for layout to settle
         await timestampCell.click({ modifiers: ['Control'], force: true });
 
         // 8. Verify Copied Text Length
         // If it copies ONLY the cell, length will remain close to cellText.length
         // If it copies the ROW, length should be > 50 (timestamp + columns + summary etc.)
-        await page.waitForTimeout(500); // Wait for console
+        await page.waitForTimeout(1500); // Wait for console
         console.log(`Copied Length: ${copiedTextLength}`);
 
         expect(copiedTextLength).toBeGreaterThan(cellText.length + 10);

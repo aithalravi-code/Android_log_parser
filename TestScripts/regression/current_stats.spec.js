@@ -30,7 +30,7 @@ test.describe('Performance Stats Proof', () => {
 
         // 1. Load Time
         const startLoad = Date.now();
-        await page.goto('http://localhost:8081/index.html');
+        await page.goto('/log_parser.html');
         await page.waitForSelector('#logFilesInput', { timeout: 10000 });
         const loadTime = Date.now() - startLoad;
         console.log(`[Load Time] ${loadTime}ms`);
@@ -72,6 +72,13 @@ test.describe('Performance Stats Proof', () => {
         await page.waitForSelector('.log-line');
         const startFilter = Date.now();
         // Toggle Verbose OFF
+        // Ensure panel is expanded if it was auto-collapsed
+        const leftPanel = page.locator('.left-panel');
+        if (await leftPanel.evaluate(el => el.classList.contains('collapsed'))) {
+            await page.click('#panel-toggle-btn');
+            // Wait for transition
+            await page.waitForTimeout(300);
+        }
         await page.click('[data-level="V"]');
         // Wait for ANY visual update.
         // We can check if the number of lines decreased or a class changed.

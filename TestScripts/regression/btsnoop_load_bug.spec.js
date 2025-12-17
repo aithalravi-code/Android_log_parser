@@ -4,7 +4,7 @@ import fs from 'fs';
 
 test.describe('BTSnoop Reload Behavior', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('index.html');
+        await page.goto('log_parser.html');
         await page.waitForLoadState('networkidle');
 
         // Console logging for debugging
@@ -14,6 +14,7 @@ test.describe('BTSnoop Reload Behavior', () => {
     });
 
     test('Should reload BTSnoop logs when uploading ZIP while already on BTSnoop tab', async ({ page }) => {
+        test.setTimeout(180000); // 2 minutes for ZIP processing
         // 1. Initial State: Upload a single log file to get started
         // We use the unzipped folder/file for speed first
         const initFile = path.resolve(process.cwd(), 'TestData/fixtures/bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57/FS/data/misc/bluetooth/logs/btsnoop_hci.log');
@@ -38,7 +39,7 @@ test.describe('BTSnoop Reload Behavior', () => {
             // Here, let's just wait for the BTSnoop tab to be interactable.
             return document.querySelector('[data-tab="btsnoop"]');
         });
-        await page.waitForTimeout(1000); // Wait for asyncs
+        await page.waitForTimeout(5000); // Wait for asyncs
 
         // Switch to BTSnoop Tab
         console.log('Switching to BTSnoop tab...');

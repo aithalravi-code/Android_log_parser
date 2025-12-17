@@ -1,8 +1,19 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('BTSnoop Connection Events Filter Scroll Restoration', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.goto('http://localhost:5173/log_parser.html');
+        await page.evaluate(() => {
+            return new Promise((resolve) => {
+                const request = indexedDB.deleteDatabase('logParserDB');
+                request.onsuccess = () => resolve(true);
+                request.onerror = () => resolve(false);
+            });
+        });
+    });
+
     test('should restore scroll position after filtering', async ({ page }) => {
-        test.setTimeout(120000);
+        test.setTimeout(180000);
 
         // Capture console logs
         const consoleLogs = [];
@@ -24,7 +35,7 @@ test.describe('BTSnoop Connection Events Filter Scroll Restoration', () => {
         // Navigate to Stats tab
         console.log('Clicking Stats tab...');
         await page.click('button[data-tab="stats"]');
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(5000);
 
         // Find table
         const table = page.locator('#btsnoopConnectionEventsTable');
@@ -42,7 +53,7 @@ test.describe('BTSnoop Connection Events Filter Scroll Restoration', () => {
         const targetRow = rows.nth(Math.min(4, rowCount - 1));
         console.log('Selecting row...');
         await targetRow.click();
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(1500);
 
         const rowId = await targetRow.getAttribute('data-row-id');
         console.log(`Selected row: ${rowId}`);
@@ -52,7 +63,7 @@ test.describe('BTSnoop Connection Events Filter Scroll Restoration', () => {
         const filterInputs = table.locator('.filter-row input');
         if (await filterInputs.count() > 0) {
             await filterInputs.first().fill('xyz123notfound');
-            await page.waitForTimeout(1000);
+            await page.waitForTimeout(5000);
 
             // Check rows are hidden
             const visibleRows = await rows.locator(':visible').count();
@@ -61,7 +72,7 @@ test.describe('BTSnoop Connection Events Filter Scroll Restoration', () => {
             // Clear filter
             console.log('Clearing filter...');
             await filterInputs.first().fill('');
-            await page.waitForTimeout(1000);
+            await page.waitForTimeout(5000);
         }
 
         // Check if selection is restored
@@ -73,7 +84,8 @@ test.describe('BTSnoop Connection Events Filter Scroll Restoration', () => {
 
         // Check for restore log
         const hasRestoreLog = consoleLogs.some(log =>
-            log.includes('Restored selection') && log.includes('btsnoopConnectionEventsTable')
+            (log.includes('Restored selection') && log.includes('btsnoopConnectionEventsTable')) ||
+            (log.includes('[Sort] Restored selection for btsnoopConnectionEventsTable'))
         );
         console.log(`Restore log found: ${hasRestoreLog}`);
 

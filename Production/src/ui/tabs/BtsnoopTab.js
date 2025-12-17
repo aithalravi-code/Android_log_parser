@@ -48,6 +48,10 @@ export function getBtsnoopPackets() {
     return btsnoopPackets;
 }
 
+export function setBtsnoopPackets(packets) {
+    btsnoopPackets = packets;
+}
+
 export function getBtsnoopConnectionMap() {
     return btsnoopConnectionMap;
 }
@@ -66,6 +70,23 @@ export function setSelectedBtsnoopPacket(packet) {
 
 export function getFilteredBtsnoopPackets() {
     return filteredBtsnoopPackets;
+}
+
+/**
+ * Reset all BTSnoop state - called when new files are uploaded
+ */
+export function reset() {
+    console.log('[BTSnoop] Resetting BTSnoop state');
+    btsnoopPackets = [];
+    filteredBtsnoopPackets = [];
+    btsnoopConnectionEvents = [];
+    btsnoopConnectionMap = new Map();
+    btsnoopRowPositions = new Float32Array(0);
+    btsnoopTotalHeight = 0;
+    btsnoopAnchorPacketNumber = null;
+    selectedBtsnoopPacket = null;
+    isBtsnoopProcessed = false;
+    btsnoopCollapsedFiles.clear();
 }
 
 
@@ -1363,9 +1384,11 @@ function handleBtsnoopClick(e) {
                 if (row && !row.classList.contains('btsnoop-meta-row')) {
                     const cells = Array.from(row.querySelectorAll('.btsnoop-cell'));
                     text = cells.map(c => c.dataset.logText || c.textContent).join('  ');
+                    console.log(`[Copy] Aggregated BTSnoop Row: ${text.length} chars`);
                 }
 
                 navigator.clipboard.writeText(text).then(() => {
+                    console.log(`[Copy] Copied: ${text.length} chars`);
                     const originalTitle = copyCell.title;
                     copyCell.title = 'Row Copied!';
                     copyCell.classList.add('copied-feedback'); // We might need to style this class if not global

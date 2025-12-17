@@ -25,7 +25,7 @@ test('Debug Current Build', async ({ browser }) => {
     });
 
     console.log('\n🔍 Loading current build...');
-    await page.goto('http://localhost:8081/index.html');
+    await page.goto('log_parser.html');
     await page.waitForSelector('#logFilesInput', { timeout: 10000 });
     console.log('✓ Page loaded');
 

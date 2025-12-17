@@ -7,14 +7,25 @@ const __dirname = path.dirname(__filename);
 
 test.describe('File Collapsing', () => {
     test('should collapse and expand file sections when clicking headers', async ({ page }) => {
-        await page.goto('index.html');
+        await page.goto('log_parser.html');
 
-        // create a data transfer object with multiple files
-        const file1Path = path.join(__dirname, '../../test-data/file1.txt');
-        const file2Path = path.join(__dirname, '../../test-data/file2.txt');
+        // Create mock files using buffers
+        const file1Content = Array.from({ length: 50 }, (_, i) => `12-17 10:00:${String(i).padStart(2, '0')}.000 1000 1000 I Ref1: Log line ${i}\n`).join('');
+        const file2Content = Array.from({ length: 50 }, (_, i) => `12-17 10:01:${String(i).padStart(2, '0')}.000 1000 1000 I Ref2: Log line ${i}\n`).join('');
 
         // Upload files
-        await page.setInputFiles('#logFilesInput', [file1Path, file2Path]);
+        await page.locator('#logFilesInput').setInputFiles([
+            {
+                name: 'file1.txt',
+                mimeType: 'text/plain',
+                buffer: Buffer.from(file1Content)
+            },
+            {
+                name: 'file2.txt',
+                mimeType: 'text/plain',
+                buffer: Buffer.from(file2Content)
+            }
+        ]);
 
         // Wait for logs to render
         await page.waitForSelector('.log-line');
@@ -30,8 +41,8 @@ test.describe('File Collapsing', () => {
         // Verify content lines are visible initially
         // "Log line 1" should be under file1
         // "Log line 2" should be under file2
-        await expect(page.locator('text=Log line 1')).toBeVisible();
-        await expect(page.locator('text=Log line 2')).toBeVisible();
+        await expect(page.locator('text=Ref1').first()).toBeVisible();
+        await expect(page.locator('text=Ref2').first()).toBeVisible();
 
         // 1. Click header 1 to collapse
         await header1.click({ force: true });
@@ -40,21 +51,21 @@ test.describe('File Collapsing', () => {
         await page.waitForTimeout(100);
 
         // Verify "Log line 1" is HIDDEN (detached or hidden)
-        await expect(page.locator('text=Log line 1')).toBeHidden();
+        await expect(page.locator('text=Ref1').first()).toBeHidden();
 
         // Verify header 1 text changed to [+] indicator (logic in renders usually changes [-] to [+])
         // The parser adds "[-] " prefix by default for expanded, "[+] " for collapsed.
         await expect(header1).toContainText('[+]');
 
         // Verify File 2 content is STILL visible
-        await expect(page.locator('text=Log line 2')).toBeVisible();
+        await expect(page.locator('text=Ref2').first()).toBeVisible();
 
         // 2. Click header 1 to expand
         await header1.click();
         await page.waitForTimeout(100);
 
         // Verify "Log line 1" is VISIBLE
-        await expect(page.locator('text=Log line 1')).toBeVisible();
+        await expect(page.locator('text=Ref1').first()).toBeVisible();
         await expect(header1).toContainText('[-]');
 
         // 3. Click header 2 to collapse
@@ -62,8 +73,8 @@ test.describe('File Collapsing', () => {
         await page.waitForTimeout(100);
 
         // Verify "Log line 2" is HIDDEN
-        await expect(page.locator('text=Log line 2')).toBeHidden();
+        await expect(page.locator('text=Ref2').first()).toBeHidden();
         // Verify "Log line 1" is STILL visible
-        await expect(page.locator('text=Log line 1')).toBeVisible();
+        await expect(page.locator('text=Ref1').first()).toBeVisible();
     });
 });

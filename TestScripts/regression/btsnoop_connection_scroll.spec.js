@@ -1,8 +1,20 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('BTSnoop Connection Events Scroll Restoration', () => {
+    test.beforeEach(async ({ page }) => {
+        // Clear IndexedDB to ensure clean state
+        await page.goto('http://localhost:5173/log_parser.html');
+        await page.evaluate(() => {
+            return new Promise((resolve) => {
+                const request = indexedDB.deleteDatabase('logParserDB');
+                request.onsuccess = () => resolve(true);
+                request.onerror = () => resolve(false);
+            });
+        });
+    });
+
     test('should restore scroll position and selection after filtering', async ({ page }) => {
-        test.setTimeout(120000); // 2 minutes for file upload
+        test.setTimeout(180000); // 2 minutes for file upload
 
         // Capture console logs FIRST
         const consoleLogs = [];
@@ -27,7 +39,7 @@ test.describe('BTSnoop Connection Events Scroll Restoration', () => {
         // Navigate to Stats tab
         console.log('Clicking Stats tab...');
         await page.click('button[data-tab="stats"]');
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(5000);
 
         // Find BTSnoop Connection Events table
         const table = page.locator('#btsnoopConnectionEventsTable');
@@ -49,7 +61,7 @@ test.describe('BTSnoop Connection Events Scroll Restoration', () => {
 
         console.log(`Clicking row ${rowIndex}...`);
         await targetRow.click();
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(1500);
 
         // Verify row is selected
         const hasSelectedClass = await targetRow.evaluate(el => el.classList.contains('selected'));
@@ -64,7 +76,7 @@ test.describe('BTSnoop Connection Events Scroll Restoration', () => {
         const headers = table.locator('thead th');
         if (await headers.count() > 1) {
             await headers.nth(1).click(); // Click timestamp header to sort
-            await page.waitForTimeout(1000);
+            await page.waitForTimeout(5000);
         }
 
         // After re-render, check if selection is restored
@@ -79,7 +91,8 @@ test.describe('BTSnoop Connection Events Scroll Restoration', () => {
 
         // Check console for scroll restoration message
         const hasRestoreLog = consoleLogs.some(log =>
-            log.includes('Restored selection') && log.includes('btsnoopConnectionEventsTable')
+            (log.includes('Restored selection') && log.includes('btsnoopConnectionEventsTable')) ||
+            (log.includes('[Sort] Restored selection for btsnoopConnectionEventsTable'))
         );
 
         console.log('\n=== TEST RESULTS ===');

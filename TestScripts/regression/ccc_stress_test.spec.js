@@ -65,7 +65,7 @@ test.describe('CCC Tab Stress Test', () => {
         expect(rowCount).toBeGreaterThan(50); // Should have rendered at least the first chunk
 
         // Verify responsiveness - try to click a filter
-        const filterInput = page.locator('input[data-col="0"]');
+        const filterInput = page.locator('#cccStatsTable input[data-col="0"]');
         await expect(filterInput).toBeVisible();
         await filterInput.fill('00:00:00.001'); // Filter for specific timestamp
         await page.waitForTimeout(1000); // Wait for debounce/filter

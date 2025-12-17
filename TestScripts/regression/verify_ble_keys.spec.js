@@ -40,8 +40,8 @@ test.describe('BLE Keys Population Verification', () => {
         const tableBody = page.locator('#bleKeysTable tbody');
         await expect(tableBody).toBeVisible();
 
-        // Wait a bit for async rendering if needed
-        await page.waitForTimeout(2000);
+        // Wait for async rendering and BTSnoop processing (Webkit needs more time)
+        await page.waitForTimeout(10000); // Increased from 2s to 10s for Webkit
 
         const rows = tableBody.locator('tr');
         const count = await rows.count();

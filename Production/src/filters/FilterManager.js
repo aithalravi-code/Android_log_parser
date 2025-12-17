@@ -175,6 +175,8 @@ export function applyMainFilters(lines, collapseState, activeCollapseSet, filter
                     rejectedByTime++;
                     continue;
                 }
+            } else {
+                // Lines without valid timestamps are excluded when time filter is active
             }
             // Lines without valid timestamps are excluded when time filter is active
         }

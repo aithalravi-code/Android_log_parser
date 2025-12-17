@@ -9,9 +9,9 @@
     "globalTimeout": 0,
     "grep": {},
     "grepInvert": null,
-    "maxFailures": 0,
+    "maxFailures": 3,
     "metadata": {
-      "actualWorkers": 2
+      "actualWorkers": 1
     },
     "preserveOutput": "always",
     "reporter": [
@@ -56,7 +56,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 2
+          "actualWorkers": 1
         },
         "id": "chromium",
         "name": "chromium",
@@ -72,7 +72,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 2
+          "actualWorkers": 1
         },
         "id": "firefox",
         "name": "firefox",
@@ -88,7 +88,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 2
+          "actualWorkers": 1
         },
         "id": "webkit",
         "name": "webkit",
@@ -105,7 +105,7 @@
     "updateSnapshots": "missing",
     "updateSourceMethod": "patch",
     "version": "1.57.0",
-    "workers": 6,
+    "workers": 1,
     "webServer": {
       "command": "npm run dev",
       "port": 5173,
@@ -115,20 +115,198 @@
   },
   "suites": [
     {
-      "title": "coverage_test.spec.js",
-      "file": "coverage_test.spec.js",
+      "title": "log_filtering_advanced.spec.js",
+      "file": "log_filtering_advanced.spec.js",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Coverage Test",
-          "file": "coverage_test.spec.js",
-          "line": 4,
+          "title": "Advanced Log Filtering",
+          "file": "log_filtering_advanced.spec.js",
+          "line": 12,
           "column": 6,
           "specs": [
             {
-              "title": "should collect coverage during app initialization",
+              "title": "Filter by single log level (Error only)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4930,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Filtered from 1002 to 214 error logs\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:48:25.834Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-5ff81c21194fe6678cd7",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 37,
+              "column": 5
+            },
+            {
+              "title": "Filter by multiple log levels (Error and Warning)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4208,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Filtered to 397 error/warning logs\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:48:30.934Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-3b91db775a49df7f09c4",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 50,
+              "column": 5
+            },
+            {
+              "title": "Filter by all log levels (should show all logs)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3675,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:48:35.168Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-1da7dfaff18d76e54690",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 63,
+              "column": 5
+            },
+            {
+              "title": "Toggle log levels on and off",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5435,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:48:38.866Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-0c78082484a30a0ebdf8",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 73,
+              "column": 5
+            },
+            {
+              "title": "Keyword search with single term",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 24812,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:48:44.316Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-b7f56b8090a11e8027db",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 94,
+              "column": 5
+            },
+            {
+              "title": "Keyword search with multiple terms (OR logic)",
               "ok": false,
               "tags": [],
               "tests": [
@@ -143,69 +321,65 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 12423,
+                      "duration": 4207,
                       "error": {
-                        "message": "TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#fileInput') to be visible\u001b[22m\n",
-                        "stack": "TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#fileInput') to be visible\u001b[22m\n\n    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/coverage_test.spec.js:26:20)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)",
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/log_filtering_advanced.spec.js:118:26)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)",
                         "location": {
-                          "file": "copy)/TestScripts/regression/coverage_test.spec.js",
-                          "column": 20,
-                          "line": 26
+                          "file": "copy)/TestScripts/regression/log_filtering_advanced.spec.js",
+                          "column": 26,
+                          "line": 118
                         }
                       },
                       "errors": [
                         {
                           "location": {
-                            "file": "copy)/TestScripts/regression/coverage_test.spec.js",
-                            "column": 20,
-                            "line": 26
+                            "file": "copy)/TestScripts/regression/log_filtering_advanced.spec.js",
+                            "column": 26,
+                            "line": 118
                           },
-                          "message": "TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#fileInput') to be visible\u001b[22m\n\n    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/coverage_test.spec.js:26:20)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)"
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/log_filtering_advanced.spec.js:118:26)\u001b[22m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\u001b[22m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\u001b[22m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)\u001b[22m"
                         }
                       ],
-                      "stdout": [
-                        {
-                          "text": "✓ Collected coverage for: should collect coverage during app initialization (140 files)\n"
-                        }
-                      ],
+                      "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-17T11:18:14.760Z",
+                      "startTime": "2025-12-17T15:49:09.161Z",
                       "annotations": [],
                       "attachments": [
                         {
                           "name": "screenshot",
                           "contentType": "image/png",
-                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/coverage_test-Coverage-Tes-1aa58-e-during-app-initialization-chromium/test-failed-1.png"
+                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/log_filtering_advanced-Adv-4e956-th-multiple-terms-OR-logic--chromium/test-failed-1.png"
                         },
                         {
                           "name": "video",
                           "contentType": "video/webm",
-                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/coverage_test-Coverage-Tes-1aa58-e-during-app-initialization-chromium/video.webm"
+                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/log_filtering_advanced-Adv-4e956-th-multiple-terms-OR-logic--chromium/video.webm"
                         },
                         {
                           "name": "error-context",
                           "contentType": "text/markdown",
-                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/coverage_test-Coverage-Tes-1aa58-e-during-app-initialization-chromium/error-context.md"
+                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/log_filtering_advanced-Adv-4e956-th-multiple-terms-OR-logic--chromium/error-context.md"
                         }
                       ],
                       "errorLocation": {
-                        "file": "copy)/TestScripts/regression/coverage_test.spec.js",
-                        "column": 20,
-                        "line": 26
+                        "file": "copy)/TestScripts/regression/log_filtering_advanced.spec.js",
+                        "column": 26,
+                        "line": 118
                       }
                     }
                   ],
                   "status": "unexpected"
                 }
               ],
-              "id": "1ab1efe4bf21808de7fe-356b118593867566cd1d",
-              "file": "coverage_test.spec.js",
-              "line": 22,
+              "id": "ec4296df4c46127cd8b4-3e843a3a10d9b95d5bf4",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 110,
               "column": 5
             },
             {
-              "title": "should collect coverage during file upload",
+              "title": "Keyword search with multiple terms (AND logic)",
               "ok": true,
               "tags": [],
               "tests": [
@@ -218,18 +392,18 @@
                   "results": [
                     {
                       "workerIndex": 1,
-                      "parallelIndex": 1,
+                      "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 4136,
+                      "duration": 4645,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "✓ Collected coverage for: should collect coverage during file upload (80 files)\n"
+                          "text": "AND search found 1001 logs\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-17T11:18:14.745Z",
+                      "startTime": "2025-12-17T15:49:14.501Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -237,9 +411,1529 @@
                   "status": "expected"
                 }
               ],
-              "id": "1ab1efe4bf21808de7fe-a05e7ffd77bdd654728c",
-              "file": "coverage_test.spec.js",
-              "line": 34,
+              "id": "ec4296df4c46127cd8b4-18a3fd097f5c2e54a04e",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 123,
+              "column": 5
+            },
+            {
+              "title": "Case-insensitive keyword search",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6527,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:49:19.309Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-c4f2c1cc81cd2db3c300",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 140,
+              "column": 5
+            },
+            {
+              "title": "Empty search should show all logs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3970,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:49:25.862Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-99b9a02352761379f824",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 161,
+              "column": 5
+            },
+            {
+              "title": "Search with no matches should show empty results",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3849,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:49:29.856Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-7c9bc6c4d1f978e01076",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 171,
+              "column": 5
+            },
+            {
+              "title": "Combined filter: Level + Keyword",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6068,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:49:33.731Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-de52525f29dffa5f135f",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 179,
+              "column": 5
+            },
+            {
+              "title": "Time range filter: Full range shows all logs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3946,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:49:39.834Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-fa4f1de28e6aa86c898c",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 198,
+              "column": 5
+            },
+            {
+              "title": "Time range filter: Narrow range reduces logs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3985,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Time range filter: 1002 → 3 logs\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:49:43.815Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-60b4ba897cd58999079d",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 215,
+              "column": 5
+            },
+            {
+              "title": "Clear all filters restores all logs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7570,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:49:47.836Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-96867ca80f86e4cc7aec",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 242,
+              "column": 5
+            },
+            {
+              "title": "Filter persistence across page interactions",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4021,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:49:55.439Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-2a68c52effde45f17c9d",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 266,
+              "column": 5
+            },
+            {
+              "title": "Complex filter combination: Level + Keyword + Time Range",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6011,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Complex filter: 1002 → 0 logs\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:49:59.481Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-a0be76d2288267e15b42",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 283,
+              "column": 5
+            },
+            {
+              "title": "Filter performance: Large dataset filtering under 500ms",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4430,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Filter duration: 1900ms\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:50:05.518Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-e6a79a557792dca69b68",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 309,
+              "column": 5
+            },
+            {
+              "title": "Rapid filter changes should not cause errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7392,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:50:09.974Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-1082b33507436a2d4843",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 327,
+              "column": 5
+            },
+            {
+              "title": "Special characters in search should not break filtering",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13638,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:50:17.397Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-0fc9e43ad3518956bda4",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 340,
+              "column": 5
+            },
+            {
+              "title": "Filter by single log level (Error only)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5821,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Filtered from 1002 to 203 error logs\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:50:32.218Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-5200fda3e330abc25821",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 37,
+              "column": 5
+            },
+            {
+              "title": "Filter by multiple log levels (Error and Warning)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4566,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Filtered to 403 error/warning logs\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:50:38.696Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-926bacad72cac20c5bcf",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 50,
+              "column": 5
+            },
+            {
+              "title": "Filter by all log levels (should show all logs)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3891,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:50:43.280Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-3442363de18a04df4d41",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 63,
+              "column": 5
+            },
+            {
+              "title": "Toggle log levels on and off",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6014,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:50:47.189Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-5f522a258a8f038f1922",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 73,
+              "column": 5
+            },
+            {
+              "title": "Keyword search with single term",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4211,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:50:53.227Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-74e5fcce58fc0af1ab20",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 94,
+              "column": 5
+            },
+            {
+              "title": "Keyword search with multiple terms (OR logic)",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 5011,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/log_filtering_advanced.spec.js:118:26)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)",
+                        "location": {
+                          "file": "copy)/TestScripts/regression/log_filtering_advanced.spec.js",
+                          "column": 26,
+                          "line": 118
+                        }
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "copy)/TestScripts/regression/log_filtering_advanced.spec.js",
+                            "column": 26,
+                            "line": 118
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/log_filtering_advanced.spec.js:118:26)\u001b[22m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\u001b[22m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\u001b[22m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:50:57.462Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/log_filtering_advanced-Adv-4e956-th-multiple-terms-OR-logic--firefox/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/log_filtering_advanced-Adv-4e956-th-multiple-terms-OR-logic--firefox/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/log_filtering_advanced-Adv-4e956-th-multiple-terms-OR-logic--firefox/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "copy)/TestScripts/regression/log_filtering_advanced.spec.js",
+                        "column": 26,
+                        "line": 118
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-e33fb2937917cfee25cb",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 110,
+              "column": 5
+            },
+            {
+              "title": "Keyword search with multiple terms (AND logic)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5247,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "AND search found 1001 logs\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:51:04.223Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-be4bcf75fbd19493934e",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 123,
+              "column": 5
+            },
+            {
+              "title": "Case-insensitive keyword search",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7771,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:51:10.161Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-3ca3cc39d51c5010379d",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 140,
+              "column": 5
+            },
+            {
+              "title": "Empty search should show all logs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4135,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:51:17.960Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-75d5a8ecc05751bd22e8",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 161,
+              "column": 5
+            },
+            {
+              "title": "Search with no matches should show empty results",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4190,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:51:22.130Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-7857d743fa96443bb4f5",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 171,
+              "column": 5
+            },
+            {
+              "title": "Combined filter: Level + Keyword",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6510,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:51:26.354Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-fd09654ff78b75a191e2",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 179,
+              "column": 5
+            },
+            {
+              "title": "Time range filter: Full range shows all logs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4343,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:51:32.890Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-d30ddd3abe45e4cd8e4e",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 198,
+              "column": 5
+            },
+            {
+              "title": "Time range filter: Narrow range reduces logs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5043,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Time range filter: 1002 → 3 logs\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:51:37.250Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-6b489327096a22312bd7",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 215,
+              "column": 5
+            },
+            {
+              "title": "Clear all filters restores all logs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7342,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:51:42.329Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-ce36b1a35ecb7c61a463",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 242,
+              "column": 5
+            },
+            {
+              "title": "Filter persistence across page interactions",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4323,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:51:49.690Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-d437af55efebba8c2360",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 266,
+              "column": 5
+            },
+            {
+              "title": "Complex filter combination: Level + Keyword + Time Range",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5154,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Complex filter: 1002 → 0 logs\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:51:54.029Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-fce3dc7899a4b310522a",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 283,
+              "column": 5
+            },
+            {
+              "title": "Filter performance: Large dataset filtering under 500ms",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 5110,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m2000\u001b[39m\nReceived:   \u001b[31m2024\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m2000\u001b[39m\nReceived:   \u001b[31m2024\u001b[39m\n    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/log_filtering_advanced.spec.js:324:26)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\n    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)",
+                        "location": {
+                          "file": "copy)/TestScripts/regression/log_filtering_advanced.spec.js",
+                          "column": 26,
+                          "line": 324
+                        }
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "copy)/TestScripts/regression/log_filtering_advanced.spec.js",
+                            "column": 26,
+                            "line": 324
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m2000\u001b[39m\nReceived:   \u001b[31m2024\u001b[39m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/TestScripts/regression/log_filtering_advanced.spec.js:324:26)\u001b[22m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:322:9)\u001b[22m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/testInfo.js:311:11)\u001b[22m\n\u001b[2m    at /home/rk/Documents/Android_log_parser (copy)/node_modules/playwright/lib/worker/workerMain.js:320:7)\u001b[22m"
+                        }
+                      ],
+                      "stdout": [
+                        {
+                          "text": "Filter duration: 2024ms\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-17T15:51:59.201Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/log_filtering_advanced-Adv-2e256-taset-filtering-under-500ms-firefox/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/log_filtering_advanced-Adv-2e256-taset-filtering-under-500ms-firefox/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/rk/Documents/Android_log_parser (copy)/.config/TestReports/regression/artifacts/log_filtering_advanced-Adv-2e256-taset-filtering-under-500ms-firefox/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "copy)/TestScripts/regression/log_filtering_advanced.spec.js",
+                        "column": 26,
+                        "line": 324
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-8ab36bd9fa0a7307bb0c",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 309,
+              "column": 5
+            },
+            {
+              "title": "Rapid filter changes should not cause errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-f5705808efdc405ec9b0",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 327,
+              "column": 5
+            },
+            {
+              "title": "Special characters in search should not break filtering",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-2b70e81ebf1b562e0031",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 340,
+              "column": 5
+            },
+            {
+              "title": "Filter by single log level (Error only)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-4d6912d52478bdccd753",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 37,
+              "column": 5
+            },
+            {
+              "title": "Filter by multiple log levels (Error and Warning)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-880375c5cbdfbc8be828",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 50,
+              "column": 5
+            },
+            {
+              "title": "Filter by all log levels (should show all logs)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-be503928f5dd18c440a1",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 63,
+              "column": 5
+            },
+            {
+              "title": "Toggle log levels on and off",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-abdd8831b4a1b08dbdd2",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 73,
+              "column": 5
+            },
+            {
+              "title": "Keyword search with single term",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-5f72125b50c1b2252f41",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 94,
+              "column": 5
+            },
+            {
+              "title": "Keyword search with multiple terms (OR logic)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-80d45bc3d7ba7e2d56c3",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 110,
+              "column": 5
+            },
+            {
+              "title": "Keyword search with multiple terms (AND logic)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-cd57658b7541a0a87aa8",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 123,
+              "column": 5
+            },
+            {
+              "title": "Case-insensitive keyword search",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-1b806940111d92e1b829",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 140,
+              "column": 5
+            },
+            {
+              "title": "Empty search should show all logs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-45d479ca408e9da397cb",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 161,
+              "column": 5
+            },
+            {
+              "title": "Search with no matches should show empty results",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-a893128b084704570090",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 171,
+              "column": 5
+            },
+            {
+              "title": "Combined filter: Level + Keyword",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-9937abb90b49462ee8bc",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 179,
+              "column": 5
+            },
+            {
+              "title": "Time range filter: Full range shows all logs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-49eb1fc8cd28855b8e52",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 198,
+              "column": 5
+            },
+            {
+              "title": "Time range filter: Narrow range reduces logs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-ae2a9dad79a09d3ef5cf",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 215,
+              "column": 5
+            },
+            {
+              "title": "Clear all filters restores all logs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-791909c16d0682b7b628",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 242,
+              "column": 5
+            },
+            {
+              "title": "Filter persistence across page interactions",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-3500422d6cb14913ccdf",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 266,
+              "column": 5
+            },
+            {
+              "title": "Complex filter combination: Level + Keyword + Time Range",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-6f1feb5545b8d27701b9",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 283,
+              "column": 5
+            },
+            {
+              "title": "Filter performance: Large dataset filtering under 500ms",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-f4989c57f525cc927a7a",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 309,
+              "column": 5
+            },
+            {
+              "title": "Rapid filter changes should not cause errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-4be294ecda05b4f690d6",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 327,
+              "column": 5
+            },
+            {
+              "title": "Special characters in search should not break filtering",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec4296df4c46127cd8b4-e1ac17511d42ffe54aa4",
+              "file": "log_filtering_advanced.spec.js",
+              "line": 340,
               "column": 5
             }
           ]
@@ -247,13 +1941,17 @@
       ]
     }
   ],
-  "errors": [],
+  "errors": [
+    {
+      "message": "\u001b[31mTesting stopped early after 3 maximum allowed failures.\u001b[39m"
+    }
+  ],
   "stats": {
-    "startTime": "2025-12-17T11:18:11.381Z",
-    "duration": 16114.991999999998,
-    "expected": 1,
-    "skipped": 0,
-    "unexpected": 1,
+    "startTime": "2025-12-17T15:48:23.501Z",
+    "duration": 221442.65600000002,
+    "expected": 33,
+    "skipped": 21,
+    "unexpected": 3,
     "flaky": 0
   }
 }

@@ -653,11 +653,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 await renderUI(true); // Use fast initial render and wait for it to complete
 
                 // Auto-collapse left panel to maximize log viewing space
-                if (leftPanel && panelToggleBtn && !leftPanel.classList.contains('collapsed')) {
-                    leftPanel.classList.add('collapsed');
-                    panelToggleBtn.innerHTML = '&raquo;';
-                    console.log('[UI] Auto-collapsed left panel after restoring logs');
-                }
+                // if (leftPanel && panelToggleBtn && !leftPanel.classList.contains('collapsed')) {
+                //     leftPanel.classList.add('collapsed');
+                //     panelToggleBtn.innerHTML = '&raquo;';
+                //     console.log('[UI] Auto-collapsed left panel after restoring logs');
+                // }
 
                 return true; // Explicitly return true on success
             }
@@ -1050,6 +1050,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Reset CCC Tab State
         CccTab.reset();
 
+        // Reset BTSnoop Tab State
+        BtsnoopTab.reset();
+
         // Reset state flags
         localBtAddress = 'Host';
         isBtsnoopProcessed = false;
@@ -1138,6 +1141,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         progressText.textContent = 'Initializing...';
         progressBar.style.width = '0%';
+
+        // Show the progress bar container
+        const progressBarContainer = document.querySelector('.progress-bar-container.fixed-bottom-right');
+        if (progressBarContainer) {
+            progressBarContainer.style.display = 'block';
+        }
 
         TimeTracker.start('File Discovery & Decompression');
 
@@ -1500,7 +1509,7 @@ self.onmessage = async (event) => {
         renderHighlights(finalHighlights);
 
         // Process and render secondary dashboard stats like CPU, Temp, and App Versions
-        const dashboardStats = StatsTab.processForDashboardStats(originalLogLines, consolidatedBatteryDataPoints);
+        const dashboardStats = StatsTab.processForDashboardStats(originalLogLines, consolidatedBatteryDataPoints, consolidatedThermalDataPoints);
         // FIX: Store for re-rendering
         window.finalDashboardStats = dashboardStats;
         // Also attach battery points to the stats object for convenience
@@ -1543,14 +1552,23 @@ self.onmessage = async (event) => {
             console.log('[Background] Processing complete.');
         }, 500);
 
+
         // Auto-collapse left panel to maximize log viewing space
-        if (leftPanel && panelToggleBtn && !leftPanel.classList.contains('collapsed')) {
-            leftPanel.classList.add('collapsed');
-            panelToggleBtn.innerHTML = '&raquo;';
-            console.log('[UI] Auto-collapsed left panel after file loading');
-        }
+        // if (leftPanel && panelToggleBtn && !leftPanel.classList.contains('collapsed')) {
+        //     leftPanel.classList.add('collapsed');
+        //     panelToggleBtn.innerHTML = '&raquo;';
+        //     console.log('[UI] Auto-collapsed left panel after file loading');
+        // }
 
         progressText.textContent = 'Complete!';
+
+        // Hide the progress bar after a short delay to show completion
+        setTimeout(() => {
+            const progressBarContainer = document.querySelector('.progress-bar-container.fixed-bottom-right');
+            if (progressBarContainer) {
+                progressBarContainer.style.display = 'none';
+            }
+        }, 500);
     }
 
     /**
@@ -2141,7 +2159,8 @@ self.onmessage = async (event) => {
         const hours = String(date.getUTCHours()).padStart(2, '0');
         const minutes = String(date.getUTCMinutes()).padStart(2, '0');
         const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+        const ms = String(date.getUTCMilliseconds()).padStart(3, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}`;
     }
 
     function logcatToISO(logcatTimestamp) {
@@ -2670,104 +2689,7 @@ self.onmessage = async (event) => {
 
     // setupCccTab moved to ui/tabs/CccTab.js
 
-    async function setupBtsnoopTab() {
-        console.log('[BTSnoop Debug] 1. setupBtsnoopTab called.');
-        if (!btsnoopScrollListenerAttached && btsnoopLogContainer instanceof HTMLElement) {
-            // FIX: Attach the correct virtual scroll listener.
-            btsnoopLogContainer.addEventListener('scroll', () => {
-                // Clear the anchor when user manually scrolls
-                // This allows scroll restoration to work only when filters change
-                if (!window.btsnoopScrollFrame) {
-                    window.btsnoopScrollFrame = requestAnimationFrame(() => {
-                        renderBtsnoopVirtualLogs();
-                        window.btsnoopScrollFrame = null;
-
-                        // Sync horizontal scroll
-                        const header = document.getElementById('btsnoopHeader');
-                        if (header && header.firstChild) {
-                            header.scrollLeft = btsnoopLogContainer.scrollLeft;
-                        }
-
-                        // Clear anchor after manual scroll (debounced)
-                        // But ONLY if this is not a programmatic scroll
-                        if (!isProgrammaticBtsnoopScroll) {
-                            clearTimeout(window.btsnoopAnchorClearTimer);
-                            window.btsnoopAnchorClearTimer = setTimeout(() => {
-                                btsnoopAnchorPacketNumber = null;
-                            }, 100);
-                        }
-                    });
-                }
-            });
-            btsnoopScrollListenerAttached = true;
-        }
-        // FIX: Trigger the initial render after setting up the tab.
-        console.log('[BTSnoop Debug] 2. Attaching btsnoop layer filters and calling renderBtsnoopPackets.');
-        createBtsnoopFilterHeader(); // Ensure header and filters are created
-        attachBtsnoopFilterListeners(); // Attach listeners to the filter buttons (CMD, EVT, etc.)
-
-        // Attach Toggle Collapse/Expand Listener
-        const toggleCollapseBtn = document.getElementById('btsnoopToggleCollapseBtn');
-
-        if (toggleCollapseBtn) {
-            const newBtn = toggleCollapseBtn.cloneNode(true);
-            toggleCollapseBtn.parentNode.replaceChild(newBtn, toggleCollapseBtn);
-            newBtn.addEventListener('click', () => {
-                const metaPackets = btsnoopPackets.filter(p => p.type === 'META');
-                if (metaPackets.length === 0) return;
-
-                const allCollapsed = metaPackets.every(p => btsnoopCollapsedFiles.has(p.fileName));
-
-                if (allCollapsed) {
-                    // Expand All
-                    btsnoopCollapsedFiles.clear();
-                    newBtn.textContent = '⊟';
-                    newBtn.title = 'Collapse All Files';
-                } else {
-                    // Collapse All
-                    metaPackets.forEach(p => btsnoopCollapsedFiles.add(p.fileName));
-                    newBtn.textContent = '⊞';
-                    newBtn.title = 'Expand All Files';
-                }
-                renderBtsnoopPackets();
-            });
-        }
-
-        renderBtsnoopPackets();
-    }
-
-    function attachBtsnoopFilterListeners() {
-        const container = document.getElementById('btsnoopFilterContainer');
-        if (!container) return;
-
-        const buttons = container.querySelectorAll('.filter-icon');
-        buttons.forEach(btn => {
-            // Remove old listeners to avoid duplicates (safeguard)
-            const newBtn = btn.cloneNode(true);
-            btn.parentNode.replaceChild(newBtn, btn);
-
-            newBtn.addEventListener('click', () => {
-                const type = newBtn.dataset.btsnoopFilter;
-                newBtn.classList.toggle('active');
-
-                if (newBtn.classList.contains('active')) {
-                    activeBtsnoopFilters.add(type);
-                } else {
-                    activeBtsnoopFilters.delete(type);
-                }
-
-                // Trigger re-filter and re-render
-                renderBtsnoopPackets();
-            });
-
-            // Sync initial state
-            if (activeBtsnoopFilters.has(newBtn.dataset.btsnoopFilter)) {
-                newBtn.classList.add('active');
-            } else {
-                newBtn.classList.remove('active'); // Should be active by default if set matches
-            }
-        });
-    }
+    // setupBtsnoopTab and attachBtsnoopFilterListeners removed (moved to BtsnoopTab.js)
 
     // --- BTSnoop Log Processing ---
     async function processForBtsnoop() {
@@ -3111,13 +3033,15 @@ self.onmessage = async (event) => {
     window._debug = {
         // Delegate to module getters/setters if available, or just use getters
         get btsnoopPackets() { return BtsnoopTab.getBtsnoopPackets(); },
-        // set btsnoopPackets(v) { ... } // Read-only via debug to avoid state desync
+        set btsnoopPackets(v) { BtsnoopTab.setBtsnoopPackets(v); },
         get isBtsnoopProcessed() { return isBtsnoopProcessed; },
         set isBtsnoopProcessed(v) { isBtsnoopProcessed = v; },
-        // renderBtsnoopPackets: () => BtsnoopTab.renderBtsnoopPackets(), // If needed, but better to trigger via setup
-        setupBtsnoopTab,
+        renderBtsnoopPackets: () => BtsnoopTab.renderBtsnoopPackets(),
+        setupBtsnoopTab: BtsnoopTab.setupBtsnoopTab,
         get selectedBtsnoopPacket() { return BtsnoopTab.getSelectedBtsnoopPacket(); },
-        // set selectedBtsnoopPacket(v) { BtsnoopTab.setSelectedBtsnoopPacket(v); }
+        set selectedBtsnoopPacket(v) { BtsnoopTab.setSelectedBtsnoopPacket(v); },
+        originalLogLines: () => originalLogLines,
+        filteredLogLines: () => filteredLogLines
     };
 
     initializeApp();

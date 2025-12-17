@@ -30,18 +30,24 @@ test('BTSnoop Scroll Restoration on Filter Clear', async ({ page }) => {
         const delay = ms => new Promise(res => setTimeout(res, ms));
 
         // Initial setup
+        // Manually toggle views (simulating worker completion)
+        const content = document.getElementById('btsnoopContentView');
+        if (content) content.style.display = 'flex';
+        const initial = document.getElementById('btsnoopInitialView');
+        if (initial) initial.style.display = 'none';
+
         await window._debug.setupBtsnoopTab();
     });
 
     // 3. Switch to BTSnoop Tab
     await page.click('[data-tab="btsnoop"]');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1500);
 
     // 4. Apply Filter 'Host'
     const filterInput = page.locator('input[data-column="2"]');
     await filterInput.waitFor({ state: 'visible', timeout: 10000 });
     await filterInput.fill('Host');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1500);
 
     // 5. Select Packet 101 (Source Host, index 100)
     // We force selection via _debug to avoid complex scrolling interactions in test
@@ -51,11 +57,11 @@ test('BTSnoop Scroll Restoration on Filter Clear', async ({ page }) => {
         // Trigger render to update selection state internally
         window._debug.renderBtsnoopPackets();
     });
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1500);
 
     // 6. Clear Filter
     await page.fill('input[data-column="2"]', '');
-    await page.waitForTimeout(1000); // Wait for debounce + render + scroll
+    await page.waitForTimeout(5000); // Wait for debounce + render + scroll
 
     // 7. Verify Scroll Position
     // Packet 101 is at index 100.

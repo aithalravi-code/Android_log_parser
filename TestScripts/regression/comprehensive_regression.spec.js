@@ -75,8 +75,8 @@ test.describe('Comprehensive Regression & Performance Suite', () => {
     });
 
     test('Regression: Time Ranges should be populated', async ({ page }) => {
-        const startTime = await page.inputValue('#startTimeInput');
-        const endTime = await page.inputValue('#endTimeInput');
+        const startTime = await page.inputValue('#startTime');
+        const endTime = await page.inputValue('#endTime');
 
         console.log(`Detected Time Range: ${startTime} to ${endTime}`);
 
