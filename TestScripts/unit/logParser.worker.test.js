@@ -86,7 +86,7 @@ describe('logParser.worker.js', () => {
     });
 
     it('should parse Weaver log format', async () => {
-        const sampleLog = `[12-31 23:59:59.123][1000][WeaverTag] Weaver Message content`;
+        const sampleLog = '[12-31 23:59:59.123][1000][WeaverTag] Weaver Message content';
         const postMessageSpy = vi.fn();
         await processLogFile({ file: createMockFile(sampleLog), path: 'test.log' }, postMessageSpy);
 
@@ -103,7 +103,7 @@ describe('logParser.worker.js', () => {
 
     it('should parse GPS/Custom log format', async () => {
         // Date Time PID Hex Tag Message
-        const sampleLog = `01-02 10:00:00.500 9999 AABBCC GPS_Tag +Message content`;
+        const sampleLog = '01-02 10:00:00.500 9999 AABBCC GPS_Tag +Message content';
         const postMessageSpy = vi.fn();
         await processLogFile({ file: createMockFile(sampleLog), path: 'test.log' }, postMessageSpy);
 
@@ -120,7 +120,7 @@ describe('logParser.worker.js', () => {
     it('should parse Process Status (ps) lines', async () => {
         // PID TID User ... Tag
         // 123 456 root ... init
-        const sampleLog = `123 456 root 0 0 init`;
+        const sampleLog = '123 456 root 0 0 init';
         const postMessageSpy = vi.fn();
         await processLogFile({ file: createMockFile(sampleLog), path: 'test.log' }, postMessageSpy);
 

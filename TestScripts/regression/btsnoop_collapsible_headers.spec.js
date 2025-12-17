@@ -31,7 +31,7 @@ test.describe('BTSnoop Collapsible Headers', () => {
         const header = Buffer.from([
             0x62, 0x74, 0x73, 0x6e, 0x6f, 0x6f, 0x70, 0x00, // btsnoop\0
             0x00, 0x00, 0x00, 0x01, // Version 1
-            0x00, 0x00, 0x03, 0xea  // ID 1002
+            0x00, 0x00, 0x03, 0xea // ID 1002
         ]);
 
         // SMP Packet (CID 0x0006)
@@ -60,7 +60,7 @@ test.describe('BTSnoop Collapsible Headers', () => {
         const smpData = Buffer.from([
             0x01, 0x00, 0x06, 0x00, // HCI ACL Handle 1, Len 6
             0x02, 0x00, 0x06, 0x00, // L2CAP Len 2, CID 0x0006 (SMP)
-            0x01, 0x00             // SMP Pairing Req
+            0x01, 0x00 // SMP Pairing Req
         ]);
 
         const packet1 = createPacket(1000, smpData);

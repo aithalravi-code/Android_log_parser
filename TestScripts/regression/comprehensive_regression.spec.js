@@ -61,7 +61,7 @@ test.describe('Comprehensive Regression & Performance Suite', () => {
         const logContent = await page.textContent('#logContainer');
         // The parser escapes HTML, so '< div' becomes '&lt; div'.
         // In textContent, '&lt;' is displayed as '<'.
-        // So we SHOULD see '< div' in the text content (safe display of code), 
+        // So we SHOULD see '< div' in the text content (safe display of code),
         // but it should NOT be rendered as an actual DIV tag in the DOM.
 
         // We ensure it IS visible (safely)
@@ -69,7 +69,7 @@ test.describe('Comprehensive Regression & Performance Suite', () => {
 
         // Check availability of raw HTML to ensure it was NOT rendered as a tag
         const rawHtml = await page.innerHTML('#logContainer');
-        // We expect SAFE escaping (e.g. &lt;div) 
+        // We expect SAFE escaping (e.g. &lt;div)
         // So rawHtml should NOT contain <div (unescaped tag)
         expect(rawHtml).not.toMatch(/<div\s+should_not_be_raw/i);
     });

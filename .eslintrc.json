@@ -1,0 +1,92 @@
+{
+    "env": {
+        "browser": true,
+        "es2022": true,
+        "node": true,
+        "worker": true
+    },
+    "globals": {
+        "XLSX": "readonly"
+    },
+    "extends": "eslint:recommended",
+    "parserOptions": {
+        "ecmaVersion": 2022,
+        "sourceType": "module"
+    },
+    "rules": {
+        "no-unused-vars": [
+            "warn",
+            {
+                "args": "none",
+                "varsIgnorePattern": "^_"
+            }
+        ],
+        "no-console": "off",
+        "prefer-const": "warn",
+        "no-var": "error",
+        "eqeqeq": [
+            "warn",
+            "always"
+        ],
+        "curly": [
+            "warn",
+            "all"
+        ],
+        "brace-style": [
+            "warn",
+            "1tbs"
+        ],
+        "comma-dangle": [
+            "warn",
+            "never"
+        ],
+        "semi": [
+            "warn",
+            "always"
+        ],
+        "quotes": [
+            "warn",
+            "single",
+            {
+                "avoidEscape": true
+            }
+        ],
+        "indent": [
+            "warn",
+            4,
+            {
+                "SwitchCase": 1
+            }
+        ],
+        "no-trailing-spaces": "warn",
+        "no-multiple-empty-lines": [
+            "warn",
+            {
+                "max": 2
+            }
+        ],
+        "space-before-function-paren": [
+            "warn",
+            {
+                "anonymous": "always",
+                "named": "never",
+                "asyncArrow": "always"
+            }
+        ],
+        "keyword-spacing": "warn",
+        "space-infix-ops": "warn",
+        "arrow-spacing": "warn",
+        "no-multi-spaces": "warn"
+    },
+    "ignorePatterns": [
+        "node_modules/",
+        "dist/",
+        "TestReports/",
+        "*.min.js",
+        "test-results/",
+        "coverage/",
+        "allure-results/",
+        "allure-report/",
+        "temp/"
+    ]
+}

@@ -25,8 +25,8 @@ test.describe('BLE Keys Population Verification', () => {
         // Wait for "Data loaded" message or completion signal
         await page.waitForTimeout(2000); // Give it a moment to start
 
-        // Wait for BTSnoop processing to hopefully finish implicitly 
-        // by waiting for the Stats tab data to be ready. 
+        // Wait for BTSnoop processing to hopefully finish implicitly
+        // by waiting for the Stats tab data to be ready.
         // But processing is async. We can check for a known element or wait for console "BTSnoop Processing stopped".
 
         // Better: Click Stats tab and wait for table rows.

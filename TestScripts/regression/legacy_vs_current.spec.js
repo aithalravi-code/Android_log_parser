@@ -53,7 +53,9 @@ test.describe.serial('Legacy vs Current Performance Benchmark', () => {
         // Use JavaScript to click directly to avoid viewport issues
         await page.evaluate(() => {
             const btn = document.querySelector('[data-level="V"]');
-            if (btn) btn.click();
+            if (btn) {
+                btn.click();
+            }
         });
         await page.waitForTimeout(200); // Wait for filter to apply
         results.filterTime = Date.now() - startFilter;

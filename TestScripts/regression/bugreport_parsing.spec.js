@@ -62,17 +62,17 @@ test.describe('Bugreport Parsing Test', () => {
 
         // Verify specific expected log lines are present
         const expectedLines = [
-            'NetworkScheduler.Stats',  // Should have proper tag
-            'RegisterSyncOperation',    // Should have proper tag
-            'CCTUploader',              // Should have proper tag
-            'ActivityManager',          // Should have proper tag
-            'dumpstate'                 // Should have proper tag (shell user case)
+            'NetworkScheduler.Stats', // Should have proper tag
+            'RegisterSyncOperation', // Should have proper tag
+            'CCTUploader', // Should have proper tag
+            'ActivityManager', // Should have proper tag
+            'dumpstate' // Should have proper tag (shell user case)
         ];
 
         const expectedTimestamps = [
-            '16:18:43.056',  // Should have proper timestamp
-            '16:18:43.058',  // Should have proper timestamp
-            '16:18:43.079',  // Should have proper timestamp
+            '16:18:43.056', // Should have proper timestamp
+            '16:18:43.058', // Should have proper timestamp
+            '16:18:43.079' // Should have proper timestamp
         ];
 
         console.log('Checking for expected tags...');
@@ -121,13 +121,13 @@ test.describe('Bugreport Parsing Test', () => {
         console.log('Found timestamps:', foundTimestamps, '/', expectedTimestamps.length);
 
         // Assertions
-        expect(foundTags, `Should find at least 4 of the expected tags`).toBeGreaterThanOrEqual(4);
-        expect(foundTimestamps, `Should find all expected timestamps`).toBe(expectedTimestamps.length);
-        expect(linesWithDates, `Should have many lines with proper dates`).toBeGreaterThan(100);
+        expect(foundTags, 'Should find at least 4 of the expected tags').toBeGreaterThanOrEqual(4);
+        expect(foundTimestamps, 'Should find all expected timestamps').toBe(expectedTimestamps.length);
+        expect(linesWithDates, 'Should have many lines with proper dates').toBeGreaterThan(100);
 
         // The ratio should be reasonable - we expect most lines to have dates
         const ratio = linesWithDates / (linesWithDates + linesWithoutDates);
-        expect(ratio, `At least 50% of lines should have proper dates`).toBeGreaterThan(0.5);
+        expect(ratio, 'At least 50% of lines should have proper dates').toBeGreaterThan(0.5);
 
         console.log('✓ Test passed! Bugreport parsing is working correctly.');
     });

@@ -257,7 +257,7 @@ describe('CccTab - Extended Coverage', () => {
             const messages = [
                 {
                     timestamp: '12:00:00.000',
-                    line: 1,
+                    line: 1
                     // Missing direction, type, subtype, etc.
                 }
             ];

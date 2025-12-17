@@ -1,7 +1,7 @@
 /**
  * Makes a table sortable.
  * Assumes headers are in <thead > and rows in <tbody >.
- * 
+ *
  * @param {string} tableId - The ID of the table to sort.
  * @param {number|null} defaultSortColumn - The index of the column to sort by default.
  * @param {string} defaultSortOrder - 'asc' or 'desc'.
@@ -53,7 +53,7 @@ export function makeSortable(tableId, defaultSortColumn = null, defaultSortOrder
             // Don't sort if clicking on or within resize handle
             if (e.target.classList.contains('resize-handle-col') ||
                 e.target.closest('.resize-handle-col')) {
-                console.log(`[Sort] Ignoring click on resize handle`);
+                console.log('[Sort] Ignoring click on resize handle');
                 return;
             }
             console.log(`[Sort] Header clicked: ${tableId}, column ${index}, text = "${header.textContent.trim()}"`);
@@ -78,9 +78,9 @@ function sortTable(tableId, columnIndex, order = null) {
     }
 
     const tbody = table.querySelector('tbody');
-    // const headerRow = table.querySelector('thead tr:first-child'); 
-    // Wait, headerRow logic should mirror makeSortable's discovery logic or assume 
-    // headers store sort state. 
+    // const headerRow = table.querySelector('thead tr:first-child');
+    // Wait, headerRow logic should mirror makeSortable's discovery logic or assume
+    // headers store sort state.
     // We need to find the headers again to update indicators.
 
     // We'll reuse logic to find header row:
@@ -93,7 +93,9 @@ function sortTable(tableId, columnIndex, order = null) {
             break;
         }
     }
-    if (!headerRow) return;
+    if (!headerRow) {
+        return;
+    }
 
     const headers = headerRow.querySelectorAll('th');
 
@@ -115,19 +117,21 @@ function sortTable(tableId, columnIndex, order = null) {
         const aCell = a.children[columnIndex];
         const bCell = b.children[columnIndex];
 
-        if (!aCell || !bCell) return 0;
+        if (!aCell || !bCell) {
+            return 0;
+        }
 
         // Extract text content only (ignore tooltips etc)
         // Or usage data-log-text if available (better for formatted cells)
-        let aValue = aCell.dataset.logText || aCell.textContent.trim();
-        let bValue = bCell.dataset.logText || bCell.textContent.trim();
+        const aValue = aCell.dataset.logText || aCell.textContent.trim();
+        const bValue = bCell.dataset.logText || bCell.textContent.trim();
 
         // Check if values look like timestamps (contain colons or dashes)
         const looksLikeTimestamp = (val) => /\d{1,2}[-:]\d{1,2}/.test(val);
 
         if (looksLikeTimestamp(aValue) && looksLikeTimestamp(bValue)) {
             // Direct string comparison works well for timestamps in consistent format
-            // But if format varies, Date.parse might be needed. 
+            // But if format varies, Date.parse might be needed.
             // Assuming ISO-ish or consistently formatted log timestamps.
             const result = newOrder === 'asc'
                 ? aValue.localeCompare(bValue)

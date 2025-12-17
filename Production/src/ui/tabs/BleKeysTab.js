@@ -1,7 +1,7 @@
 import { makeSortable } from '../../table-sort.js';
 import { makeTableResizable } from '../../table-resize.js';
 
-let bleKeysData = [];
+const bleKeysData = [];
 
 /**
  * Renders the BLE Security Keys table.
@@ -10,7 +10,9 @@ let bleKeysData = [];
  * @param {HTMLElement} tableElement - The HTML element (tbody) to render into.
  */
 export function renderBleKeys(connectionEvents, connectionMap, tableElement, textKeys = null) {
-    if (!tableElement) return;
+    if (!tableElement) {
+        return;
+    }
 
     tableElement.innerHTML = '';
 
@@ -22,8 +24,8 @@ export function renderBleKeys(connectionEvents, connectionMap, tableElement, tex
     if (textKeys && textKeys.size > 0) {
         textKeys.forEach((keyInfo, address) => {
             // keyInfo is expected to be { type: 'LTK'/'IRK', key: 'HexStr' } or similar
-            // Adjust based on what worker actually sends. 
-            // Worker sends: [addr, keyInfo] where keyInfo might be just the key string or object? 
+            // Adjust based on what worker actually sends.
+            // Worker sends: [addr, keyInfo] where keyInfo might be just the key string or object?
             // Checking main.js consolidation: finalBleKeys.set(addr, keyInfo);
             // Checking worker.js: it doesn't seem to extract BLE keys from text logs yet?
             // Wait, implementation plan said "finalBleKeys (extracted by worker) are effectively ignored".
@@ -61,7 +63,9 @@ export function renderBleKeys(connectionEvents, connectionMap, tableElement, tex
 
     for (const event of allKeys) {
         // Deduplication check
-        if (seenKeys.has(event.keyValue)) continue;
+        if (seenKeys.has(event.keyValue)) {
+            continue;
+        }
         seenKeys.add(event.keyValue);
 
         // Resolve peer address from connection map if handle is available

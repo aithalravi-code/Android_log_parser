@@ -11,13 +11,13 @@ export class PerformanceTracker {
 
         // Performance thresholds (in milliseconds)
         this.thresholds = {
-            fileLoad: 5000,      // 5 seconds for file loading
-            parsing: 3000,       // 3 seconds for parsing
-            filtering: 1000,     // 1 second for filtering
-            rendering: 500,      // 500ms for rendering
-            export: 3000,        // 3 seconds for export
-            workerComm: 100,     // 100ms for worker communication
-            dbOperation: 200     // 200ms for IndexedDB operations
+            fileLoad: 5000, // 5 seconds for file loading
+            parsing: 3000, // 3 seconds for parsing
+            filtering: 1000, // 1 second for filtering
+            rendering: 500, // 500ms for rendering
+            export: 3000, // 3 seconds for export
+            workerComm: 100, // 100ms for worker communication
+            dbOperation: 200 // 200ms for IndexedDB operations
         };
 
         // Track memory usage if available
@@ -171,7 +171,9 @@ export class PerformanceTracker {
             console.warn(`⚠️ Performance Warning: ${warning.message}`);
 
             // Store warning
-            if (!this.warnings) this.warnings = [];
+            if (!this.warnings) {
+                this.warnings = [];
+            }
             this.warnings.push(warning);
         }
     }
@@ -295,13 +297,17 @@ export class PerformanceTracker {
      * @returns {number} Percentile value
      */
     percentile(sortedArray, percentile) {
-        if (sortedArray.length === 0) return 0;
+        if (sortedArray.length === 0) {
+            return 0;
+        }
         const index = (percentile / 100) * (sortedArray.length - 1);
         const lower = Math.floor(index);
         const upper = Math.ceil(index);
         const weight = index % 1;
 
-        if (lower === upper) return sortedArray[lower];
+        if (lower === upper) {
+            return sortedArray[lower];
+        }
 
         return sortedArray[lower] * (1 - weight) + sortedArray[upper] * weight;
     }

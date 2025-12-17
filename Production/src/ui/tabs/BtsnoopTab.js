@@ -7,8 +7,8 @@ let filteredBtsnoopPackets = [];
 let btsnoopConnectionEvents = [];
 let btsnoopConnectionMap = new Map();
 let localBtAddress = '00:00:00:00:00:00';
-let activeBtsnoopFilters = new Set(['cmd', 'evt', 'acl', 'l2cap', 'smp', 'att']);
-let btsnoopCollapsedFiles = new Set();
+const activeBtsnoopFilters = new Set(['cmd', 'evt', 'acl', 'l2cap', 'smp', 'att']);
+const btsnoopCollapsedFiles = new Set();
 let btsnoopRowPositions = new Float32Array(0);
 let btsnoopTotalHeight = 0;
 let btsnoopAnchorPacketNumber = null;
@@ -22,7 +22,7 @@ let btsnoopScrollListenerAttached = false;
 let btsnoopLogContainer = null;
 let btsnoopLogSizer = null;
 let btsnoopLogViewport = null;
-let btsnoopRowPool = [];
+const btsnoopRowPool = [];
 
 // Sort & Filter State
 let btsnoopSortColumn = null; // 0-based index
@@ -198,8 +198,12 @@ export async function processForBtsnoop(fileTasks, { db, getDb, saveData, loadDa
             const bufferPromises = tasks.map(task => (task.file || task.blob).arrayBuffer());
             const fileBuffers = await Promise.all(bufferPromises);
             const fileNames = tasks.map(task => {
-                if (task.path) return task.path;
-                if (task.file && task.file.webkitRelativePath) return task.file.webkitRelativePath;
+                if (task.path) {
+                    return task.path;
+                }
+                if (task.file && task.file.webkitRelativePath) {
+                    return task.file.webkitRelativePath;
+                }
                 return task.file ? task.file.name : 'unknown.log';
             });
 
@@ -208,7 +212,7 @@ export async function processForBtsnoop(fileTasks, { db, getDb, saveData, loadDa
             const workerURL = URL.createObjectURL(blob);
             const worker = new Worker(workerURL);
             let totalPacketsStored = 0;
-            let storedHighlights = null; // Local highlights cache if needed
+            const storedHighlights = null; // Local highlights cache if needed
 
             worker.onmessage = async (event) => {
                 const { type, packets, message, stack, connectionMap } = event.data;
@@ -237,7 +241,7 @@ export async function processForBtsnoop(fileTasks, { db, getDb, saveData, loadDa
 
                     await resolveBtsnoopHandles(btsnoopConnectionMap);
 
-                    progressDiv.textContent = `Saving...`;
+                    progressDiv.textContent = 'Saving...';
                     await saveData('btsnoopPackets', btsnoopPackets);
 
                     // UI Updates
@@ -245,7 +249,9 @@ export async function processForBtsnoop(fileTasks, { db, getDb, saveData, loadDa
                     btsnoopContentView.style.display = 'flex';
                     btsnoopFilterContainer.style.display = 'block';
                     btsnoopInitialView.style.display = 'none';
-                    if (btsnoopToolbar) btsnoopToolbar.style.display = 'block';
+                    if (btsnoopToolbar) {
+                        btsnoopToolbar.style.display = 'block';
+                    }
 
                     TimeTracker.stop('BTSnoop Processing');
                     isBtsnoopProcessed = true;
@@ -634,10 +640,16 @@ async function resolveBtsnoopHandles(connectionMap) {
         if (packet.handle !== undefined && connectionMap.has(packet.handle)) {
             const connInfo = connectionMap.get(packet.handle);
             // Update source/destination if they are just Handles
-            if (String(packet.source).startsWith('Handle')) packet.source = connInfo.address;
-            if (String(packet.destination).startsWith('Handle')) packet.destination = connInfo.address;
+            if (String(packet.source).startsWith('Handle')) {
+                packet.source = connInfo.address;
+            }
+            if (String(packet.destination).startsWith('Handle')) {
+                packet.destination = connInfo.address;
+            }
         }
-        if (i % 20000 === 0 && i > 0) await new Promise(r => setTimeout(r, 0));
+        if (i % 20000 === 0 && i > 0) {
+            await new Promise(r => setTimeout(r, 0));
+        }
     }
 }
 
@@ -679,7 +691,8 @@ export function renderBtsnoopConnectionEvents(events = null) {
                 <td class="params-cell">${formattedParams}</td>
                 <td>${event.rawData}</td>
             </tr>
-        `}).join('');
+        `;
+        }).join('');
 
         // Restore scroll position after rendering
         const table = document.getElementById('btsnoopConnectionEventsTable');
@@ -700,7 +713,9 @@ export function renderBtsnoopConnectionEvents(events = null) {
 export async function renderBtsnoopPackets(deps = {}) {
     console.log('[BTSnoop Debug] 3. Rendering btsnoop packets (virtual scroll).');
     const { loadData, TimeTracker } = deps;
-    if (TimeTracker) TimeTracker.start('BTSnoop Filtering');
+    if (TimeTracker) {
+        TimeTracker.start('BTSnoop Filtering');
+    }
 
     // --- LIVE Scroll Restoration Logic ---
     if (!btsnoopAnchorPacketNumber && btsnoopLogContainer && btsnoopLogContainer.scrollTop > 0) {
@@ -710,8 +725,11 @@ export async function renderBtsnoopPackets(deps = {}) {
             let low = 0, high = btsnoopRowPositions.length - 1;
             while (low <= high) {
                 const mid = (low + high) >>> 1;
-                if (btsnoopRowPositions[mid] < scrollTop) low = mid + 1;
-                else high = mid - 1;
+                if (btsnoopRowPositions[mid] < scrollTop) {
+                    low = mid + 1;
+                } else {
+                    high = mid - 1;
+                }
             }
             topVisibleIndex = Math.max(0, Math.min(high, filteredBtsnoopPackets.length - 1));
         }
@@ -734,9 +752,13 @@ export async function renderBtsnoopPackets(deps = {}) {
     if ((!allPackets || allPackets.length === 0) && loadData) {
         try {
             const stored = await loadData('btsnoopPackets');
-            if (stored && stored.value) allPackets = stored.value;
+            if (stored && stored.value) {
+                allPackets = stored.value;
+            }
             btsnoopPackets = allPackets;
-        } catch (e) { console.log('No cached packets'); }
+        } catch (e) {
+            console.log('No cached packets');
+        }
     }
 
     // SORTING
@@ -747,15 +769,23 @@ export async function renderBtsnoopPackets(deps = {}) {
 
         sortedPackets = [...allPackets].sort((a, b) => {
             // Primary: Group by Filename for collapsible headers
-            if (a.fileName > b.fileName) return 1;
-            if (a.fileName < b.fileName) return -1;
+            if (a.fileName > b.fileName) {
+                return 1;
+            }
+            if (a.fileName < b.fileName) {
+                return -1;
+            }
 
             // Secondary: Meta first
-            if (a.type === 'META') return -1;
-            if (b.type === 'META') return 1;
+            if (a.type === 'META') {
+                return -1;
+            }
+            if (b.type === 'META') {
+                return 1;
+            }
 
-            let aVal = a[sortField] || '';
-            let bVal = b[sortField] || '';
+            const aVal = a[sortField] || '';
+            const bVal = b[sortField] || '';
             // Numeric check
             const aNum = parseFloat(String(aVal).replace(/[^0-9.-]/g, ''));
             const bNum = parseFloat(String(bVal).replace(/[^0-9.-]/g, ''));
@@ -779,17 +809,23 @@ export async function renderBtsnoopPackets(deps = {}) {
             filteredBtsnoopPackets.push(packet);
             continue;
         }
-        if (btsnoopCollapsedFiles.has(packet.fileName)) continue;
+        if (btsnoopCollapsedFiles.has(packet.fileName)) {
+            continue;
+        }
 
         const passesTags = activeBtsnoopFilters.size === 0 || packet.tags.some(tag => activeBtsnoopFilters.has(tag));
-        if (!passesTags) continue;
+        if (!passesTags) {
+            continue;
+        }
 
         let match = true;
         if (columnFilters.length > 0) {
             const columnData = [packet.number, packet.timestamp, packet.source || '', packet.destination || '', packet.type, packet.summary, packet.data];
             match = columnFilters.every(filter => columnData[filter.index].toString().toLowerCase().includes(filter.value));
         }
-        if (match) filteredBtsnoopPackets.push(packet);
+        if (match) {
+            filteredBtsnoopPackets.push(packet);
+        }
     }
 
     // Row Positions
@@ -807,7 +843,9 @@ export async function renderBtsnoopPackets(deps = {}) {
         }
     }
 
-    if (TimeTracker) TimeTracker.stop('BTSnoop Filtering');
+    if (TimeTracker) {
+        TimeTracker.stop('BTSnoop Filtering');
+    }
 
     // Scroll Restoration (Step 2 & 3 combined logic from main.js)
     let targetScrollTop = null;
@@ -843,7 +881,9 @@ export async function renderBtsnoopPackets(deps = {}) {
                 isProgrammaticBtsnoopScroll = true;
                 btsnoopLogContainer.scrollTop = targetScrollTop;
                 renderBtsnoopVirtualLogs(); // Force re-render at new pos
-                setTimeout(() => { isProgrammaticBtsnoopScroll = false; }, 200);
+                setTimeout(() => {
+                    isProgrammaticBtsnoopScroll = false;
+                }, 200);
             }
         });
     }
@@ -851,7 +891,9 @@ export async function renderBtsnoopPackets(deps = {}) {
 }
 
 function renderBtsnoopVirtualLogs() {
-    if (!btsnoopLogViewport || !btsnoopLogSizer || !btsnoopLogContainer) return;
+    if (!btsnoopLogViewport || !btsnoopLogSizer || !btsnoopLogContainer) {
+        return;
+    }
     btsnoopLogSizer.style.height = btsnoopTotalHeight + 'px';
     const scrollTop = btsnoopLogContainer.scrollTop;
     const containerHeight = btsnoopLogContainer.clientHeight;
@@ -862,19 +904,26 @@ function renderBtsnoopVirtualLogs() {
     let low = 0, high = btsnoopRowPositions.length - 1;
     while (low <= high) {
         const mid = (low + high) >>> 1;
-        if (btsnoopRowPositions[mid] < scrollTop) low = mid + 1;
-        else high = mid - 1;
+        if (btsnoopRowPositions[mid] < scrollTop) {
+            low = mid + 1;
+        } else {
+            high = mid - 1;
+        }
     }
     startIndex = Math.max(0, high - BUFFER_LINES);
 
     // Find end index
     let endIndex = startIndex;
     for (let i = startIndex; i < filteredBtsnoopPackets.length; i++) {
-        if (btsnoopRowPositions[i] > viewportBottom) { endIndex = i; break; }
+        if (btsnoopRowPositions[i] > viewportBottom) {
+            endIndex = i; break;
+        }
         endIndex = i + 1;
     }
     endIndex = Math.min(filteredBtsnoopPackets.length, endIndex + BUFFER_LINES);
-    if (endIndex <= startIndex) endIndex = Math.min(filteredBtsnoopPackets.length, startIndex + 50);
+    if (endIndex <= startIndex) {
+        endIndex = Math.min(filteredBtsnoopPackets.length, startIndex + 50);
+    }
 
     // Debug: Log the render range
     console.log('[BTSnoop Debug] Render range:', startIndex, 'to', endIndex, 'scrollTop:', scrollTop, 'totalPackets:', filteredBtsnoopPackets.length);
@@ -885,13 +934,17 @@ function renderBtsnoopVirtualLogs() {
     const visibleRows = [];
     for (let i = startIndex; i < endIndex; i++) {
         const packet = filteredBtsnoopPackets[i];
-        if (!packet) continue;
+        if (!packet) {
+            continue;
+        }
 
         let row = btsnoopRowPool.pop();
         if (!row) {
             row = document.createElement('div');
             row.className = 'btsnoop-row';
-            for (let j = 0; j < 7; j++) row.appendChild(document.createElement('div'));
+            for (let j = 0; j < 7; j++) {
+                row.appendChild(document.createElement('div'));
+            }
         }
 
         if (packet.type === 'META') {
@@ -904,8 +957,11 @@ function renderBtsnoopVirtualLogs() {
             headerDiv.textContent = `${isCollapsed ? '▶' : '▼'} ${packet.fileName}`;
             headerDiv.onclick = (e) => {
                 e.stopPropagation();
-                if (btsnoopCollapsedFiles.has(packet.fileName)) btsnoopCollapsedFiles.delete(packet.fileName);
-                else btsnoopCollapsedFiles.add(packet.fileName);
+                if (btsnoopCollapsedFiles.has(packet.fileName)) {
+                    btsnoopCollapsedFiles.delete(packet.fileName);
+                } else {
+                    btsnoopCollapsedFiles.add(packet.fileName);
+                }
                 renderBtsnoopPackets();
             };
             row.appendChild(headerDiv);
@@ -920,22 +976,27 @@ function renderBtsnoopVirtualLogs() {
             row.style.backgroundColor = '#333';
         } else {
             row.className = 'btsnoop-row';
-            if (selectedBtsnoopPacket && selectedBtsnoopPacket.number === packet.number) row.classList.add('selected');
-            else row.classList.remove('selected');
+            if (selectedBtsnoopPacket && selectedBtsnoopPacket.number === packet.number) {
+                row.classList.add('selected');
+            } else {
+                row.classList.remove('selected');
+            }
             row.classList.add(packet.number % 2 === 0 ? 'even-row' : 'odd-row');
             row.classList.remove(packet.number % 2 === 0 ? 'odd-row' : 'even-row');
             row.dataset.packetNumber = packet.number;
 
             if (row.children.length !== 7) {
                 row.innerHTML = '';
-                for (let j = 0; j < 7; j++) row.appendChild(document.createElement('div'));
+                for (let j = 0; j < 7; j++) {
+                    row.appendChild(document.createElement('div'));
+                }
             }
             const cellData = [packet.number, packet.timestamp, packet.source, packet.destination, packet.type, packet.summary, packet.data];
             const cells = row.children;
             for (let j = 0; j < 7; j++) {
                 const val = (cellData[j] !== undefined && cellData[j] !== null) ? String(cellData[j]) : '';
                 cells[j].textContent = val;
-                cells[j].title = val + " (Ctrl+Click to copy)";
+                cells[j].title = val + ' (Ctrl+Click to copy)';
                 cells[j].dataset.logText = val;
                 cells[j].className = 'btsnoop-cell btsnoop-copy-cell';
                 cells[j].style.color = '#e0e0e0';
@@ -973,16 +1034,22 @@ function renderBtsnoopVirtualLogs() {
         visibleRows.push(row);
     }
 
-    while (btsnoopLogViewport.firstChild) btsnoopRowPool.push(btsnoopLogViewport.removeChild(btsnoopLogViewport.firstChild));
+    while (btsnoopLogViewport.firstChild) {
+        btsnoopRowPool.push(btsnoopLogViewport.removeChild(btsnoopLogViewport.firstChild));
+    }
     visibleRows.forEach(row => btsnoopLogViewport.appendChild(row));
 }
 
 function createBtsnoopFilterHeader() {
     const header = document.getElementById('btsnoopHeader');
-    if (!header) return;
+    if (!header) {
+        return;
+    }
     if (header.hasChildNodes()) {
         const grid = header.querySelector('.btsnoop-header-grid');
-        if (grid && grid.children.length === 14) return;
+        if (grid && grid.children.length === 14) {
+            return;
+        }
         header.innerHTML = '';
     }
 
@@ -1010,9 +1077,14 @@ function createBtsnoopFilterHeader() {
         cell.innerHTML = `${text}<div class="resize-handle-col"></div>`;
         cell.appendChild(sortIndicator);
         cell.addEventListener('click', (e) => {
-            if (e.target.classList.contains('resize-handle-col')) return;
-            if (btsnoopSortColumn === i) btsnoopSortOrder = btsnoopSortOrder === 'asc' ? 'desc' : 'asc';
-            else { btsnoopSortColumn = i; btsnoopSortOrder = 'desc'; }
+            if (e.target.classList.contains('resize-handle-col')) {
+                return;
+            }
+            if (btsnoopSortColumn === i) {
+                btsnoopSortOrder = btsnoopSortOrder === 'asc' ? 'desc' : 'asc';
+            } else {
+                btsnoopSortColumn = i; btsnoopSortOrder = 'desc';
+            }
 
             // Validate UI update for sort indicators
             const allCells = headerGrid.querySelectorAll('.btsnoop-header-cell');
@@ -1031,7 +1103,9 @@ function createBtsnoopFilterHeader() {
                 }
             });
             btsnoopAnchorPacketNumber = null;
-            if (btsnoopLogContainer) btsnoopLogContainer.scrollTop = 0;
+            if (btsnoopLogContainer) {
+                btsnoopLogContainer.scrollTop = 0;
+            }
             renderBtsnoopPackets();
         });
         headerGrid.appendChild(cell);
@@ -1098,7 +1172,9 @@ function createBtsnoopFilterHeader() {
 function attachBtsnoopFilterListeners() {
     // ... logic ...
     const container = document.getElementById('btsnoopFilterContainer');
-    if (!container) return;
+    if (!container) {
+        return;
+    }
     const buttons = container.querySelectorAll('.filter-icon');
     buttons.forEach(btn => {
         const newBtn = btn.cloneNode(true);
@@ -1106,13 +1182,19 @@ function attachBtsnoopFilterListeners() {
         newBtn.addEventListener('click', () => {
             const type = newBtn.dataset.btsnoopFilter;
             newBtn.classList.toggle('active');
-            if (newBtn.classList.contains('active')) activeBtsnoopFilters.add(type);
-            else activeBtsnoopFilters.delete(type);
+            if (newBtn.classList.contains('active')) {
+                activeBtsnoopFilters.add(type);
+            } else {
+                activeBtsnoopFilters.delete(type);
+            }
             renderBtsnoopPackets();
         });
         // Sync
-        if (activeBtsnoopFilters.has(newBtn.dataset.btsnoopFilter)) newBtn.classList.add('active');
-        else newBtn.classList.remove('active');
+        if (activeBtsnoopFilters.has(newBtn.dataset.btsnoopFilter)) {
+            newBtn.classList.add('active');
+        } else {
+            newBtn.classList.remove('active');
+        }
     });
 }
 
@@ -1123,7 +1205,9 @@ function attachHeaderButtonListeners() {
         toggleBtn.parentNode.replaceChild(newBtn, toggleBtn);
         newBtn.addEventListener('click', () => {
             const metaPackets = btsnoopPackets.filter(p => p.type === 'META');
-            if (metaPackets.length === 0) return;
+            if (metaPackets.length === 0) {
+                return;
+            }
             const allCollapsed = metaPackets.every(p => btsnoopCollapsedFiles.has(p.fileName));
             if (allCollapsed) {
                 btsnoopCollapsedFiles.clear();
@@ -1168,7 +1252,9 @@ export function exportBtsnoopToXlsx() {
         const dataPacketsToExport = allFilteredPackets.filter(p => p && (!p.type || p.type !== 'META'));
         console.log(`[BTSnoop Export] Packet count after removing META: ${dataPacketsToExport.length}`);
 
-        if (!dataPacketsToExport.length) return alert("No BTSnoop data packets to export. Please adjust filters.");
+        if (!dataPacketsToExport.length) {
+            return alert('No BTSnoop data packets to export. Please adjust filters.');
+        }
 
         // Prepare data
         const headers = ['No.', 'Timestamp', 'Source', 'Destination', 'Type', 'Summary', 'Data'];
@@ -1187,13 +1273,13 @@ export function exportBtsnoopToXlsx() {
 
         // Define column widths (in characters) - THIS WORKS
         ws['!cols'] = [
-            { wch: 8 },   // No.
-            { wch: 20 },  // Timestamp
-            { wch: 25 },  // Source
-            { wch: 25 },  // Destination
-            { wch: 12 },  // Type
-            { wch: 50 },  // Summary
-            { wch: 80 }   // Data (wider for hex)
+            { wch: 8 }, // No.
+            { wch: 20 }, // Timestamp
+            { wch: 25 }, // Source
+            { wch: 25 }, // Destination
+            { wch: 12 }, // Type
+            { wch: 50 }, // Summary
+            { wch: 80 } // Data (wider for hex)
         ];
 
         // Enable auto-filter on header row - THIS WORKS
@@ -1208,26 +1294,30 @@ export function exportBtsnoopToXlsx() {
 
         // Helper to apply styles (borders, headers, wrapping)
         const applyStyles = (ws) => {
-            if (!ws || !ws['!ref']) return;
+            if (!ws || !ws['!ref']) {
+                return;
+            }
             const range = XLSX.utils.decode_range(ws['!ref']);
-            const thinBorder = { style: 'thin', color: { rgb: "000000" } };
+            const thinBorder = { style: 'thin', color: { rgb: '000000' } };
             const borderStyle = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
 
             for (let R = range.s.r; R <= range.e.r; ++R) {
                 for (let C = range.s.c; C <= range.e.c; ++C) {
                     const cellRef = XLSX.utils.encode_cell({ c: C, r: R });
-                    if (!ws[cellRef]) continue;
+                    if (!ws[cellRef]) {
+                        continue;
+                    }
 
                     const style = {
-                        font: { name: "Arial", sz: 10 },
+                        font: { name: 'Arial', sz: 10 },
                         border: borderStyle,
-                        alignment: { vertical: "top", wrapText: true }
+                        alignment: { vertical: 'top', wrapText: true }
                     };
 
                     if (R === 0) {
-                        style.font = { name: "Arial", sz: 10, bold: true, color: { rgb: "000000" } };
-                        style.fill = { fgColor: { rgb: "E0E0E0" } };
-                        style.alignment = { horizontal: "center", vertical: "center", wrapText: true };
+                        style.font = { name: 'Arial', sz: 10, bold: true, color: { rgb: '000000' } };
+                        style.fill = { fgColor: { rgb: 'E0E0E0' } };
+                        style.alignment = { horizontal: 'center', vertical: 'center', wrapText: true };
                     }
                     ws[cellRef].s = style;
                 }
@@ -1254,17 +1344,17 @@ function handleBtsnoopClick(e) {
         let text = copyCell.dataset.logText;
         if (text) {
             if (e.ctrlKey || e.metaKey) {
-                // Check if we should copy the whole row (if the cell is part of a row and intention is implied, 
-                // but previously it was explicit or based on context. 
-                // The old code in main.js did: if (isCopyBtn || (isCtrlClick && copyTarget)) ... 
+                // Check if we should copy the whole row (if the cell is part of a row and intention is implied,
+                // but previously it was explicit or based on context.
+                // The old code in main.js did: if (isCopyBtn || (isCtrlClick && copyTarget)) ...
                 // and checks if it's a row to aggregate.
 
                 // However, the user request "Extend BTSnoop Row Copy" implies we want row copy.
                 // Let's implement row copy on Ctrl+Click if it's a row, OR single cell.
-                // Actually, standard behavior usually allows single cell. 
+                // Actually, standard behavior usually allows single cell.
                 // But let's check main.js logic:
                 // "BTSnoop Row: Aggregate all BTSnoop cells" was used if `btsnoopRow` was found.
-                // So Ctrl+Click on ANY cell in a BTSnoop row copied the WHOLE row? 
+                // So Ctrl+Click on ANY cell in a BTSnoop row copied the WHOLE row?
                 // Let's look at main.js again.
                 // if (btsnoopRow) { logText = cells.map... }
                 // Yes, it aggregated the row.
@@ -1277,7 +1367,7 @@ function handleBtsnoopClick(e) {
 
                 navigator.clipboard.writeText(text).then(() => {
                     const originalTitle = copyCell.title;
-                    copyCell.title = "Row Copied!";
+                    copyCell.title = 'Row Copied!';
                     copyCell.classList.add('copied-feedback'); // We might need to style this class if not global
                     // Also maybe provide feedback on the whole row?
                     // For now, feedback on the clicked cell is fine.
@@ -1296,8 +1386,12 @@ function handleBtsnoopClick(e) {
         const packetNum = parseInt(row.dataset.packetNumber, 10);
         const packet = filteredBtsnoopPackets.find(p => p.number === packetNum);
         if (packet) {
-            if (selectedBtsnoopPacket === packet) selectedBtsnoopPacket = null; // Toggle off
-            else selectedBtsnoopPacket = packet;
+            if (selectedBtsnoopPacket === packet) {
+                selectedBtsnoopPacket = null;
+            } // Toggle off
+            else {
+                selectedBtsnoopPacket = packet;
+            }
             renderBtsnoopVirtualLogs();
         }
     } else if (!target.closest('.btsnoop-copy-cell') && !target.closest('.btsnoop-header-cell') && !target.closest('input')) {

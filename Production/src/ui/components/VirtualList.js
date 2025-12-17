@@ -6,7 +6,7 @@ const BUFFER_LINES = 50;
 
 /**
  * Renders a virtualized list of log lines.
- * 
+ *
  * @param {HTMLElement} container - The scroll container.
  * @param {HTMLElement} sizer - The element determining total scroll height.
  * @param {HTMLElement} viewport - The element containing visible items.
@@ -18,7 +18,9 @@ const BUFFER_LINES = 50;
  * @param {Object} [options.selectedLine] - The currently selected/anchor line object.
  */
 export function renderVirtualList(container, sizer, viewport, lines, activeCollapseSet, options = {}) {
-    if (!container || !sizer || !viewport || !lines) return;
+    if (!container || !sizer || !viewport || !lines) {
+        return;
+    }
 
     const { keywordRegexes, liveSearchRegex, selectedLine } = options;
 
@@ -39,7 +41,9 @@ export function renderVirtualList(container, sizer, viewport, lines, activeColla
 
     for (let i = startIndex; i < endIndex; i++) {
         const line = lines[i];
-        if (!line) continue; // Safety check
+        if (!line) {
+            continue;
+        } // Safety check
 
         let lineContent;
         let lineClass = 'log-line';

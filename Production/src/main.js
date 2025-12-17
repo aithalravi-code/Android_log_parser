@@ -1654,8 +1654,7 @@ self.onmessage = async (event) => {
                 // Delegate setup to the module
                 // FIX: Pass necessary dependencies including DB refs and UI containers
                 await BtsnoopTab.setupBtsnoopTab({
-                    db,
-                    getDb: () => db, // Simple wrapper if getDb isn't global, but passing 'db' instance usually works if open
+                    getDb,
                     saveData,
                     loadData,
                     TimeTracker,

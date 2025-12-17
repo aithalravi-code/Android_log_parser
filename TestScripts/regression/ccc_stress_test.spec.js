@@ -6,7 +6,7 @@ test.describe('CCC Tab Stress Test', () => {
         await page.waitForLoadState('networkidle');
 
         // Wait for CccTab to be available (it's loaded lazily or needs to be ensured)
-        // Since it's a module, we might need to trigger something to load it, 
+        // Since it's a module, we might need to trigger something to load it,
         // or just wait if it's bundled in index.js now.
         // Given the build, it's likely a separate chunk.
 
@@ -30,17 +30,17 @@ test.describe('CCC Tab Stress Test', () => {
             const mockData = Array(total).fill(0).map((_, idx) => ({
                 type: 0x01,
                 subtype: 0x0B,
-                payload: "3004A0028300" + (idx % 255).toString(16).padStart(2, '0'),
-                timestamp: "00:00:00." + idx.toString().padStart(6, '0'),
+                payload: '3004A0028300' + (idx % 255).toString(16).padStart(2, '0'),
+                timestamp: '00:00:00.' + idx.toString().padStart(6, '0'),
                 direction: idx % 2 === 0 ? 'Sending' : 'Receiving',
-                fullHex: "010B3004A0028300"
+                fullHex: '010B3004A0028300'
             }));
 
             if (window.CccTab && window.CccTab.setup) {
-                console.log("Calling CccTab.setup...");
+                console.log('Calling CccTab.setup...');
                 await window.CccTab.setup(mockData, new Map());
             } else {
-                throw new Error("window.CccTab is not available");
+                throw new Error('window.CccTab is not available');
             }
         });
 

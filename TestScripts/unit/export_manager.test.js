@@ -18,9 +18,9 @@ describe('ExportManager', () => {
             book_append_sheet: vi.fn(),
             decode_range: vi.fn(() => ({ s: { c: 0, r: 0 }, e: { c: 1, r: 1 } })),
             encode_cell: vi.fn(({ c, r }) => `R${r}C${c}`),
-            table_to_sheet: vi.fn(() => ({ '!ref': 'A1:B2' })),
+            table_to_sheet: vi.fn(() => ({ '!ref': 'A1:B2' }))
         },
-        writeFile: vi.fn(),
+        writeFile: vi.fn()
     };
 
     // Mock URL and Styles

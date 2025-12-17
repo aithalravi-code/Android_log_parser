@@ -18,7 +18,9 @@ export function processForDashboardStats(originalLogLines, batteryDataPoints = [
     // Battery data now comes from workers via the parameter
     // This loop is necessary to calculate CPU and Temperature, which are not done by the workers.
     for (const line of originalLogLines) {
-        if (line.isMeta) continue;
+        if (line.isMeta) {
+            continue;
+        }
 
         // CPU Parsing
         const cpuMatch = line.originalText.match(cpuRegex);
@@ -41,8 +43,12 @@ export function processForDashboardStats(originalLogLines, batteryDataPoints = [
         const tempMatch = line.originalText.match(tempRegex);
         if (tempMatch) {
             let temp = parseInt(tempMatch[1]);
-            if (temp > 1000) temp /= 1000; // Normalize from milli-Celsius (e.g., 45000)
-            else if (temp > 100) temp /= 10;  // Normalize from tenths of a degree (e.g., 350 for 35.0)
+            if (temp > 1000) {
+                temp /= 1000;
+            } // Normalize from milli-Celsius (e.g., 45000)
+            else if (temp > 100) {
+                temp /= 10;
+            } // Normalize from tenths of a degree (e.g., 350 for 35.0)
             if (temp > 0 && temp < 100) { // Sanity check
                 if (line.timestamp) {
                     temperatureDataPoints.push({
@@ -54,7 +60,6 @@ export function processForDashboardStats(originalLogLines, batteryDataPoints = [
             }
         }
     }
-
 
 
     // Merge worker thermal data (SIOP)
@@ -132,11 +137,13 @@ export function renderDashboardStats(stats, elements) {
  * @param {Object} stats - Log level statistics
  */
 export function renderStats(stats) {
-    if (!stats) return;
+    if (!stats) {
+        return;
+    }
     const total = stats.total || 0;
     const errorRate = total > 0 ? ((stats.E / total) * 100).toFixed(2) : 0;
 
-    let html = `
+    const html = `
         <div class="stat-item"><strong>Total Lines:</strong> ${total.toLocaleString()}</div>
         <div class="stat-item"><strong>Error Rate:</strong> ${errorRate}%</div>
         <div class="stat-item"><span class="log-level-E" style="color: #fff; background-color: #D32F2F; padding: 2px 6px; border-radius: 3px; font-weight: 500;">Errors:</span> ${stats.E.toLocaleString()}</div>
@@ -188,7 +195,9 @@ export function renderStats(stats) {
  */
 // FIX: Target tbody to preserve thead (headers)
 export function renderAppVersions(versions, appVersionsTable, appSearchInput) {
-    if (!appVersionsTable) return;
+    if (!appVersionsTable) {
+        return;
+    }
 
     let tbody = appVersionsTable.querySelector('tbody');
     if (!tbody) {
@@ -251,7 +260,9 @@ export function renderAppVersions(versions, appVersionsTable, appSearchInput) {
  * @param {HTMLElement} cpuLoadPlotContainer - Container element
  */
 export function renderCpuPlot(dataPoints, cpuLoadPlotContainer) {
-    if (!cpuLoadPlotContainer) return;
+    if (!cpuLoadPlotContainer) {
+        return;
+    }
     if (!dataPoints || dataPoints.length < 2) {
         cpuLoadPlotContainer.innerHTML = '<p style="text-align: center; color: #5f6368;">Not enough data to plot CPU load.</p>';
         return;
@@ -326,7 +337,9 @@ export function renderCpuPlot(dataPoints, cpuLoadPlotContainer) {
  * @param {HTMLElement} container - Container element
  */
 export function renderTemperaturePlot(dataPoints, container) {
-    if (!container) return;
+    if (!container) {
+        return;
+    }
     if (!dataPoints || dataPoints.length < 2) {
         container.innerHTML = '<p style="text-align: center; color: #5f6368;">Not enough data to plot temperature.</p>';
         return;
@@ -391,7 +404,9 @@ export function renderTemperaturePlot(dataPoints, container) {
  * @param {HTMLElement} batteryPlotContainer - Container element
  */
 export function renderBatteryPlot(dataPoints, batteryPlotContainer) {
-    if (!batteryPlotContainer) return;
+    if (!batteryPlotContainer) {
+        return;
+    }
     if (!dataPoints || dataPoints.length < 2) {
         batteryPlotContainer.innerHTML = '<p style="text-align: center; color: #5f6368;">Not enough data to plot battery level.</p>';
         return;
@@ -457,12 +472,14 @@ export function renderBatteryPlot(dataPoints, batteryPlotContainer) {
  * @param {Array} batteryDataPoints - Battery data points from workers
  */
 export async function setupStatsTab(originalLogLines, elements, batteryDataPoints = []) {
-    console.log(`[Stats Tab] Processing stats...`);
+    console.log('[Stats Tab] Processing stats...');
 
     // Calculate log level statistics
     const logStats = { total: 0, E: 0, W: 0, I: 0, D: 0, V: 0 };
     for (const line of originalLogLines) {
-        if (line.isMeta) continue;
+        if (line.isMeta) {
+            continue;
+        }
         logStats.total++;
         if (line.level && logStats[line.level] !== undefined) {
             logStats[line.level]++;
@@ -477,11 +494,17 @@ export async function setupStatsTab(originalLogLines, elements, batteryDataPoint
     renderDashboardStats(dashboardStats, elements);
 
     // Render Charts
-    if (elements.cpuLoadPlotContainer) renderCpuPlot(dashboardStats.cpuDataPoints, elements.cpuLoadPlotContainer);
-    if (elements.temperatureStats) renderTemperaturePlot(dashboardStats.temperatureDataPoints, document.getElementById('temperaturePlotContainer'));
-    if (elements.batteryStats) renderBatteryPlot(batteryDataPoints, elements.batteryPlotContainer);
+    if (elements.cpuLoadPlotContainer) {
+        renderCpuPlot(dashboardStats.cpuDataPoints, elements.cpuLoadPlotContainer);
+    }
+    if (elements.temperatureStats) {
+        renderTemperaturePlot(dashboardStats.temperatureDataPoints, document.getElementById('temperaturePlotContainer'));
+    }
+    if (elements.batteryStats) {
+        renderBatteryPlot(batteryDataPoints, elements.batteryPlotContainer);
+    }
 
-    console.log(`[Stats Tab] Rendering complete`);
+    console.log('[Stats Tab] Rendering complete');
 }
 
 /**
@@ -532,7 +555,7 @@ function attachChartInteraction(container, dataPoints, width, height, padding, m
         let closest = dataPoints[0];
         let minDiff = Math.abs(closest.ts.getTime() - hoverTs);
 
-        // Optimization: Binary search or linear scan near last known index? 
+        // Optimization: Binary search or linear scan near last known index?
         // For distinct datasets < 10k, simple scan or partial scan is fine.
         // Let's do a simple find for now or binary search if perf issues.
         // simple binary search:
@@ -545,8 +568,11 @@ function attachChartInteraction(container, dataPoints, width, height, padding, m
                 minDiff = diff;
                 closest = dataPoints[mid];
             }
-            if (midTime < hoverTs) low = mid + 1;
-            else high = mid - 1;
+            if (midTime < hoverTs) {
+                low = mid + 1;
+            } else {
+                high = mid - 1;
+            }
         }
 
         if (closest) {
@@ -557,7 +583,9 @@ function attachChartInteraction(container, dataPoints, width, height, padding, m
 
             // Position tooltip
             let toolLeft = mouseX + 10;
-            if (toolLeft + 100 > width) toolLeft = mouseX - 110;
+            if (toolLeft + 100 > width) {
+                toolLeft = mouseX - 110;
+            }
             tooltip.style.left = `${toolLeft}px`;
             tooltip.style.top = '10px';
 

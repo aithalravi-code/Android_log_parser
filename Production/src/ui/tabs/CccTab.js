@@ -4,7 +4,7 @@ import { makeSortable } from '../../table-sort.js';
 // import * as XLSX from 'xlsx';
 
 let cccStatsData = [];
-let cccColumnFilters = new Map();
+const cccColumnFilters = new Map();
 let btsnoopConnectionMap = new Map();
 let currentRenderJobId = 0;
 let cccFilterDebounceTimer = null;
@@ -129,70 +129,72 @@ const UWB_TAGS = {};
 
 export const CCC_CONSTANTS = {
     MESSAGE_TYPES: {
-        0x00: "Framework",
-        0x01: "SE",
-        0x02: "UWB Ranging Service",
-        0x03: "DK Event Notification",
-        0x04: "Vehicle OEM App",
-        0x05: "Supplementary Service",
-        0x06: "Head Unit Pairing"
+        0x00: 'Framework',
+        0x01: 'SE',
+        0x02: 'UWB Ranging Service',
+        0x03: 'DK Event Notification',
+        0x04: 'Vehicle OEM App',
+        0x05: 'Supplementary Service',
+        0x06: 'Head Unit Pairing'
     },
     UWB_RANGING_MSGS: {
-        0x01: "Ranging_Capability_RQ",
-        0x02: "Ranging_Capability_RS",
-        0x03: "Ranging_Session_RQ",
-        0x04: "Ranging_Session_RS",
-        0x05: "Ranging_Session_Setup_RQ",
-        0x06: "Ranging_Session_Setup_RS",
-        0x07: "Ranging_Suspend_RQ",
-        0x08: "Ranging_Suspend_RS",
-        0x09: "Ranging_Recovery_RQ",
-        0x0A: "Ranging_Recovery_RS",
-        0x0B: "Configurable_Ranging_Recovery_RQ",
-        0x0C: "Configurable_Ranging_Recovery_RS"
+        0x01: 'Ranging_Capability_RQ',
+        0x02: 'Ranging_Capability_RS',
+        0x03: 'Ranging_Session_RQ',
+        0x04: 'Ranging_Session_RS',
+        0x05: 'Ranging_Session_Setup_RQ',
+        0x06: 'Ranging_Session_Setup_RS',
+        0x07: 'Ranging_Suspend_RQ',
+        0x08: 'Ranging_Suspend_RS',
+        0x09: 'Ranging_Recovery_RQ',
+        0x0A: 'Ranging_Recovery_RS',
+        0x0B: 'Configurable_Ranging_Recovery_RQ',
+        0x0C: 'Configurable_Ranging_Recovery_RS'
     },
     DK_EVENT_CATEGORIES: {
-        0x01: "Command Complete",
-        0x02: "Ranging Session Status Changed",
-        0x03: "Device Ranging Intent",
-        0x04: "Vehicle Status Change",
-        0x05: "RKE Request",
-        0x11: "DK Event Notification"
+        0x01: 'Command Complete',
+        0x02: 'Ranging Session Status Changed',
+        0x03: 'Device Ranging Intent',
+        0x04: 'Vehicle Status Change',
+        0x05: 'RKE Request',
+        0x11: 'DK Event Notification'
     },
     SUPPLEMENTARY_MSGS: {
-        0x0D: "Time_Sync",
-        0x0E: "First_Approach_RQ",
-        0x0F: "First_Approach_RS",
-        0x14: "RKE_Auth_RQ",
-        0x15: "RKE_Auth_RS"
+        0x0D: 'Time_Sync',
+        0x0E: 'First_Approach_RQ',
+        0x0F: 'First_Approach_RS',
+        0x14: 'RKE_Auth_RQ',
+        0x15: 'RKE_Auth_RS'
     },
     FRAMEWORK_MSGS: {
-        0x04: "OP_CONTROL_FLOW",
-        0x18: "Proprietary / Unknown"
+        0x04: 'OP_CONTROL_FLOW',
+        0x18: 'Proprietary / Unknown'
     },
     SE_MSGS: {
-        0x0B: "DK_APDU_RQ",
-        0x0C: "DK_APDU_RS"
+        0x0B: 'DK_APDU_RQ',
+        0x0C: 'DK_APDU_RS'
     }
 };
 
 // --- Helpers ---
 
 const parseTLV = (hex, tagMap = COMMON_TAGS) => {
-    let result = "";
+    let result = '';
     let i = 0;
     let maxIter = 100;
     let currentFunctionId = null;
 
     while (i < hex.length && maxIter-- > 0) {
-        let nextByte = hex.substring(i, i + 2).toUpperCase();
+        const nextByte = hex.substring(i, i + 2).toUpperCase();
         if (nextByte === '00' || nextByte === 'FF') {
             i += 2;
             continue;
         }
 
         let tag = nextByte;
-        if (!/^[0-9A-F]{2}$/i.test(tag)) break;
+        if (!/^[0-9A-F]{2}$/i.test(tag)) {
+            break;
+        }
 
         i += 2;
         if ((parseInt(tag, 16) & 0x1F) === 0x1F) {
@@ -200,18 +202,24 @@ const parseTLV = (hex, tagMap = COMMON_TAGS) => {
             i += 2;
         }
 
-        if (i + 2 > hex.length) break;
-        let lenHex = hex.substring(i, i + 2);
+        if (i + 2 > hex.length) {
+            break;
+        }
+        const lenHex = hex.substring(i, i + 2);
         let len = parseInt(lenHex, 16);
         i += 2;
 
         if (len > 127) {
             if (len === 0x81) {
-                if (i + 2 > hex.length) break;
+                if (i + 2 > hex.length) {
+                    break;
+                }
                 len = parseInt(hex.substring(i, i + 2), 16);
                 i += 2;
             } else if (len === 0x82) {
-                if (i + 4 > hex.length) break;
+                if (i + 4 > hex.length) {
+                    break;
+                }
                 len = parseInt(hex.substring(i, i + 4), 16);
                 i += 4;
             }
@@ -222,7 +230,7 @@ const parseTLV = (hex, tagMap = COMMON_TAGS) => {
             break;
         }
 
-        let val = hex.substring(i, i + (len * 2));
+        const val = hex.substring(i, i + (len * 2));
         i += (len * 2);
 
         const tagName = tagMap[tag] || `Tag_${tag}`;
@@ -236,14 +244,20 @@ const parseTLV = (hex, tagMap = COMMON_TAGS) => {
             if (tagMap === RKE_TAGS) {
                 if (tag === '80') {
                     currentFunctionId = val;
-                    if (FUNCTION_IDS[val]) displayVal = `${val} (${FUNCTION_IDS[val]})`;
+                    if (FUNCTION_IDS[val]) {
+                        displayVal = `${val} (${FUNCTION_IDS[val]})`;
+                    }
                 }
                 if (tag === '83') {
                     const map = RKE_STATUS_MAP[currentFunctionId] || RKE_STATUS_MAP['default'];
                     const statusText = map[val] || map['default'];
-                    if (statusText) displayVal = `${val} (${statusText})`;
+                    if (statusText) {
+                        displayVal = `${val} (${statusText})`;
+                    }
                 }
-                if (tag === '86' && len === 0) displayVal = "True";
+                if (tag === '86' && len === 0) {
+                    displayVal = 'True';
+                }
             }
 
             result += `<div class="tlv-block">${formatParam(tagName, displayVal)}</div>`;
@@ -255,11 +269,21 @@ const parseTLV = (hex, tagMap = COMMON_TAGS) => {
 const decodeHoppingConfig = (hex) => {
     const val = parseInt(hex, 16);
     const modes = [];
-    if (val & 0x80) modes.push('No Hopping');
-    if (val & 0x40) modes.push('Continuous');
-    if (val & 0x20) modes.push('Adaptive');
-    if (val & 0x10) modes.push('Default Sequence');
-    if (val & 0x08) modes.push('AES Hopping');
+    if (val & 0x80) {
+        modes.push('No Hopping');
+    }
+    if (val & 0x40) {
+        modes.push('Continuous');
+    }
+    if (val & 0x20) {
+        modes.push('Adaptive');
+    }
+    if (val & 0x10) {
+        modes.push('Default Sequence');
+    }
+    if (val & 0x08) {
+        modes.push('AES Hopping');
+    }
 
     // F8 (1111 1000) -> b7, b6, b5, b4, b3 set.
 
@@ -270,8 +294,12 @@ const decodeHoppingConfig = (hex) => {
 const decodeChannelBitmask = (hex) => {
     const val = parseInt(hex, 16);
     const channels = [];
-    if (val & 0x01) channels.push('Channel 5');
-    if (val & 0x02) channels.push('Channel 9');
+    if (val & 0x01) {
+        channels.push('Channel 5');
+    }
+    if (val & 0x02) {
+        channels.push('Channel 9');
+    }
 
     const chanStr = channels.length > 0 ? channels.join(', ') : 'None';
     return `0x${hex} (${chanStr})`;
@@ -279,21 +307,25 @@ const decodeChannelBitmask = (hex) => {
 
 export const decodePayload = (type, subtype, payload) => {
     let innerMsg = CCC_CONSTANTS.MESSAGE_TYPES[type] || `Type_0x${type.toString(16).padStart(2, '0')}`;
-    let params = "";
+    let params = '';
 
-    if (!payload) return { innerMsg, params: "" };
+    if (!payload) {
+        return { innerMsg, params: '' };
+    }
 
     if (type === 0x00) {
         if (subtype === 0x04) {
-            innerMsg = "Data PDU";
+            innerMsg = 'Data PDU';
             const dataParts = payload.match(/.{1,2}/g);
             params = formatParam('Data', dataParts ? dataParts.join(' ') : payload);
             return { innerMsg, params };
         }
         if (subtype === 0x18) {
-            innerMsg = "Encrypted PDU";
-            let info = "";
-            if (payload.toLowerCase().includes('a0')) info = formatParam('Info', '[Contains TLV Data]') + " ";
+            innerMsg = 'Encrypted PDU';
+            let info = '';
+            if (payload.toLowerCase().includes('a0')) {
+                info = formatParam('Info', '[Contains TLV Data]') + ' ';
+            }
             const dataParts = payload.match(/.{1,2}/g);
             params = info + formatParam('Data', dataParts ? dataParts.join(' ') : payload);
             return { innerMsg, params };
@@ -303,13 +335,13 @@ export const decodePayload = (type, subtype, payload) => {
     if (type === 0x01) {
         if (subtype === 0x0B) {
             if (payload.length >= 4) {
-                let apdu = payload.substring(4);
+                const apdu = payload.substring(4);
                 const cla = apdu.substring(0, 2).toUpperCase();
                 const ins = apdu.substring(2, 4).toUpperCase();
                 const claIns = cla + ins;
 
                 if (cla === 'C9') {
-                    innerMsg = "EXCHANGE_APDU";
+                    innerMsg = 'EXCHANGE_APDU';
                     if (apdu.length >= 10) {
                         const data = apdu.substring(10);
                         params = parseTLV(data, APDU_TAGS);
@@ -347,7 +379,9 @@ export const decodePayload = (type, subtype, payload) => {
                     const commonParams = formatParam('P1', `${p1Text} (0x${p1})`) +
                         formatParam('P2', `${p2Text} (0x${p2})`);
 
-                    if (!params) params = "";
+                    if (!params) {
+                        params = '';
+                    }
                     params = commonParams + params;
 
                     if (data.length > 0) {
@@ -367,19 +401,19 @@ export const decodePayload = (type, subtype, payload) => {
                         }
                     }
                 } else if (apdu.startsWith('8080')) {
-                    innerMsg = "AUTH0";
+                    innerMsg = 'AUTH0';
                     params = parseTLV(apdu.substring(10), APDU_TAGS);
                 } else {
-                    innerMsg = "APDU";
+                    innerMsg = 'APDU';
                     if (claIns === '8071') {
-                        innerMsg = "CREATE_RANGING_KEY";
+                        innerMsg = 'CREATE_RANGING_KEY';
                         // This command has arbitrary data, not TLV
                         params = formatParam('Data', apdu.substring(10).match(/.{1,2}/g).join(' '));
                     } else if (claIns === '8072') {
-                        innerMsg = "TERMINATE_RANGING_SESSION";
+                        innerMsg = 'TERMINATE_RANGING_SESSION';
                         params = parseTLV(apdu.substring(10), APDU_TAGS);
                     } else if (claIns === '8073') {
-                        innerMsg = "EXCHANGE_RANGING_DATA";
+                        innerMsg = 'EXCHANGE_RANGING_DATA';
                         params = parseTLV(apdu.substring(10), APDU_TAGS);
                     } else {
                         params = formatParam('Data', apdu.match(/.{1,2}/g).join(' '));
@@ -396,12 +430,14 @@ export const decodePayload = (type, subtype, payload) => {
                     const sw = apdu.substring(apdu.length - 4);
                     const data = apdu.substring(0, apdu.length - 4);
                     let statusText = sw;
-                    if (sw === '9000') statusText = 'Success (9000)';
+                    if (sw === '9000') {
+                        statusText = 'Success (9000)';
+                    }
 
-                    innerMsg = "Response";
+                    innerMsg = 'Response';
 
                     const swHtml = formatParam('SW', statusText);
-                    let tlvHtml = "";
+                    let tlvHtml = '';
 
                     if (data.length > 0) {
                         const tlv = parseTLV(data, APDU_TAGS);
@@ -456,8 +492,11 @@ export const decodePayload = (type, subtype, payload) => {
                     }
                 } else {
                     const tlv = parseTLV(content, UWB_TAGS);
-                    if (tlv) params += tlv;
-                    else params += formatParam('Data', content.match(/.{1,2}/g)?.join(' ') || content);
+                    if (tlv) {
+                        params += tlv;
+                    } else {
+                        params += formatParam('Data', content.match(/.{1,2}/g)?.join(' ') || content);
+                    }
                 }
             }
         }
@@ -489,13 +528,13 @@ export const decodePayload = (type, subtype, payload) => {
         if (subtype === 0x06) {
             // Ranging_Session_Setup_RS - CCC Spec Table 19-35
             // Format: [Length:4 hex chars][Data...]
-            // Data params are in little-endian byte order  
+            // Data params are in little-endian byte order
             if (payload.length >= 4) {
                 params = formatParam('Length', '0x' + payload.substring(0, 4));
                 const content = payload.substring(4);
                 if (content.length >= 34) {
-                    const stsIndex = content.substring(0, 8);    // STS_Index0: 4 bytes
-                    const uwbTime = content.substring(8, 24);   // UWB_Time0: 8 bytes
+                    const stsIndex = content.substring(0, 8); // STS_Index0: 4 bytes
+                    const uwbTime = content.substring(8, 24); // UWB_Time0: 8 bytes
                     const hopKey = content.substring(24, 32);
                     const syncIdx = content.substring(32, 34);
 
@@ -539,12 +578,12 @@ export const decodePayload = (type, subtype, payload) => {
         if (subtype === 0x0A) {
             // Ranging_Recovery_RS - CCC Spec Table 19-43
             // Format: [Length:4 hex chars][Data...]
-            if (payload.length >= 28) {  // Need at least 4 (length) + 24 (data)
-                const length = payload.substring(0, 4);  // Length field
-                const data = payload.substring(4);        // Actual data starts here
+            if (payload.length >= 28) { // Need at least 4 (length) + 24 (data)
+                const length = payload.substring(0, 4); // Length field
+                const data = payload.substring(4); // Actual data starts here
 
-                const stsIndex = data.substring(0, 8);    // STS_Index0: 4 bytes
-                const uwbTime = data.substring(8, 24);    // UWB_Time0: 8 bytes
+                const stsIndex = data.substring(0, 8); // STS_Index0: 4 bytes
+                const uwbTime = data.substring(8, 24); // UWB_Time0: 8 bytes
 
                 const stsDec = parseInt(stsIndex, 16);
                 const uwbDec = BigInt('0x' + uwbTime).toString();
@@ -557,7 +596,9 @@ export const decodePayload = (type, subtype, payload) => {
                 }
             }
         }
-        if (params && params !== "") return { innerMsg, params };
+        if (params && params !== '') {
+            return { innerMsg, params };
+        }
     }
 
     if (type === 0x03) {
@@ -643,12 +684,14 @@ export const decodePayload = (type, subtype, payload) => {
                 return { innerMsg, params };
             }
         }
-        if (subtype === 0x03) return { innerMsg: "Legacy Intent", params: formatParam('Data', payload) };
+        if (subtype === 0x03) {
+            return { innerMsg: 'Legacy Intent', params: formatParam('Data', payload) };
+        }
     }
 
     if (type === 0x05) {
         if (subtype === 0x0D) {
-            innerMsg = "Time_Sync";
+            innerMsg = 'Time_Sync';
             // Payload should be Length(2 bytes) + 23 bytes data = 25 bytes (50 hex chars)
             // But we accept if it has at least the data length (46 chars) + length (4 chars) = 50
             if (payload.length >= 50) {
@@ -696,7 +739,7 @@ export const decodePayload = (type, subtype, payload) => {
 
     if (type === 0x05) {
         if (subtype === 0x0D) {
-            innerMsg = "Time_Sync";
+            innerMsg = 'Time_Sync';
             params = parseTLV(payload, {
                 '57': 'Counter_Value',
                 '58': 'UWB_Device_Time_Uncertainty',
@@ -707,7 +750,7 @@ export const decodePayload = (type, subtype, payload) => {
             });
         }
         if (subtype === 0x0E) {
-            innerMsg = "First_Approach_RQ";
+            innerMsg = 'First_Approach_RQ';
             // First_Approach_RQ contains two encrypted blocks (AES-128-CCM):
             // Block 1: E1_Payload (8 bytes) + IV1 (8 bytes) + Tag1 (4 bytes) - encrypted DK_Identifier with Kble_intro
             // Block 2: E2_Payload (38 bytes) + IV2 (8 bytes) + Tag2 (4 bytes) - encrypted BTAddrA||Ca||ra with Kble_oob
@@ -731,31 +774,31 @@ export const decodePayload = (type, subtype, payload) => {
             }
         }
         if (subtype === 0x0F) {
-            innerMsg = "First_Approach_RS";
+            innerMsg = 'First_Approach_RS';
             // E_Payload(Variable), IV(8), Tag(4)
             // Tag is last 4 bytes (8 chars), IV is before that (8 bytes/16 chars)
             if (payload.length >= 24) {
-                let tagStart = payload.length - 8;
-                let ivStart = tagStart - 16;
-                let ePayload = payload.substring(0, ivStart);
-                let iv = payload.substring(ivStart, tagStart);
-                let tag = payload.substring(tagStart);
+                const tagStart = payload.length - 8;
+                const ivStart = tagStart - 16;
+                const ePayload = payload.substring(0, ivStart);
+                const iv = payload.substring(ivStart, tagStart);
+                const tag = payload.substring(tagStart);
 
-                let p1 = formatParam('E_Payload', ePayload);
-                let p2 = formatParam('IV', iv);
-                let p3 = formatParam('Tag', tag);
+                const p1 = formatParam('E_Payload', ePayload);
+                const p2 = formatParam('IV', iv);
+                const p3 = formatParam('Tag', tag);
                 params = `${p1} ${p2} ${p3}`;
             } else {
                 params = formatParam('Raw Data', payload);
             }
         }
         if (subtype === 0x14) {
-            innerMsg = "RKE_Auth_RQ";
+            innerMsg = 'RKE_Auth_RQ';
             // RKE Challenge (16 bytes)
             params = formatParam('RKE Challenge', payload);
         }
         if (subtype === 0x15) {
-            innerMsg = "RKE_Auth_RS";
+            innerMsg = 'RKE_Auth_RS';
             // Arbitrary Data Attestation (Variable)
             params = formatParam('Arbitrary Data', payload);
         }
@@ -805,7 +848,9 @@ export function render(messages) {
     cccStatsData = messages || [];
 
     const container = document.getElementById('cccStatsContainer');
-    if (!container) return;
+    if (!container) {
+        return;
+    }
 
     // Only initialize table HTML and listeners once
     if (!isCccTableInitialized && !container.querySelector('table')) {
@@ -871,15 +916,21 @@ export function render(messages) {
 
                 const exportData = cccStatsData.map(msg => {
                     const categoryName = CCC_CONSTANTS.MESSAGE_TYPES[msg.type] || `Unknown (0x${msg.type.toString(16).padStart(2, '0').toUpperCase()})`;
-                    let typeName = `Unknown`;
-                    if (msg.type === 0x02) typeName = CCC_CONSTANTS.UWB_RANGING_MSGS[msg.subtype] || typeName;
-                    else if (msg.type === 0x03) typeName = CCC_CONSTANTS.DK_EVENT_CATEGORIES[msg.subtype] || typeName;
-                    else if (msg.type === 0x01 && CCC_CONSTANTS.SE_MSGS && CCC_CONSTANTS.SE_MSGS[msg.subtype]) typeName = CCC_CONSTANTS.SE_MSGS[msg.subtype];
-                    else if (msg.type === 0x05) typeName = CCC_CONSTANTS.SUPPLEMENTARY_MSGS[msg.subtype] || typeName;
-                    else if (msg.type === 0x00 && CCC_CONSTANTS.FRAMEWORK_MSGS && CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype]) typeName = CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype];
+                    let typeName = 'Unknown';
+                    if (msg.type === 0x02) {
+                        typeName = CCC_CONSTANTS.UWB_RANGING_MSGS[msg.subtype] || typeName;
+                    } else if (msg.type === 0x03) {
+                        typeName = CCC_CONSTANTS.DK_EVENT_CATEGORIES[msg.subtype] || typeName;
+                    } else if (msg.type === 0x01 && CCC_CONSTANTS.SE_MSGS && CCC_CONSTANTS.SE_MSGS[msg.subtype]) {
+                        typeName = CCC_CONSTANTS.SE_MSGS[msg.subtype];
+                    } else if (msg.type === 0x05) {
+                        typeName = CCC_CONSTANTS.SUPPLEMENTARY_MSGS[msg.subtype] || typeName;
+                    } else if (msg.type === 0x00 && CCC_CONSTANTS.FRAMEWORK_MSGS && CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype]) {
+                        typeName = CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype];
+                    }
 
-                    const innerMessage = msg._decoded ? (msg._decoded.innerMsg || "-") : "-";
-                    const params = msg._decoded ? (msg._decoded.params || "") : "";
+                    const innerMessage = msg._decoded ? (msg._decoded.innerMsg || '-') : '-';
+                    const params = msg._decoded ? (msg._decoded.params || '') : '';
                     const paramsText = params.replace(/<[^>]*>/g, '');
 
                     let handleNumber = -1;
@@ -910,7 +961,9 @@ export function render(messages) {
 
                 // Helper to auto-fit columns
                 const autoFitColumns = (ws) => {
-                    if (!ws || !ws['!ref']) return;
+                    if (!ws || !ws['!ref']) {
+                        return;
+                    }
                     const range = XLSX.utils.decode_range(ws['!ref']);
                     const colWidths = [];
                     for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -928,26 +981,30 @@ export function render(messages) {
 
                 // Helper to apply styles
                 const applyStyles = (ws) => {
-                    if (!ws || !ws['!ref']) return;
+                    if (!ws || !ws['!ref']) {
+                        return;
+                    }
                     const range = XLSX.utils.decode_range(ws['!ref']);
-                    const thinBorder = { style: 'thin', color: { rgb: "000000" } };
+                    const thinBorder = { style: 'thin', color: { rgb: '000000' } };
                     const borderStyle = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
 
                     for (let R = range.s.r; R <= range.e.r; ++R) {
                         for (let C = range.s.c; C <= range.e.c; ++C) {
                             const cellRef = XLSX.utils.encode_cell({ c: C, r: R });
-                            if (!ws[cellRef]) continue;
+                            if (!ws[cellRef]) {
+                                continue;
+                            }
 
                             const style = {
-                                font: { name: "Arial", sz: 10 },
+                                font: { name: 'Arial', sz: 10 },
                                 border: borderStyle,
-                                alignment: { vertical: "top", wrapText: true }
+                                alignment: { vertical: 'top', wrapText: true }
                             };
 
                             if (R === 0) {
-                                style.font = { name: "Arial", sz: 10, bold: true, color: { rgb: "000000" } };
-                                style.fill = { fgColor: { rgb: "E0E0E0" } };
-                                style.alignment = { horizontal: "center", vertical: "center", wrapText: true };
+                                style.font = { name: 'Arial', sz: 10, bold: true, color: { rgb: '000000' } };
+                                style.fill = { fgColor: { rgb: 'E0E0E0' } };
+                                style.alignment = { horizontal: 'center', vertical: 'center', wrapText: true };
                             }
                             ws[cellRef].s = style;
                         }
@@ -956,7 +1013,7 @@ export function render(messages) {
 
                 autoFitColumns(ws);
                 applyStyles(ws);
-                XLSX.utils.book_append_sheet(wb, ws, "CCC_Analysis");
+                XLSX.utils.book_append_sheet(wb, ws, 'CCC_Analysis');
 
                 // Generate default filename with timestamp
                 const now = new Date();
@@ -983,7 +1040,9 @@ export function render(messages) {
 function updateCccTableBody(container) {
     console.log('[CccTab] updateCccTableBody() called, renderJobId:', currentRenderJobId + 1);
     const tbody = container.querySelector('tbody');
-    if (!tbody) return;
+    if (!tbody) {
+        return;
+    }
 
     currentRenderJobId++;
     const myJobId = currentRenderJobId;
@@ -998,7 +1057,9 @@ function updateCccTableBody(container) {
 
     // Defer processing to prevent blocking
     setTimeout(() => {
-        if (myJobId !== currentRenderJobId) return;
+        if (myJobId !== currentRenderJobId) {
+            return;
+        }
 
         const allData = cccStatsData;
         const total = allData.length;
@@ -1007,7 +1068,9 @@ function updateCccTableBody(container) {
         let anyMatchesFound = false; // Track if any row matched filters across all chunks
 
         function processChunk() {
-            if (myJobId !== currentRenderJobId) return;
+            if (myJobId !== currentRenderJobId) {
+                return;
+            }
 
             const startTime = performance.now();
             const chunkHtmlParts = [];
@@ -1031,12 +1094,18 @@ function updateCccTableBody(container) {
                 // --- 2. Resolve Display Values ---
                 const categoryName = (msg.type !== undefined && CCC_CONSTANTS.MESSAGE_TYPES[msg.type]) || (msg.type !== undefined ? `Unknown (0x${msg.type.toString(16).padStart(2, '0').toUpperCase()})` : 'Unknown Type');
 
-                let typeName = `Unknown`;
-                if (msg.type === 0x02) typeName = CCC_CONSTANTS.UWB_RANGING_MSGS[msg.subtype] || typeName;
-                else if (msg.type === 0x03) typeName = CCC_CONSTANTS.DK_EVENT_CATEGORIES[msg.subtype] || typeName;
-                else if (msg.type === 0x01 && CCC_CONSTANTS.SE_MSGS && CCC_CONSTANTS.SE_MSGS[msg.subtype]) typeName = CCC_CONSTANTS.SE_MSGS[msg.subtype];
-                else if (msg.type === 0x05) typeName = CCC_CONSTANTS.SUPPLEMENTARY_MSGS[msg.subtype] || typeName;
-                else if (msg.type === 0x00 && CCC_CONSTANTS.FRAMEWORK_MSGS && CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype]) typeName = CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype];
+                let typeName = 'Unknown';
+                if (msg.type === 0x02) {
+                    typeName = CCC_CONSTANTS.UWB_RANGING_MSGS[msg.subtype] || typeName;
+                } else if (msg.type === 0x03) {
+                    typeName = CCC_CONSTANTS.DK_EVENT_CATEGORIES[msg.subtype] || typeName;
+                } else if (msg.type === 0x01 && CCC_CONSTANTS.SE_MSGS && CCC_CONSTANTS.SE_MSGS[msg.subtype]) {
+                    typeName = CCC_CONSTANTS.SE_MSGS[msg.subtype];
+                } else if (msg.type === 0x05) {
+                    typeName = CCC_CONSTANTS.SUPPLEMENTARY_MSGS[msg.subtype] || typeName;
+                } else if (msg.type === 0x00 && CCC_CONSTANTS.FRAMEWORK_MSGS && CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype]) {
+                    typeName = CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype];
+                }
 
                 const subtypeHex = (msg.subtype !== undefined) ? `0x${msg.subtype.toString(16).padStart(2, '0').toUpperCase()}` : 'N/A';
                 let displayType = typeName;
@@ -1049,12 +1118,12 @@ function updateCccTableBody(container) {
                     displayTypeHtml = `${typeName} <span style="font-size: 0.85em; color: #888;">(${subtypeHex})</span>`;
                 }
 
-                const innerMessage = msg._decoded.innerMsg || "-";
+                const innerMessage = msg._decoded.innerMsg || '-';
                 // Truncate params if huge to prevent DOM freeze
-                const params = msg._decoded.params || "";
-                let paramsText = "";
+                const params = msg._decoded.params || '';
+                let paramsText = '';
                 if (params.length > 10000) {
-                    paramsText = "[Large Data]";
+                    paramsText = '[Large Data]';
                 } else {
                     paramsText = params.replace(/<[^>]*>/g, '');
                 }
@@ -1087,7 +1156,9 @@ function updateCccTableBody(container) {
                         return cellValue.includes(filterValue);
                     });
 
-                    if (!passesFilter) continue;
+                    if (!passesFilter) {
+                        continue;
+                    }
                 }
 
                 chunkHasMatches = true;
@@ -1095,7 +1166,7 @@ function updateCccTableBody(container) {
 
                 // --- 4. Generate Row HTML ---
                 // Safety check for timestamp
-                const safeTimestamp = msg.timestamp || "";
+                const safeTimestamp = msg.timestamp || '';
                 const rowId = `ccc-${safeTimestamp.replace(/[^a-zA-Z0-9]/g, '')}-${msg.type}-${msg.subtype}`;
 
                 chunkHtmlParts.push(`<tr data-row-id="${rowId}">
@@ -1141,11 +1212,15 @@ function updateCccTableBody(container) {
         // Helper to restore scroll position after rendering
         function restoreScrollPosition() {
             const table = document.getElementById('cccStatsTable');
-            if (!table) return;
+            if (!table) {
+                return;
+            }
 
             // Check if there's a selected row ID stored (set by global click handler in main.js)
             const selectedRowId = window.selectedTableRows?.get('cccStatsTable');
-            if (!selectedRowId) return;
+            if (!selectedRowId) {
+                return;
+            }
 
             // Find and restore the selected row
             const row = table.querySelector(`tr[data-row-id="${selectedRowId}"]`);

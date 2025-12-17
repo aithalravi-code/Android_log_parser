@@ -16,9 +16,9 @@ export class TooltipManager {
 
     /**
      * Show the tooltip for a given log line
-     * @param {Event} event 
-     * @param {Object} line 
-     * @param {Object} cccMsg 
+     * @param {Event} event
+     * @param {Object} line
+     * @param {Object} cccMsg
      */
     showTooltip(event, line, cccMsg) {
         // Fallback: If cccMsg is not passed (from property), try to find it in global array
@@ -34,7 +34,9 @@ export class TooltipManager {
 
         // UX Improvement: Prevent double tooltips
         if (event.target) {
-            if (event.target.hasAttribute('title')) event.target.removeAttribute('title');
+            if (event.target.hasAttribute('title')) {
+                event.target.removeAttribute('title');
+            }
             const lineEl = event.target.closest('.log-line');
             if (lineEl) {
                 const titleEls = lineEl.querySelectorAll('[title]');
@@ -50,20 +52,26 @@ export class TooltipManager {
                 cccMsg._decoded = decoded; // Cache it
             } catch (err) {
                 console.error('[Tooltip] Decode failed:', err);
-                decoded = { innerMsg: "Error decoding", params: err.message };
+                decoded = { innerMsg: 'Error decoding', params: err.message };
             }
         }
 
         const categoryName = CccTab.CCC_CONSTANTS.MESSAGE_TYPES[cccMsg.type] || `Unknown (0x${cccMsg.type.toString(16).padStart(2, '0').toUpperCase()})`;
-        let typeName = `Unknown`;
-        if (cccMsg.type === 0x02) typeName = CccTab.CCC_CONSTANTS.UWB_RANGING_MSGS[cccMsg.subtype] || typeName;
-        else if (cccMsg.type === 0x03) typeName = CccTab.CCC_CONSTANTS.DK_EVENT_CATEGORIES[cccMsg.subtype] || typeName;
-        else if (cccMsg.type === 0x01 && CccTab.CCC_CONSTANTS.SE_MSGS && CccTab.CCC_CONSTANTS.SE_MSGS[cccMsg.subtype]) typeName = CccTab.CCC_CONSTANTS.SE_MSGS[cccMsg.subtype];
-        else if (cccMsg.type === 0x05) typeName = CccTab.CCC_CONSTANTS.SUPPLEMENTARY_MSGS[cccMsg.subtype] || typeName;
-        else if (cccMsg.type === 0x00 && CccTab.CCC_CONSTANTS.FRAMEWORK_MSGS && CccTab.CCC_CONSTANTS.FRAMEWORK_MSGS[cccMsg.subtype]) typeName = CccTab.CCC_CONSTANTS.FRAMEWORK_MSGS[cccMsg.subtype];
+        let typeName = 'Unknown';
+        if (cccMsg.type === 0x02) {
+            typeName = CccTab.CCC_CONSTANTS.UWB_RANGING_MSGS[cccMsg.subtype] || typeName;
+        } else if (cccMsg.type === 0x03) {
+            typeName = CccTab.CCC_CONSTANTS.DK_EVENT_CATEGORIES[cccMsg.subtype] || typeName;
+        } else if (cccMsg.type === 0x01 && CccTab.CCC_CONSTANTS.SE_MSGS && CccTab.CCC_CONSTANTS.SE_MSGS[cccMsg.subtype]) {
+            typeName = CccTab.CCC_CONSTANTS.SE_MSGS[cccMsg.subtype];
+        } else if (cccMsg.type === 0x05) {
+            typeName = CccTab.CCC_CONSTANTS.SUPPLEMENTARY_MSGS[cccMsg.subtype] || typeName;
+        } else if (cccMsg.type === 0x00 && CccTab.CCC_CONSTANTS.FRAMEWORK_MSGS && CccTab.CCC_CONSTANTS.FRAMEWORK_MSGS[cccMsg.subtype]) {
+            typeName = CccTab.CCC_CONSTANTS.FRAMEWORK_MSGS[cccMsg.subtype];
+        }
 
-        const innerMessage = decoded.innerMsg || "-";
-        const paramsHtml = decoded.params || "No parameters";
+        const innerMessage = decoded.innerMsg || '-';
+        const paramsHtml = decoded.params || 'No parameters';
 
         this.cccTooltip.innerHTML = `
             <div class="ccc-tooltip-header">CCC Packet Details</div>
@@ -106,11 +114,13 @@ export class TooltipManager {
 
     /**
      * Attach listeners to a specific log container
-     * @param {HTMLElement} container 
+     * @param {HTMLElement} container
      * @param {Function} getLineAtIndex - (index) => object
      */
     attachTo(container, getLineAtIndex) {
-        if (!container) return;
+        if (!container) {
+            return;
+        }
 
         container.addEventListener('mouseover', (e) => {
             const lineEl = e.target.closest('.log-line');

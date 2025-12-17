@@ -35,7 +35,7 @@ test.describe('BTSnoop Scroll Restoration Reproduction', () => {
         // 3. Wait for file loading to complete
         // We wait for the "Data loaded" log message which indicates processFiles is done (for text logs)
         // or just wait for the progress bar to complete if it was a zip.
-        // Since we are uploading a binary log, the text worker returns 0 lines, but this signals 
+        // Since we are uploading a binary log, the text worker returns 0 lines, but this signals
         // that processFiles() has reached the end of its main logic.
         await new Promise(resolve => {
             const listener = msg => {
@@ -144,7 +144,9 @@ test.describe('BTSnoop Scroll Restoration Reproduction', () => {
         const isVisible = await page.evaluate(async ({ packetNum, containerSelector }) => {
             const container = document.querySelector(containerSelector);
             const row = document.querySelector(`.btsnoop-row[data-packet-number="${packetNum}"]`);
-            if (!container || !row) return false;
+            if (!container || !row) {
+                return false;
+            }
 
             const cRect = container.getBoundingClientRect();
             const rRect = row.getBoundingClientRect();
@@ -165,7 +167,7 @@ test.describe('BTSnoop Scroll Restoration Reproduction', () => {
             return {
                 scrollTop: container.scrollTop,
                 rowTop: row ? row.offsetTop : 'N/A'
-            }
+            };
         }, { packetNum: packetNumber });
         console.log('Debug Info:', debugInfo);
 

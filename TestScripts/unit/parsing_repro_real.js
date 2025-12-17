@@ -54,9 +54,11 @@ function parse(content) {
 
     for (let i = 0; i < lines.length; i++) {
         const lineText = lines[i];
-        if (!lineText.trim()) continue;
+        if (!lineText.trim()) {
+            continue;
+        }
 
-        let match = logcatRegex.exec(lineText);
+        const match = logcatRegex.exec(lineText);
         let parsedLine = null;
         let lineDateObj = null;
 
@@ -89,20 +91,22 @@ function parse(content) {
             parsedLine = { isMeta: false, dateObj, date, time, timestamp, originalText: lineText, level, lineNumber: i + 1 };
         }
 
-        if (parsedLine) parsedLines.push(parsedLine);
+        if (parsedLine) {
+            parsedLines.push(parsedLine);
+        }
     }
     return parsedLines;
 }
 
 // 4. Run Test
 const results = parse(testContent);
-console.log("Parsed Lines:", JSON.stringify(results, null, 2));
+console.log('Parsed Lines:', JSON.stringify(results, null, 2));
 
 // 5. Assertions
 const continuationLine1 = results.find(l => l.originalText.includes('Continuation Line 1'));
 if (continuationLine1 && continuationLine1.timestamp === '01-01 12:00:00.000') {
-    console.log("PASS: Continuation Line 1 inherited timestamp correctly.");
+    console.log('PASS: Continuation Line 1 inherited timestamp correctly.');
 } else {
-    console.log("FAIL: Continuation Line 1 did NOT inherit timestamp. Got: " + (continuationLine1 ? continuationLine1.timestamp : 'undefined'));
+    console.log('FAIL: Continuation Line 1 did NOT inherit timestamp. Got: ' + (continuationLine1 ? continuationLine1.timestamp : 'undefined'));
     process.exit(1);
 }

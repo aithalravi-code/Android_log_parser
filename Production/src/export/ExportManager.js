@@ -26,7 +26,9 @@ export function calculateLogLevels(lines) {
  * @param {Object} ws - The worksheet object
  */
 function autoFitColumns(ws) {
-    if (!ws || !ws['!ref']) return;
+    if (!ws || !ws['!ref']) {
+        return;
+    }
 
     const range = XLSX.utils.decode_range(ws['!ref']);
     const colWidths = [];
@@ -39,7 +41,9 @@ function autoFitColumns(ws) {
             const cell = ws[cellRef];
             if (cell && cell.v) {
                 const cellLen = String(cell.v).length;
-                if (cellLen > maxLen) maxLen = cellLen;
+                if (cellLen > maxLen) {
+                    maxLen = cellLen;
+                }
             }
         }
         // Add buffer
@@ -53,29 +57,33 @@ function autoFitColumns(ws) {
  * @param {Object} ws - The worksheet object
  */
 function applyStyles(ws) {
-    if (!ws || !ws['!ref']) return;
+    if (!ws || !ws['!ref']) {
+        return;
+    }
 
     const range = XLSX.utils.decode_range(ws['!ref']);
-    const thinBorder = { style: 'thin', color: { rgb: "000000" } };
+    const thinBorder = { style: 'thin', color: { rgb: '000000' } };
     const borderStyle = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
 
     for (let R = range.s.r; R <= range.e.r; ++R) {
         for (let C = range.s.c; C <= range.e.c; ++C) {
             const cellRef = XLSX.utils.encode_cell({ c: C, r: R });
-            if (!ws[cellRef]) continue;
+            if (!ws[cellRef]) {
+                continue;
+            }
 
             // Base style for all cells
             const style = {
-                font: { name: "Arial", sz: 10 },
+                font: { name: 'Arial', sz: 10 },
                 border: borderStyle,
-                alignment: { vertical: "top", wrapText: true }
+                alignment: { vertical: 'top', wrapText: true }
             };
 
             // Header Row (Row 0)
             if (R === 0) {
-                style.font = { name: "Arial", sz: 10, bold: true, color: { rgb: "000000" } };
-                style.fill = { fgColor: { rgb: "E0E0E0" } }; // Light Gray
-                style.alignment = { horizontal: "center", vertical: "center", wrapText: true };
+                style.font = { name: 'Arial', sz: 10, bold: true, color: { rgb: '000000' } };
+                style.fill = { fgColor: { rgb: 'E0E0E0' } }; // Light Gray
+                style.alignment = { horizontal: 'center', vertical: 'center', wrapText: true };
             }
 
             ws[cellRef].s = style;

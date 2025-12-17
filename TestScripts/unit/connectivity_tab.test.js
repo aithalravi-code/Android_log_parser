@@ -26,7 +26,7 @@ describe('ConnectivityTab Logic', () => {
         // "Allow Verbose lines to pass, OR lines that explicitly contain key tags regardless of level"
         // Line 10 (BluetoothAdapter) matches /Bluetooth/
         // Line 20 (BtGatt) is 'D', but matches /BtGatt/ -> Wait, logic says `if (activeLayers.size === 0) return;` unless it matches the core regex first.
-        // Let's verify logic: 
+        // Let's verify logic:
         // if (line.level === 'V' || /Bluetooth|bt_/i.test(line.originalText)) -> addLine
         // if (activeLayers.size === 0) return;
 

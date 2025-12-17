@@ -5,7 +5,7 @@ import 'fake-indexeddb/auto'; // Automatically mocks indexedDB
 describe('Database Infrastructure (db.js)', () => {
 
     beforeEach(async () => {
-        // Reset DB before each test? 
+        // Reset DB before each test?
         // fake-indexeddb keeps state in memory.
         // We can close and reopen or just clear.
         if (getDb()) {
@@ -47,7 +47,7 @@ describe('Database Infrastructure (db.js)', () => {
     });
 
     it('should upgrade database structure if needed', async () => {
-        // difficult to test upgrade directly with fake-indexeddb auto without manual control, 
+        // difficult to test upgrade directly with fake-indexeddb auto without manual control,
         // but checking objectStoreNames confirms successful open/upgrade.
         const db = getDb();
         expect(db.objectStoreNames.length).toBeGreaterThanOrEqual(2);

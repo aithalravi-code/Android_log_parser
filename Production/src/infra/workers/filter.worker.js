@@ -48,20 +48,26 @@ function runFilter(lines, config) {
             stateInsideCollapsed = collapsedHeadersSet.has(line.originalText);
             continue;
         }
-        if (stateInsideCollapsed) continue;
+        if (stateInsideCollapsed) {
+            continue;
+        }
 
         if (keywordRegexes) {
             const matches = isAndLogic
                 ? keywordRegexes.every(regex => regex.test(line.originalText))
                 : keywordRegexes.some(regex => regex.test(line.originalText));
-            if (!matches) continue;
+            if (!matches) {
+                continue;
+            }
         }
-        if (liveSearchRegex && !liveSearchRegex.test(line.originalText)) continue;
+        if (liveSearchRegex && !liveSearchRegex.test(line.originalText)) {
+            continue;
+        }
         if (checkTime && line.dateObj) {
             const d = new Date(line.dateObj);
             if (isNaN(d.getTime())) {
                 // console.log('Invalid Date for line:', line.originalText);
-                // continue; 
+                // continue;
             }
             if ((startTimeResult && d < startTimeResult) || (endTimeResult && d > endTimeResult)) {
                 // console.log('Skipping line time:', line.timestamp, 'Start:', startTimeResult.toISOString(), 'End:', endTimeResult.toISOString(), 'LogDate:', d.toISOString());
@@ -74,7 +80,9 @@ function runFilter(lines, config) {
         if (line.originalText.includes('Continuation Line') || line.originalText.includes('java.lang.')) {
             // console.log(`[FilterWorker Debug] Line: "${line.originalText.substring(0, 30)}..." Level: ${lineLevel} (Inherited?)`);
         }
-        if (!logLevelsSet.has(lineLevel)) continue;
+        if (!logLevelsSet.has(lineLevel)) {
+            continue;
+        }
 
         if (!headerHasMatches && currentHeaderIndex !== -1) {
             indices.push(currentHeaderIndex);

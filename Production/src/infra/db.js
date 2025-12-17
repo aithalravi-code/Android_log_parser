@@ -49,7 +49,9 @@ export const getDb = () => state.db;
 function dbAction(type, key, value = null) {
     return new Promise((resolve, reject) => {
         const database = getDb();
-        if (!database) return reject('DB not open');
+        if (!database) {
+            return reject('DB not open');
+        }
         const transaction = database.transaction([LOG_STORE_NAME], type);
         const store = transaction.objectStore(LOG_STORE_NAME);
         const request = type === 'readwrite' ? store.put({ key, value }) : store.get(key);
@@ -80,7 +82,9 @@ export const loadData = (key) => dbAction('readonly', key);
 export const clearData = () => {
     return new Promise((resolve, reject) => {
         const database = getDb();
-        if (!database) return reject('DB not open');
+        if (!database) {
+            return reject('DB not open');
+        }
         // Get all store names from the database
         const storeNames = Array.from(database.objectStoreNames);
         const transaction = database.transaction(storeNames, 'readwrite');

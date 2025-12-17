@@ -104,7 +104,11 @@ describe('BtsnoopTab', () => {
                             onerror: null
                         };
                         // Trigger oncomplete async
-                        setTimeout(() => { if (tx.oncomplete) tx.oncomplete(); }, 0);
+                        setTimeout(() => {
+                            if (tx.oncomplete) {
+                                tx.oncomplete();
+                            }
+                        }, 0);
                         return tx;
                     }
                 },
@@ -132,7 +136,11 @@ describe('BtsnoopTab', () => {
                             onerror: null
                         };
                         // Trigger oncomplete async to simulate DB operation finishing
-                        setTimeout(() => { if (tx.oncomplete) tx.oncomplete(); }, 0);
+                        setTimeout(() => {
+                            if (tx.oncomplete) {
+                                tx.oncomplete();
+                            }
+                        }, 0);
                         return tx;
                     }
                 },

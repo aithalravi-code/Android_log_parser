@@ -1,9 +1,9 @@
 /**
  * E2E test for UI and basic interactions
- * 
+ *
  * NOTE: File upload tests require a web server due to file:// protocol limitations.
  * These tests focus on UI elements and interactions that work without file uploads.
- * 
+ *
  * For full E2E testing with file uploads:
  * 1. Install http-server: npm install -g http-server
  * 2. Run server: http-server -p 8080

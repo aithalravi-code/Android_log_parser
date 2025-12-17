@@ -1,6 +1,9 @@
+import { logger } from '../../utils/logger.js';
+
+// --- Export for testing ---
 export async function processLogFile(eventData, postMessage) {
     const { file, blob, path } = eventData;
-    console.log('[Worker] processLogFile called for:', path);
+    logger.worker('processLogFile called for:', path);
     let fileContent = '';
 
     async function streamToString(stream) {
@@ -9,7 +12,9 @@ export async function processLogFile(eventData, postMessage) {
         let result = '';
         while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
+            if (done) {
+                break;
+            }
             result += decoder.decode(value, { stream: false });
         }
         return result;
@@ -30,9 +35,14 @@ export async function processLogFile(eventData, postMessage) {
         '(?<logcatDate>\\d{2}-\\d{2})\\s(?<logcatTime>\\d{2}:\\d{2}:\\d{2}\\.\\d{3,})' + // MM-DD HH:mm:ss.SSS
         '\\s+' + // Separator
         '(?:' + // Start PID/TID/UID group
-        '(?<pid>[\\w-]+)\\s+(?<tid>[\\w-]+)\\s+(?<uid>[\\w-]+)\\s+(?<level>[A-Z])\\s+(?<tag>[^\\s]+?)\\s*:\\s+' + // UID PID TID Level Tag : (bugreport format with all 3 IDs)
+        // STANDARD FORMAT: PID TID Level Tag : Message (most common)
+        '(?<pid2>\\d+)\\s+(?<tid2>\\d+)\\s+(?<level2>[A-Z])\\s+(?<tag2>[^:\\s]+?)\\s*:\\s+' + // PID TID Level Tag :
         '|' + // OR
-        '(?<pid2>\\d+)\\s+(?<level2>[A-Z])\\s+(?<tag2>[^\\s|]+?)(?:\\||:)\\s*' + // PID Level Tag| or Tag:
+        // BUGREPORT FORMAT: UID PID TID Level Tag : Message (3 IDs)
+        '(?<pid>[\\w-]+)\\s+(?<tid>[\\w-]+)\\s+(?<uid>[\\w-]+)\\s+(?<level>[A-Z])\\s+(?<tag>[^\\s]+?)\\s*:\\s+' + // UID PID TID Level Tag :
+        '|' + // OR
+        // ALTERNATE FORMAT: PID Level Tag| or Tag: (2 fields)
+        '(?<pid3>\\d+)\\s+(?<level3>[A-Z])\\s+(?<tag3>[^\\s|]+?)(?:\\||:)\\s*' + // PID Level Tag| or Tag:
         ')' + // End PID/TID/UID group
         '(?<message>(?!.*Date: \\d{4}).+)' + // Message
         '|' +
@@ -108,7 +118,7 @@ export async function processLogFile(eventData, postMessage) {
 
     const bleMessageKeywords = ['Bluetooth', 'BLE', 'GATT', 'SMP', 'L2CAP', 'HCI', 'NotificationService'];
     // For messages, we also want strictly 'BLE'/'GATT' etc, but 'Bluetooth' can be loose.
-    const bleMessageRegex = new RegExp(`\\b(BLE|GATT|SMP|L2CAP|HCI)\\b|(Bluetooth|NotificationService)`, 'i');
+    const bleMessageRegex = new RegExp('\\b(BLE|GATT|SMP|L2CAP|HCI)\\b|(Bluetooth|NotificationService)', 'i');
 
     const nfcTagKeywords = ['StNfcHal', 'NfcService', 'NfcManager', 'TagDispatcher', 'NfcTag', 'P2pLinkManager', 'HostEmulationManager', 'ApduServiceInfo', 'NxpNci', 'NxpExtns', 'libnfc', 'libnfc-nci'];
     const nfcTagRegex = new RegExp(`^(${nfcTagKeywords.join('|')})$`, 'i');
@@ -136,66 +146,74 @@ export async function processLogFile(eventData, postMessage) {
     const lines = fileContent.split('\n');
     for (let i = 0; i < lines.length; i++) {
         const lineText = lines[i];
-        if (!lineText.trim()) continue;
+        if (!lineText.trim()) {
+            continue;
+        }
         stats.total++;
 
-        let match = logcatRegex.exec(lineText);
+        const match = logcatRegex.exec(lineText);
         let parsedLine = { lineNumber: i + 1 }; // Add line number
+
         let lineDateObj = null;
 
         // DEBUG: Track matches
         if (i < 20000 && i > 16400) { // Only log SYSTEM LOG section
             if (match) {
-                if (i % 100 === 0) console.log(`[Worker] Line ${i} MATCHED:`, lineText.substring(0, 80));
+                if (i % 100 === 0) {
+                    logger.worker(`Line ${i} MATCHED:`, lineText.substring(0, 80));
+                }
             } else {
-                if (i % 100 === 0) console.log(`[Worker] Line ${i} NO MATCH:`, lineText.substring(0, 80));
+                if (i % 100 === 0) {
+                    logger.worker(`Line ${i} NO MATCH:`, lineText.substring(0, 80));
+                }
             }
         }
 
         if (match) {
             if (match.groups.logcatDate) { // Standard logcat format
-                const { logcatDate, logcatTime, level, tag, level2, tag2, message, tid, uid } = match.groups;
-                // const pid = match.groups.pid || match.groups.pid2;
-                // This seems commented out/buggy in original? No, it was active.
-                const pid = match.groups.pid || match.groups.pid2;
+                const { logcatDate, logcatTime, level, tag, level2, tag2, level3, tag3, message, tid, tid2, uid } = match.groups;
+                const pid = match.groups.pid || match.groups.pid2 || match.groups.pid3;
 
                 const [month, day] = logcatDate.split('-').map(Number);
                 const [hours, minutes, seconds, milliseconds] = logcatTime.split(/[:.]/).map(Number);
                 lineDateObj = new Date(Date.UTC(fileYear, month - 1, day, hours, minutes, seconds, milliseconds || 0));
 
                 const fullTimestamp = logcatDate + ' ' + logcatTime;
-                if (!minTimestamp || fullTimestamp < minTimestamp) minTimestamp = fullTimestamp;
-                if (!maxTimestamp || fullTimestamp > maxTimestamp) maxTimestamp = fullTimestamp;
+                if (!minTimestamp || fullTimestamp < minTimestamp) {
+                    minTimestamp = fullTimestamp;
+                }
+                if (!maxTimestamp || fullTimestamp > maxTimestamp) {
+                    maxTimestamp = fullTimestamp;
+                }
 
-                const finalTag = (tag || tag2 || '').trim();
+                const finalTag = (tag || tag2 || tag3 || '').trim();
                 tagSet.add(finalTag);
-                const finalLevel = (level || level2 || '').trim();
+                const finalLevel = (level || level2 || level3 || '').trim();
 
-                // FIX: Detect UID PID TID format (3 numbers) vs PID TID (2 numbers)
-                // Current regex captures 1st->pid, 2nd->tid, 3rd->uid.
-                // If 3rd (uid) is present, it's usually the UID PID TID format.
+                // Determine which format matched and set PID/TID/UID accordingly
                 let finalPid = pid;
-                let finalTid = tid;
-                let finalUid = uid;
+                let finalTid = tid || tid2 || '';
+                let finalUid = uid || '';
 
+                // If UID is present, this is the 3-ID format (UID PID TID)
+                // The regex currently captures them as pid, tid, uid but they're actually in UID PID TID order
                 if (uid) {
-                    // Start swap: 1st=UID, 2nd=PID, 3rd=TID
+                    // Swap: 1st=UID, 2nd=PID, 3rd=TID
                     finalUid = pid;
                     finalPid = tid;
                     finalTid = uid;
                 }
 
-
                 // Update state for continuation lines
                 lastValidDateObj = lineDateObj;
-                lastValidDate = logcatDate;
-                lastValidTime = logcatTime;
                 lastValidDate = logcatDate;
                 lastValidTime = logcatTime;
                 lastValidTimestamp = fullTimestamp;
 
                 parsedLine = { isMeta: false, dateObj: lineDateObj, date: logcatDate, time: logcatTime, timestamp: fullTimestamp, level: finalLevel, pid: finalPid, tid: finalTid, uid: finalUid, tag: finalTag, message: message.trim(), originalText: lineText };
-                if (stats[finalLevel] !== undefined) stats[finalLevel]++;
+                if (stats[finalLevel] !== undefined) {
+                    stats[finalLevel]++;
+                }
             } else if (match.groups.customFullDate) { // Custom YYYY-MM-DD format
                 const { customFullDate, customTime, customMessage } = match.groups;
                 const [year, month, day] = customFullDate.split('-').map(Number);
@@ -205,8 +223,12 @@ export async function processLogFile(eventData, postMessage) {
                 const mmdd = customFullDate.substring(5);
                 const timeWithMs = customTime + '.000';
                 const fullTimestamp = mmdd + ' ' + timeWithMs;
-                if (!minTimestamp || fullTimestamp < minTimestamp) minTimestamp = fullTimestamp;
-                if (!maxTimestamp || fullTimestamp > maxTimestamp) maxTimestamp = fullTimestamp;
+                if (!minTimestamp || fullTimestamp < minTimestamp) {
+                    minTimestamp = fullTimestamp;
+                }
+                if (!maxTimestamp || fullTimestamp > maxTimestamp) {
+                    maxTimestamp = fullTimestamp;
+                }
 
                 // Update state for continuation lines
                 lastValidDateObj = lineDateObj;
@@ -218,16 +240,19 @@ export async function processLogFile(eventData, postMessage) {
 
                 parsedLine = { isMeta: false, dateObj: lineDateObj, date: mmdd, time: timeWithMs, timestamp: fullTimestamp, level: 'I', tag: 'CustomLog', message: customMessage.trim(), originalText: lineText };
                 stats.I++;
-            }
-            else if (match.groups.weaverDate) { // Weaver log format
+            } else if (match.groups.weaverDate) { // Weaver log format
                 const { weaverDate, weaverTime, weaverPid, weaverTag, weaverMessage } = match.groups;
                 const [month, day] = weaverDate.split('-').map(Number);
                 const [hours, minutes, seconds, milliseconds] = weaverTime.split(/[.:]/).map(Number);
                 lineDateObj = new Date(Date.UTC(fileYear, month - 1, day, hours, minutes, seconds, Math.floor(milliseconds / 1000))); // Convert microseconds to ms
 
                 const fullTimestamp = weaverDate + ' ' + weaverTime.slice(0, 12); // Trim to ms for consistency
-                if (!minTimestamp || fullTimestamp < minTimestamp) minTimestamp = fullTimestamp;
-                if (!maxTimestamp || fullTimestamp > maxTimestamp) maxTimestamp = fullTimestamp;
+                if (!minTimestamp || fullTimestamp < minTimestamp) {
+                    minTimestamp = fullTimestamp;
+                }
+                if (!maxTimestamp || fullTimestamp > maxTimestamp) {
+                    maxTimestamp = fullTimestamp;
+                }
 
                 // Update state
                 lastValidDateObj = lineDateObj;
@@ -239,8 +264,7 @@ export async function processLogFile(eventData, postMessage) {
 
                 parsedLine = { isMeta: false, dateObj: lineDateObj, date: weaverDate, time: weaverTime, timestamp: fullTimestamp, level: 'D', pid: weaverPid, tag: weaverTag.trim(), message: weaverMessage.trim(), originalText: lineText };
                 stats.D++;
-            }
-            else if (match.groups.psPid) { // Process Status Line
+            } else if (match.groups.psPid) { // Process Status Line
                 const { psPid, psTid, psUser, psTag } = match.groups;
                 // No timestamp available
                 parsedLine = {
@@ -253,16 +277,19 @@ export async function processLogFile(eventData, postMessage) {
                     originalText: lineText
                 };
                 stats.V++; // Count as Verbose instead of Info
-            }
-            else if (match.groups.gpsDate) { // GPS Custom Line
+            } else if (match.groups.gpsDate) { // GPS Custom Line
                 const { gpsDate, gpsTime, gpsPid, gpsExtra, gpsTag, gpsMessage } = match.groups;
                 const [month, day] = gpsDate.split('-').map(Number);
                 const [hours, minutes, seconds, milliseconds] = gpsTime.split(/[:.]/).map(Number);
                 lineDateObj = new Date(Date.UTC(fileYear, month - 1, day, hours, minutes, seconds, milliseconds || 0));
 
                 const fullTimestamp = gpsDate + ' ' + gpsTime;
-                if (!minTimestamp || fullTimestamp < minTimestamp) minTimestamp = fullTimestamp;
-                if (!maxTimestamp || fullTimestamp > maxTimestamp) maxTimestamp = fullTimestamp;
+                if (!minTimestamp || fullTimestamp < minTimestamp) {
+                    minTimestamp = fullTimestamp;
+                }
+                if (!maxTimestamp || fullTimestamp > maxTimestamp) {
+                    maxTimestamp = fullTimestamp;
+                }
 
                 // Update state
                 lastValidDateObj = lineDateObj;
@@ -286,8 +313,7 @@ export async function processLogFile(eventData, postMessage) {
                     originalText: lineText
                 };
                 stats.D++;
-            }
-            else if (match.groups.simpleDate) { // NEW: Simple Tag Log format
+            } else if (match.groups.simpleDate) { // NEW: Simple Tag Log format
                 const { simpleDate, simpleTime, simpleTag, simpleMessage } = match.groups;
                 const [month, day] = simpleDate.split('-').map(Number);
                 // Handle both colon and dot separators for milliseconds
@@ -300,8 +326,12 @@ export async function processLogFile(eventData, postMessage) {
                 const stdTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds || 0).padStart(3, '0')}`;
                 const fullTimestamp = simpleDate + ' ' + stdTime;
 
-                if (!minTimestamp || fullTimestamp < minTimestamp) minTimestamp = fullTimestamp;
-                if (!maxTimestamp || fullTimestamp > maxTimestamp) maxTimestamp = fullTimestamp;
+                if (!minTimestamp || fullTimestamp < minTimestamp) {
+                    minTimestamp = fullTimestamp;
+                }
+                if (!maxTimestamp || fullTimestamp > maxTimestamp) {
+                    maxTimestamp = fullTimestamp;
+                }
 
                 // Update state
                 lastValidDateObj = lineDateObj;
@@ -329,7 +359,7 @@ export async function processLogFile(eventData, postMessage) {
             const level = levelMatch ? levelMatch[1] : 'V';
 
             // FIX: If we have a previous valid timestamp, assume this is a continuation line
-            // and inherit the time. This fixes issues with exception stack traces and other 
+            // and inherit the time. This fixes issues with exception stack traces and other
             // multi-line logs being discarded or sorted incorrectly.
             const date = lastValidDate !== 'N/A' ? lastValidDate : 'N/A';
             const time = lastValidTime !== 'N/A' ? lastValidTime : 'N/A';
@@ -346,11 +376,15 @@ export async function processLogFile(eventData, postMessage) {
             }
         }
 
-        if (parsedLine) parsedLine.lineNumber = i + 1;
+        if (parsedLine) {
+            parsedLine.lineNumber = i + 1;
+        }
         const textToSearchForHighlights = parsedLine.message || lineText;
         let accountMatch;
         while ((accountMatch = accountRegex.exec(textToSearchForHighlights)) !== null) {
-            if (accountMatch[1]) highlights.accounts.add(accountMatch[1].trim());
+            if (accountMatch[1]) {
+                highlights.accounts.add(accountMatch[1].trim());
+            }
         }
 
         const localAddrMatch = lineText.match(localAddressRegex);
@@ -358,13 +392,21 @@ export async function processLogFile(eventData, postMessage) {
             highlights.localBtAddress = localAddrMatch[1];
         }
 
-        if (lockRegex.test(textToSearchForHighlights)) highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: 'Device Locked', detail: '', originalText: lineText });
-        if (unlockRegex.test(textToSearchForHighlights)) highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: 'Device Unlocked', detail: '', originalText: lineText });
+        if (lockRegex.test(textToSearchForHighlights)) {
+            highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: 'Device Locked', detail: '', originalText: lineText });
+        }
+        if (unlockRegex.test(textToSearchForHighlights)) {
+            highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: 'Device Unlocked', detail: '', originalText: lineText });
+        }
 
         for (const serviceName in services) {
             const service = services[serviceName];
-            if (service.on.test(lineText)) highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: serviceName + ' Status', detail: 'On', originalText: lineText });
-            if (service.off.test(lineText)) highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: serviceName + ' Status', detail: 'Off', originalText: lineText });
+            if (service.on.test(lineText)) {
+                highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: serviceName + ' Status', detail: 'On', originalText: lineText });
+            }
+            if (service.off.test(lineText)) {
+                highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: serviceName + ' Status', detail: 'Off', originalText: lineText });
+            }
         }
 
         if (btConnectRegex.test(textToSearchForHighlights)) {
@@ -372,7 +414,7 @@ export async function processLogFile(eventData, postMessage) {
             highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: 'Bluetooth Connected', detail: addressMatch ? addressMatch[1] : 'N/A', originalText: lineText });
         }
         if (btDisconnectRegex.test(textToSearchForHighlights)) {
-            const addressMatch = textToSearchForHighlights.match(btAddressForHighlights);
+            const addressMatch = textToSearchForHighlights.match(btAddressRegex);
             highlights.deviceEvents.push({ date: parsedLine.date, time: parsedLine.time, timestamp: parsedLine.timestamp, event: 'Bluetooth Disconnected', detail: addressMatch ? addressMatch[1] : 'N/A', originalText: lineText });
         }
 
@@ -380,14 +422,18 @@ export async function processLogFile(eventData, postMessage) {
         if (versionMatch) {
             const packageName = versionMatch[1];
             const versionName = versionMatch[2];
-            if (packageName && versionName) appVersions.set(packageName, versionName);
+            if (packageName && versionName) {
+                appVersions.set(packageName, versionName);
+            }
         }
         const customVersionMatch = lineText.match(customVersionRegex);
         if (customVersionMatch) {
             const componentName = customVersionMatch[1];
             const packageName = componentName.split('/')[0]; // Extract package name from component
             const versionCode = customVersionMatch[2];
-            if (packageName && versionCode) appVersions.set(packageName, versionCode);
+            if (packageName && versionCode) {
+                appVersions.set(packageName, versionCode);
+            }
         }
 
         const batteryMatch = lineText.match(batteryRegex);
@@ -411,12 +457,12 @@ export async function processLogFile(eventData, postMessage) {
                 const payload = hex.substring(4);
                 const cccMsg = {
                     timestamp: parsedLine.timestamp,
-                    direction: lineText.includes("Sending") ? "Host -> Controller" : "Controller -> Host",
+                    direction: lineText.includes('Sending') ? 'Host -> Controller' : 'Controller -> Host',
                     type,
                     subtype,
                     payload,
                     fullHex: hex,
-                    peerAddress: extractedAddress || "Unknown",
+                    peerAddress: extractedAddress || 'Unknown',
                     handle: null,
                     lineNumber: parsedLine.lineNumber // Add line number for tooltip mapping
                 };
@@ -485,7 +531,9 @@ export async function processLogFile(eventData, postMessage) {
             }
         }
 
-        if (parsedLine) parsedLines.push(parsedLine);
+        if (parsedLine) {
+            parsedLines.push(parsedLine);
+        }
 
         // If the chunk is full, send it back to the main thread
         if (parsedLines.length >= CHUNK_SIZE) {
@@ -504,11 +552,11 @@ export async function processLogFile(eventData, postMessage) {
     }
 
     // DEBUG: Log parsing summary
-    console.log('[Worker] PARSING SUMMARY for', path);
-    console.log('[Worker] Total lines processed:', lines.length);
-    console.log('[Worker] Parsed lines created:', parsedLines.length);
-    console.log('[Worker] Stats:', stats);
-    console.log('[Worker] Tags found:', tagSet.size);
+    logger.worker('PARSING SUMMARY for', path);
+    logger.worker('Total lines processed:', lines.length);
+    logger.worker('Parsed lines created:', parsedLines.length);
+    logger.worker('Stats:', stats);
+    logger.worker('Tags found:', tagSet.size);
 
     // Send a final success message with summary data, but without the huge parsedLines array
     postMessage({ status: 'success', tags: Array.from(tagSet), minTimestamp, maxTimestamp, filePath: path, stats, highlights: { ...highlights, accounts: Array.from(highlights.accounts) }, appVersions: Array.from(appVersions), batteryDataPoints, thermalDataPoints, cccMessages });
@@ -517,11 +565,11 @@ export async function processLogFile(eventData, postMessage) {
 if (typeof self !== 'undefined') {
     self.onmessage = async (event) => {
         try {
-            console.log('[Worker] Received message:', event.data?.path || 'unknown');
+            logger.worker('Received message:', event.data?.path || 'unknown');
             await processLogFile(event.data, self.postMessage.bind(self));
-            console.log('[Worker] Finished processing:', event.data?.path || 'unknown');
+            logger.worker('Finished processing:', event.data?.path || 'unknown');
         } catch (err) {
-            console.error('[Worker] Error processing message:', err);
+            logger.error('Error processing message:', err);
             self.postMessage({ status: 'error', error: err.toString() });
         }
     };

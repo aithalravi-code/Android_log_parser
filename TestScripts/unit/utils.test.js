@@ -43,7 +43,7 @@ describe('Date Utils', () => {
         // e.g. "XX-YY 99:99:99.999" -> Date constructor might yield "Invalid Date"
         const result = logcatToDate('99-99 99:99:99.999');
         // Depending on implementation, `new Date` might resolve to `Invalid Date` or roll over.
-        // If month is 99-1 = 98. JS dates roll over. 
+        // If month is 99-1 = 98. JS dates roll over.
         // "invalid" dates usually come from NaN checking (line 26 of date.js).
         // Let's test non-numeric string.
         expect(logcatToDate('Invalid Log Line Content')).toBeNull();

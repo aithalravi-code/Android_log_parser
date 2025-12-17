@@ -10,21 +10,21 @@ function makeTableResizable(tableId) {
         console.warn(`Table with ID "${tableId}" not found`);
         return;
     }
-    console.log(`[makeTableResizable] Table element found:`, table);
+    console.log('[makeTableResizable] Table element found:', table);
 
     const thead = table.querySelector('thead');
     if (!thead) {
         console.warn(`Table "${tableId}" has no thead`);
         return;
     }
-    console.log(`[makeTableResizable] thead found:`, thead);
+    console.log('[makeTableResizable] thead found:', thead);
 
     const headerRow = thead.querySelector('tr:not(.filter-row)');
     if (!headerRow) {
         console.warn(`Table "${tableId}" has no header row`);
         return;
     }
-    console.log(`[makeTableResizable] headerRow found:`, headerRow);
+    console.log('[makeTableResizable] headerRow found:', headerRow);
 
     // Add resize handles to each th
     const headers = headerRow.querySelectorAll('th');

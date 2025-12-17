@@ -7,12 +7,16 @@ import { describe, it, expect, beforeEach } from 'vitest';
 // Mock functions - these would be extracted from main.js
 function parseLogLine(line) {
     // Handle null, undefined, or non-string inputs
-    if (!line || typeof line !== 'string') return null;
+    if (!line || typeof line !== 'string') {
+        return null;
+    }
 
     // Android logcat format: MM-DD HH:MM:SS.mmm  PID  TID LEVEL TAG: MESSAGE
     const match = line.match(/^(\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3})\s+(\d+)\s+(\d+)\s+([VDIWEF])\s+(.+?):\s+(.*)$/);
 
-    if (!match) return null;
+    if (!match) {
+        return null;
+    }
 
     return {
         timestamp: match[1],
@@ -30,7 +34,9 @@ function filterLogsByLevel(logs, activeLevels) {
 }
 
 function filterLogsByKeyword(logs, keyword, isAndLogic = false) {
-    if (!keyword) return logs;
+    if (!keyword) {
+        return logs;
+    }
 
     const keywords = keyword.split(',').map(k => k.trim().toLowerCase());
 

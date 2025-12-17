@@ -2,10 +2,8 @@
  * Filter Manager Module
  * Handles all filtering operations for log views
  */
-
-// Filter state management
-let filterVersion = 0;
-let filterCache = new Map();
+import { logger } from '../utils/logger.js';
+import { appState } from '../core/state/AppState.js';
 
 /**
  * Computes a hash of the current filter state for caching
@@ -41,8 +39,10 @@ export function computeFilterStateHash(config) {
  * @returns {boolean} True if refiltering is needed
  */
 export function needsRefiltering(tabId, currentHash) {
-    const cached = filterCache.get(tabId);
-    if (!cached) return true;
+    const cached = appState.filter.cachedResults[tabId];
+    if (!cached) {
+        return true;
+    }
     return cached.hash !== currentHash;
 }
 
@@ -53,7 +53,7 @@ export function needsRefiltering(tabId, currentHash) {
  * @param {Array} results - Filtered results
  */
 export function cacheFilteredResults(tabId, hash, results) {
-    filterCache.set(tabId, { hash, results: [...results] });
+    appState.filter.cachedResults[tabId] = { hash, results: [...results] };
 }
 
 /**
@@ -62,7 +62,7 @@ export function cacheFilteredResults(tabId, hash, results) {
  * @returns {Array|null} Cached results or null
  */
 export function getCachedResults(tabId) {
-    const cached = filterCache.get(tabId);
+    const cached = appState.filter.cachedResults[tabId];
     return cached ? cached.results : null;
 }
 
@@ -72,9 +72,9 @@ export function getCachedResults(tabId) {
  */
 export function clearFilterCache(tabId = null) {
     if (tabId) {
-        filterCache.delete(tabId);
+        delete appState.filter.cachedResults[tabId];
     } else {
-        filterCache.clear();
+        appState.filter.clearCache();
     }
 }
 
@@ -97,7 +97,7 @@ export function applyMainFilters(lines, collapseState, activeCollapseSet, filter
         isTimeFilterActive = false
     } = filterConfig;
 
-    console.log('[FilterManager] START - Input lines:', lines.length, 'Active levels:', Array.from(activeLogLevels));
+    logger.filter('START - Input lines:', lines.length, 'Active levels:', Array.from(activeLogLevels));
 
     const filtered = [];
     let rejectedByLevel = 0, rejectedByKeyword = 0, rejectedByLiveSearch = 0, rejectedByTime = 0, rejectedByCollapse = 0;
@@ -123,7 +123,7 @@ export function applyMainFilters(lines, collapseState, activeCollapseSet, filter
             collapseState.pendingHeader = line;
             collapseState.headerPushed = false;
 
-            // If collapsed, we previously skipped content lines. 
+            // If collapsed, we previously skipped content lines.
             // FIX: We must NOT continue here if we want to support "Show Header if Matches Exist".
             // Actually, we DO continue, ensuring we process the NEXT lines (content).
             continue;
@@ -161,24 +161,22 @@ export function applyMainFilters(lines, collapseState, activeCollapseSet, filter
             continue;
         }
 
-        // Time range filter - ONLY apply if the filter is explicitly active
-        if (isTimeFilterActive && (startTime || endTime)) {
-            // Only filter lines with valid dates
-            if (line.dateObj) {
-                const lineTime = new Date(line.dateObj).getTime();
-                // Ensure valid date
-                if (!isNaN(lineTime)) {
-                    if (startTime && lineTime < startTime.getTime()) {
-                        rejectedByTime++;
-                        continue;
-                    }
-                    if (endTime && lineTime > endTime.getTime()) {
-                        rejectedByTime++;
-                        continue;
-                    }
+        // Time range filter - Auto-detect if time filtering should be applied
+        // If startTime or endTime is provided, apply the filter
+        if ((startTime || endTime) && line.dateObj) {
+            const lineTime = new Date(line.dateObj).getTime();
+            // Ensure valid date
+            if (!isNaN(lineTime)) {
+                if (startTime && lineTime < startTime.getTime()) {
+                    rejectedByTime++;
+                    continue;
+                }
+                if (endTime && lineTime > endTime.getTime()) {
+                    rejectedByTime++;
+                    continue;
                 }
             }
-            // Lines without dateObj are included (they may be metadata or context)
+            // Lines without valid timestamps are excluded when time filter is active
         }
 
         // --- MATCH FOUND ---
@@ -201,7 +199,7 @@ export function applyMainFilters(lines, collapseState, activeCollapseSet, filter
         filtered.push(line);
     }
 
-    console.log('[FilterManager] END - Output lines:', filtered.length,
+    logger.filter('END - Output lines:', filtered.length,
         '| Rejected by: Level=', rejectedByLevel, 'Keyword=', rejectedByKeyword,
         'LiveSearch=', rejectedByLiveSearch, 'Time=', rejectedByTime, 'Collapse=', rejectedByCollapse);
     return filtered;
@@ -222,12 +220,12 @@ export async function applyFiltersAsync(sourceLines, config, options = {}) {
         activeCollapseSet = new Set()
     } = options;
 
-    const currentVersion = ++filterVersion;
+    const currentVersion = appState.filter.incrementVersion();
     const tempFiltered = [];
 
     for (let i = 0; i < sourceLines.length; i += chunkSize) {
         // Check if a new filter operation has started
-        if (filterVersion !== currentVersion) {
+        if (appState.filter.version !== currentVersion) {
             return null; // Cancelled
         }
 
@@ -246,7 +244,7 @@ export async function applyFiltersAsync(sourceLines, config, options = {}) {
     }
 
     // Final check
-    if (filterVersion !== currentVersion) {
+    if (appState.filter.version !== currentVersion) {
         return null;
     }
 
@@ -258,7 +256,7 @@ export async function applyFiltersAsync(sourceLines, config, options = {}) {
  * @returns {number} Current filter version
  */
 export function getFilterVersion() {
-    return filterVersion;
+    return appState.filter.version;
 }
 
 /**
@@ -266,13 +264,12 @@ export function getFilterVersion() {
  * @returns {number} New filter version
  */
 export function incrementFilterVersion() {
-    return ++filterVersion;
+    return appState.filter.incrementVersion();
 }
 
 /**
  * Resets the filter manager state
  */
 export function resetFilterManager() {
-    filterVersion = 0;
-    filterCache.clear();
+    appState.filter.reset();
 }

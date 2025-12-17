@@ -93,7 +93,7 @@ describe('CccTab - Payload Decoding Coverage', () => {
                 '84', // From_Function_ID
                 '85', // To_Function_ID
                 '86', // Full_Update_Flag
-                '88'  // Arbitrary_Data
+                '88' // Arbitrary_Data
             ];
 
             commonTags.forEach(tag => {
@@ -106,7 +106,7 @@ describe('CccTab - Payload Decoding Coverage', () => {
                 '01', // UWB_Session_ID
                 '02', // Ranging_Config
                 '03', // Channel_Number
-                '04'  // Hopping_Config
+                '04' // Hopping_Config
             ];
 
             uwbTags.forEach(tag => {
@@ -277,7 +277,7 @@ describe('CccTab - Payload Decoding Coverage', () => {
                 '6A82', // File not found
                 '6A86', // Incorrect P1 P2
                 '6D00', // Instruction not supported
-                '6E00'  // Class not supported
+                '6E00' // Class not supported
             ];
 
             errorCodes.forEach(code => {
@@ -289,7 +289,7 @@ describe('CccTab - Payload Decoding Coverage', () => {
         it('should handle custom error codes', () => {
             const customErrors = [
                 'B0', // Vehicle not ready
-                'B1'  // Vehicle not in parking state
+                'B1' // Vehicle not in parking state
             ];
 
             customErrors.forEach(code => {

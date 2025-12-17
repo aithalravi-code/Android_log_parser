@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { makeSortable } from '../../Production/src/table-sort.js';
 
 describe('Table Sort Logic', () => {
-    let tableId = 'testTable';
+    const tableId = 'testTable';
 
     beforeEach(() => {
         // Setup a mock table
@@ -85,7 +85,7 @@ describe('Table Sort Logic', () => {
 
         // Click to sort ASC
         dateHeader.click();
-        let rows = document.querySelectorAll(`#${tableId} tbody tr`);
+        const rows = document.querySelectorAll(`#${tableId} tbody tr`);
         expect(rows[0].children[2].textContent).toBe('2023-01-01');
         expect(rows[1].children[2].textContent).toBe('2023-01-02');
         expect(rows[2].children[2].textContent).toBe('2023-01-03');
@@ -95,7 +95,7 @@ describe('Table Sort Logic', () => {
         // sort by Age (index 1), 'asc'
         makeSortable(tableId, 1, 'asc');
 
-        let rows = document.querySelectorAll(`#${tableId} tbody tr`);
+        const rows = document.querySelectorAll(`#${tableId} tbody tr`);
         expect(rows[0].children[1].textContent).toBe('25');
         expect(rows[2].children[1].textContent).toBe('35');
     });

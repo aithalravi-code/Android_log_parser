@@ -111,5 +111,64 @@ describe('Filter Worker Logic', () => {
             const indices = runFilter([], baseConfig);
             expect(indices).toEqual([]);
         });
+
+        it('should filter with AND logic for multiple keywords', () => {
+            const config = {
+                ...baseConfig,
+                activeKeywords: ['Tag', 'Error'],
+                isAndLogic: true
+            };
+            const indices = runFilter(sampleLines, config);
+            // Only line 3 has both "Tag" and "Error": "E/Tag: Error occurred"
+            expect(indices).toEqual([0, 3]);
+        });
+
+        it('should filter with OR logic for multiple keywords', () => {
+            const config = {
+                ...baseConfig,
+                activeKeywords: ['Start', 'Debug'],
+                isAndLogic: false
+            };
+            const indices = runFilter(sampleLines, config);
+            // Lines 1 (Start) and 2 (Debug)
+            expect(indices).toEqual([0, 1, 2]);
+        });
+
+        it('should handle wildcard patterns in keywords', () => {
+            const config = {
+                ...baseConfig,
+                activeKeywords: ['E*rror']
+            };
+            const indices = runFilter(sampleLines, config);
+            // Line 3 matches "Error"
+            expect(indices).toEqual([0, 3]);
+        });
+
+        it('should handle time range with null end date', () => {
+            const config = {
+                ...baseConfig,
+                isTimeFilterActive: true,
+                timeRange: { start: '2023-10-27T10:00:01', end: null }
+            };
+            const indices = runFilter(sampleLines, config);
+            // Lines from 10:00:01 onwards (lines 2, 3, 4)
+            expect(indices.length).toBeGreaterThan(0);
+            expect(indices).toContain(2);
+            expect(indices).toContain(3);
+            expect(indices).toContain(4);
+        });
+
+        it('should handle time range with null start date', () => {
+            const config = {
+                ...baseConfig,
+                isTimeFilterActive: true,
+                timeRange: { start: null, end: '2023-10-27T10:00:01' }
+            };
+            const indices = runFilter(sampleLines, config);
+            // Lines up to 10:00:01 (lines 1, 2)
+            expect(indices.length).toBeGreaterThan(0);
+            expect(indices).toContain(1);
+            expect(indices).toContain(2);
+        });
     });
 });

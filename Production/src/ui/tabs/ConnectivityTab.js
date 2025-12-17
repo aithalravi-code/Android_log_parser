@@ -12,7 +12,7 @@
  * @returns {Array} - The combined, sorted, and filtered list of log lines (before generic search/time filtering).
  */
 export function filterConnectivityLogs(data, activeTechs, activeLayers) {
-    let candidates = [];
+    const candidates = [];
     const usedIds = new Set();
     const addLine = (line) => {
         // Use line index as unique identifier to prevent duplicates
@@ -33,7 +33,9 @@ export function filterConnectivityLogs(data, activeTechs, activeLayers) {
         const bleLayers = activeLayers.ble || new Set();
 
         data.bleLogLines.forEach(line => {
-            if (line.isMeta) { addLine(line); return; }
+            if (line.isMeta) {
+                addLine(line); return;
+            }
 
             // Allow Verbose lines to pass, OR lines that explicitly contain key tags regardless of level
             if (line.level === 'V' || /Bluetooth|bt_/i.test(line.originalText)) {
@@ -41,10 +43,14 @@ export function filterConnectivityLogs(data, activeTechs, activeLayers) {
                 return;
             }
 
-            if (bleLayers.size === 0) return;
+            if (bleLayers.size === 0) {
+                return;
+            }
 
             const hit = Array.from(bleLayers).some(layer => bleKeywords[layer]?.test(line.originalText));
-            if (hit) addLine(line);
+            if (hit) {
+                addLine(line);
+            }
         });
     }
 
@@ -59,8 +65,12 @@ export function filterConnectivityLogs(data, activeTechs, activeLayers) {
         const nfcLayers = activeLayers.nfc || new Set();
 
         data.nfcLogLines.forEach(line => {
-            if (line.isMeta) { addLine(line); return; }
-            if (nfcLayers.size === 0) return;
+            if (line.isMeta) {
+                addLine(line); return;
+            }
+            if (nfcLayers.size === 0) {
+                return;
+            }
 
             if (line.level === 'V') {
                 addLine(line);
@@ -68,7 +78,9 @@ export function filterConnectivityLogs(data, activeTechs, activeLayers) {
             }
 
             const hit = Array.from(nfcLayers).some(layer => nfcKeywords[layer]?.test(line.originalText));
-            if (hit) addLine(line);
+            if (hit) {
+                addLine(line);
+            }
         });
     }
 

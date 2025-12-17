@@ -10,7 +10,9 @@ let deviceEventsData = [];
  * @param {HTMLElement} tableElement - The table element (or tbody) to render into.
  */
 export function renderDeviceEvents(events, tableElement) {
-    if (!tableElement) return;
+    if (!tableElement) {
+        return;
+    }
 
     tableElement.innerHTML = '';
     deviceEventsData = events || [];
@@ -22,7 +24,9 @@ export function renderDeviceEvents(events, tableElement) {
 
     // Sort events by timestamp to process them in chronological order
     deviceEventsData.sort((a, b) => {
-        if (!a.timestamp || !b.timestamp) return 0;
+        if (!a.timestamp || !b.timestamp) {
+            return 0;
+        }
         return a.timestamp.localeCompare(b.timestamp);
     });
 

@@ -9,7 +9,9 @@ const pidColors = ['#4CAF50', '#2196F3', '#9C27B0', '#FF9800', '#F44336', '#0096
  * @returns {string} The hex color code.
  */
 export function getColorForPid(pid) {
-    if (!pid) return '#E0E0E0'; // Default color for lines without a PID
+    if (!pid) {
+        return '#E0E0E0';
+    } // Default color for lines without a PID
     if (pidColorCache.has(pid)) {
         return pidColorCache.get(pid);
     }

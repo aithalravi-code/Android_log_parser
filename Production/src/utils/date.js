@@ -1,9 +1,9 @@
 /**
  * Parse Android logcat timestamp to JavaScript Date object
- * 
+ *
  * @param {string} logcatTimestamp - Timestamp in "MM-DD HH:mm:ss.SSS" format
  * @returns {Date|null} - Parsed date or null if invalid
- * 
+ *
  * @example
  * logcatToDate('07-02 09:33:33.365') // Returns Date object for July 2nd, 9:33:33.365
  */

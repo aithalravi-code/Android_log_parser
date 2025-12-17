@@ -228,7 +228,9 @@ describe('FilterManager', () => {
             };
 
             const sampleLinesWithDates = sampleLines.map(l => {
-                if (l.isMeta) return l;
+                if (l.isMeta) {
+                    return l;
+                }
                 return {
                     ...l,
                     dateObj: new Date(`2023-01-01T${l.timestamp}Z`)
