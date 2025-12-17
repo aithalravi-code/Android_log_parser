@@ -76,6 +76,6 @@ export default defineConfig({
         command: 'npm run preview', // Use production build for stable CI testing
         url: 'http://127.0.0.1:5173',
         reuseExistingServer: !process.env.CI,
-        timeout: 120000, // 2 minutes should be plenty for preview server
+        timeout: 180000, // 3 minutes for preview server on slow CI
     },
 });
