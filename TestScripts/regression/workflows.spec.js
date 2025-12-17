@@ -3,7 +3,7 @@ import path from 'path';
 
 test.describe('Real-World Usage Scenarios', () => {
     test('complete workflow: load, filter, export', async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         // Step 1: Load a log file
         const logContent = Array.from({ length: 100 }, (_, i) =>
@@ -39,7 +39,7 @@ test.describe('Real-World Usage Scenarios', () => {
 
     test('multi-file workflow: ZIP with multiple logs', async ({ page }) => {
         // This would require creating an actual ZIP - simplified version
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         // Load individual files to simulate
         await page.locator('#logFilesInput').setInputFiles([
@@ -64,7 +64,7 @@ test.describe('Real-World Usage Scenarios', () => {
     });
 
     test('filter combination workflow', async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         // Load test data
         const logs = [
@@ -97,7 +97,7 @@ test.describe('Real-World Usage Scenarios', () => {
     });
 
     test('search and navigate workflow', async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         // Load numbered logs for easy verification
         const logs = Array.from({ length: 50 }, (_, i) =>
@@ -124,7 +124,7 @@ test.describe('Real-World Usage Scenarios', () => {
 
 test.describe('Data Integrity', () => {
     test('should preserve data through filter changes', async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         const originalLog = '12-17 10:00:00.000  1234  5678 I Tag: Important message\n';
 
@@ -151,7 +151,7 @@ test.describe('Data Integrity', () => {
     });
 
     test('should maintain selections through tab switches', async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         await page.locator('#logFilesInput').setInputFiles({
             name: 'test.log',
@@ -183,7 +183,7 @@ test.describe('Data Integrity', () => {
 
 test.describe('Performance Under Load', () => {
     test('should handle rapid filter changes', async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         await page.locator('#logFilesInput').setInputFiles({
             name: 'test.log',
@@ -209,7 +209,7 @@ test.describe('Performance Under Load', () => {
     });
 
     test('should handle rapid tab switching', async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         await page.locator('#logFilesInput').setInputFiles({
             name: 'test.log',
@@ -238,7 +238,7 @@ test.describe('State Recovery', () => {
             if (msg.type() === 'error') consoleErrors.push(msg.text());
         });
 
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         // Load normal file first
         await page.locator('#logFilesInput').setInputFiles({

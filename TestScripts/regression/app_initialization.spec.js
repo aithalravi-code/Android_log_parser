@@ -22,7 +22,7 @@ test.describe('App Initialization', () => {
         });
 
         // Navigate to app
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         // Wait for app to initialize
         await page.waitForSelector('#app', { timeout: 5000 });
@@ -48,7 +48,7 @@ test.describe('App Initialization', () => {
     });
 
     test('should load main UI elements', async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         // Verify key elements loaded
         await expect(page.locator('#fileInput')).toBeVisible();
@@ -57,7 +57,7 @@ test.describe('App Initialization', () => {
     });
 
     test('should have working state debugging', async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         // Verify appState is accessible
         const hasAppState = await page.evaluate(() => {

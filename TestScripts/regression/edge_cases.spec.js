@@ -7,7 +7,7 @@ test.describe('Error Handling', () => {
             if (msg.type() === 'error') consoleErrors.push(msg.text());
         });
 
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         // Try to upload a non-log file
         const fileInput = page.locator('#logFilesInput');
@@ -31,7 +31,7 @@ test.describe('Error Handling', () => {
     });
 
     test('should handle empty file gracefully', async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         const fileInput = page.locator('#logFilesInput');
         await fileInput.setInputFiles({
@@ -51,7 +51,7 @@ test.describe('Error Handling', () => {
         const pageErrors = [];
         page.on('pageerror', error => pageErrors.push(error.message));
 
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         const zipInput = page.locator('#zipInput');
         await zipInput.setInputFiles({
@@ -75,7 +75,7 @@ test.describe('Error Handling', () => {
 
 test.describe('Filter Edge Cases', () => {
     test('should handle very long keyword search', async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         // Load a test file first
         await page.locator('#logFilesInput').setInputFiles({
@@ -99,7 +99,7 @@ test.describe('Filter Edge Cases', () => {
     });
 
     test('should handle special regex characters in search', async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         await page.locator('#logFilesInput').setInputFiles({
             name: 'test.log',
@@ -124,7 +124,7 @@ test.describe('Filter Edge Cases', () => {
 
 test.describe('UI Responsiveness', () => {
     test('should hide/show left panel', async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         const leftPanel = page.locator('.left-panel');
         const toggleBtn = page.locator('#panel-toggle-btn');
@@ -154,7 +154,7 @@ test.describe('UI Responsiveness', () => {
             if (msg.type() === 'error') consoleErrors.push(msg.text());
         });
 
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         // Load test data
         await page.locator('#logFilesInput').setInputFiles({
@@ -188,7 +188,7 @@ test.describe('UI Responsiveness', () => {
 
 test.describe('Performance', () => {
     test('should load medium file reasonably fast', async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         // Generate medium-sized log (1000 lines)
         const lines = [];
@@ -221,7 +221,7 @@ test.describe('Performance', () => {
 
 test.describe('Data Persistence', () => {
     test('should persist filter keywords across reload', async ({ page, context }) => {
-        await page.goto('/');
+        await page.goto('/log_parser.html');
 
         // Add a keyword
         const keywordInput = page.locator('#keywordInput');
