@@ -12,6 +12,11 @@
         "test:ci": "playwright test -c .config/test/playwright.config.ci.js",
         "test:core": "playwright test -c .config/test/playwright.config.ci.js complete_workflows log_filtering_advanced"
     },
+    "dependencies": {
+        "chart.js": "^4.4.1",
+        "jszip": "^3.10.1",
+        "nouislider": "^15.7.1"
+    },
     "devDependencies": {
         "@playwright/test": "^1.40.1",
         "@vitest/ui": "^1.0.4",
