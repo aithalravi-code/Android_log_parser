@@ -40,8 +40,8 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
       
-      - name: Run E2E tests
-        run: npm run test:regression
+      - name: Run Tests
+        run: npm run test:unitst:regression
         continue-on-error: true
       
       - name: Upload test results
