@@ -106,9 +106,20 @@ describe('Stats Tab Logic', () => {
     describe('renderAppVersions', () => {
         let table, input;
         beforeEach(() => {
-            table = document.createElement('tbody');
+            // Create table structure expected by renderAppVersions and makeTableResizable
+            const tableElement = document.createElement('table');
+            tableElement.id = 'appVersionsTable';
+            document.body.appendChild(tableElement);
+
+            // renderAppVersions expects the table element itself, not tbody
+            table = tableElement;
+
             input = document.createElement('input');
             input.value = '';
+        });
+
+        afterEach(() => {
+            document.body.innerHTML = ''; // Cleanup
         });
 
         it('should render list of versions', () => {
