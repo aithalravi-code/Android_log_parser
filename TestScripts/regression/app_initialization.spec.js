@@ -7,6 +7,7 @@ test.describe('App Initialization', () => {
 
         // Listen for console messages
         page.on('console', msg => {
+            console.log(`[Browser Console] ${msg.type()}: ${msg.text()}`); // Log immediately
             if (msg.type() === 'error') {
                 consoleErrors.push(msg.text());
             }
@@ -18,6 +19,7 @@ test.describe('App Initialization', () => {
         // Listen for page errors
         const pageErrors = [];
         page.on('pageerror', error => {
+            console.log(`[Browser PageError] ${error.message}`); // Log immediately
             pageErrors.push(error.message);
         });
 
