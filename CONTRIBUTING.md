@@ -157,6 +157,16 @@ Then create a Pull Request on GitHub with:
 - **Screenshots** if UI changes
 - **Related issues** linked
 
+## 🤖 CI/CD
+
+All PRs automatically run:
+- ✅ Unit tests
+- ✅ E2E tests (Chromium)
+- ✅ Production build
+- ✅ Coverage reporting
+
+PRs to `main` also trigger deployment to GitHub Pages.
+
 ## 🐛 Reporting Bugs
 
 ### Before Reporting
@@ -242,7 +252,7 @@ Use GitHub Issues with the "enhancement" label:
 6. Commit: `git commit -m "Release vX.Y.Z"`
 7. Tag: `git tag vX.Y.Z`
 8. Push: `git push && git push --tags`
-9. Deploy to GitHub Pages
+9. GitHub Actions auto-deploys to Pages
 
 ## 💡 Tips for Contributors
 
