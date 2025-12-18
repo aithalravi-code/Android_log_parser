@@ -1,0 +1,101 @@
+import { test, expect } from '@playwright/test';
+import { uploadFile, switchTab, waitForLogProcessing } from '../helpers/test-utils.js';
+import path from 'path';
+
+test.describe('BLE Keys Persistence After Refresh', () => {
+    const mockLogPath = path.join(process.cwd(), 'TestScripts', 'mock_data', 'bugreport-mock.zip');
+
+    test('BLE Keys visible after page refresh', async ({ page }) => {
+        // Upload file with BTSnoop data
+        await uploadFile(page, mockLogPath);
+        await waitForLogProcessing(page, { timeout: 10000 });
+
+        // Wait for BTSnoop processing to complete
+        await page.waitForTimeout(5000);
+
+        // Switch to Stats tab
+        await switchTab(page, 'stats');
+        await page.waitForTimeout(1000);
+
+        // Check if BLE Keys table has rows
+        const bleKeysTable = page.locator('#bleKeysTable tbody');
+        const rowsBeforeRefresh = await bleKeysTable.locator('tr').count();
+        console.log(`BLE Keys rows before refresh: ${rowsBeforeRefresh}`);
+
+        // Verify we have BLE Keys before refresh
+        expect(rowsBeforeRefresh).toBeGreaterThan(0);
+
+        // Get the actual table HTML to see what's rendered
+        const tableHTMLBefore = await bleKeysTable.innerHTML();
+        console.log(`Table HTML length before refresh: ${tableHTMLBefore.length}`);
+
+        // Reload the page
+        await page.reload();
+        await page.waitForTimeout(3000);
+
+        // Switch to Stats tab again
+        await switchTab(page, 'stats');
+        await page.waitForTimeout(1000);
+
+        // Check if BLE Keys are still visible
+        const rowsAfterRefresh = await bleKeysTable.locator('tr').count();
+        console.log(`BLE Keys rows after refresh: ${rowsAfterRefresh}`);
+
+        // Get table HTML after refresh
+        const tableHTMLAfter = await bleKeysTable.innerHTML();
+        console.log(`Table HTML length after refresh: ${tableHTMLAfter.length}`);
+
+        // Take screenshot for debugging
+        await page.screenshot({ path: 'ble-keys-after-refresh.png', fullPage: true });
+
+        // Verify BLE Keys persisted
+        expect(rowsAfterRefresh).toBeGreaterThan(0);
+        expect(rowsAfterRefresh).toBe(rowsBeforeRefresh);
+    });
+
+    test('BLE Keys table visibility check', async ({ page }) => {
+        // Upload file
+        await uploadFile(page, mockLogPath);
+        await waitForLogProcessing(page, { timeout: 10000 });
+        await page.waitForTimeout(5000);
+
+        // Reload page
+        await page.reload();
+        await page.waitForTimeout(3000);
+
+        // Switch to Stats tab
+        await switchTab(page, 'stats');
+        await page.waitForTimeout(1000);
+
+        // Check if the table is visible
+        const bleKeysTable = page.locator('#bleKeysTable');
+        await expect(bleKeysTable).toBeVisible();
+
+        // Check if tbody is visible
+        const tbody = page.locator('#bleKeysTable tbody');
+        await expect(tbody).toBeVisible();
+
+        // Get computed style to check for hidden properties
+        const isTableVisible = await bleKeysTable.evaluate((el) => {
+            const style = window.getComputedStyle(el);
+            return {
+                display: style.display,
+                visibility: style.visibility,
+                opacity: style.opacity,
+                height: style.height
+            };
+        });
+        console.log('BLE Keys table styles:', isTableVisible);
+
+        // Check if there are any rows
+        const rows = await tbody.locator('tr').count();
+        console.log(`Number of rows: ${rows}`);
+
+        // If rows exist, check if they're visible
+        if (rows > 0) {
+            const firstRow = tbody.locator('tr').first();
+            const firstRowVisible = await firstRow.isVisible();
+            console.log(`First row visible: ${firstRowVisible}`);
+        }
+    });
+});
