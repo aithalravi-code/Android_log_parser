@@ -1319,12 +1319,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('[Perf] Calling clearData...');
                 await clearData();
                 console.log('[Perf] clearData success');
-                // Close the database connection to free resources
-                console.log('[Perf] Closing database connection...');
-                await closeDb();
-                console.log('[Perf] Database connection closed');
+                // DO NOT close the database connection here!
+                // The connection needs to stay open for subsequent save operations
+                // when processing the newly uploaded files.
+                // Closing here caused all tests to fail as saveData() couldn't reopen properly.
             } catch (e) {
-                console.error('[Perf] clearData/closeDb failed', e);
+                console.error('[Perf] clearData failed', e);
             }
         }
 
@@ -2062,11 +2062,11 @@ self.onmessage = async (event) => {
             } catch (e) {
                 console.error('[Clear & Reset] Database deletion failed:', e);
             }
-            
+
             // Clear in-memory state (without clearing IndexedDB again since we just deleted it)
             await clearPreviousState(false);
             await applyFilters(); // Re-render the empty state
-            
+
             console.log('[Clear & Reset] Complete - application reset');
         });
     } else {

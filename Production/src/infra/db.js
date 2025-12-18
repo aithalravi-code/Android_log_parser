@@ -22,8 +22,22 @@ let openDbPromise = null;
  * @returns {Promise<IDBDatabase>}
  */
 export function openDb() {
-    if (state.db) return Promise.resolve(state.db);
-    if (openDbPromise) return openDbPromise;
+    // Check if we have a valid cached connection
+    // The database might be closed or in an invalid state even if state.db exists
+    if (state.db && !state.db.objectStoreNames) {
+        console.warn('[DB] Cached database is invalid, clearing cache');
+        state.db = null;
+        openDbPromise = null;
+    }
+
+    if (state.db) {
+        console.log('[DB] Returning cached database connection');
+        return Promise.resolve(state.db);
+    }
+    if (openDbPromise) {
+        console.log('[DB] Returning pending open promise');
+        return openDbPromise;
+    }
 
     openDbPromise = new Promise((resolve, reject) => {
         console.log('[DB] Opening IndexedDB ' + DB_NAME + ' v' + DB_VERSION);
@@ -47,6 +61,7 @@ export function openDb() {
                 state.db = null;
                 openDbPromise = null;
             };
+            openDbPromise = null; // Clear promise after successful open
             resolve(state.db);
         };
         request.onupgradeneeded = (event) => {
