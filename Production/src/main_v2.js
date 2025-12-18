@@ -22,7 +22,7 @@ import * as FilterManager from './filters/FilterManager.js';
 import * as ExportManager from './export/ExportManager.js';
 import LogParserWorker from './infra/workers/logParser.worker.js?worker&inline'; // Inline for file:// support
 import FilterWorker from './infra/workers/filter.worker.js?worker&inline'; // Inline for file:// support
-import { openDb, saveData, loadData, clearData, getDb } from './infra/db.js';
+import { openDb, saveData, loadData, clearData, getDb, closeDb, deleteDatabase, resetDatabase } from './infra/db.js';
 import { TooltipManager } from './ui/TooltipManager.js';
 
 // Register Chart.js components
@@ -112,9 +112,8 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('[Perf] UI Init FAILED:', e);
     }
 
-    // Check for persisted state
-    checkForPersistedLogs();
-    checkForPersistedFilters();
+    // Check for persisted state moved after UI variable initialization
+
     // --- UI Elements ---
     // --- UI Elements ---
     const dropZone = document.getElementById('drop-zone');
@@ -228,6 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
     var loadSelectedBtn = document.getElementById('loadSelectedBtn');
     const cancelZipSelectionBtn = document.getElementById('cancelZipSelectionBtn');
     const clearStateBtn = document.getElementById('clearStateBtn');
+    console.log('[Init] clearStateBtn element:', clearStateBtn);
 
     // --- Application State ---
     let originalLogLines = []; // Holds all lines from all files, with metadata
@@ -235,6 +235,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // FIX: Promote finalBleKeys to global for access in render
     window.finalBleKeys = new Map();
     window.finalDashboardStats = null; // Store stats for re-rendering
+
+    // Check for persisted state MUST BE CALLED AFTER UI VARIABLES ARE INITIALIZED
+    // Moved to initializeApp to avoid race condition with clearData
+    // checkForPersistedLogs();
+    checkForPersistedFilters();
 
     let consolidatedBatteryDataPoints = []; // Battery data points from all workers
     let consolidatedThermalDataPoints = []; // Thermal data points from all workers
@@ -404,7 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * Only re-filter when this hash changes
      */
     function computeFilterStateHash() {
-        return JSON.stringify({
+        const hash = JSON.stringify({
             keywords: filterKeywords.map(kw => ({ text: kw.text, active: kw.active })),
             levels: Array.from(activeLogLevels).sort(),
             isAnd: isAndLogic,
@@ -416,9 +421,11 @@ document.addEventListener('DOMContentLoaded', () => {
             techs: { ...activeTechs }, // Include connectivity toggle state
             activeBleLayers: Array.from(activeBleLayers).sort(),
             activeNfcLayers: Array.from(activeNfcLayers).sort(),
-            collapsedLogs: Array.from(logViewCollapseState).sort(),
-            collapsedConnectivity: Array.from(connectivityViewCollapseState).sort()
+            // BUGFIX: Collapse state must be included - it affects filtering, not just rendering
+            collapseState: Array.from(logViewCollapseState).sort()
         });
+        console.log('[Hash Debug] Computed filter hash, collapseState size:', logViewCollapseState.size);
+        return hash;
     }
 
     /**
@@ -573,7 +580,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
 
+
                     await StatsTab.setupStatsTab(originalLogLines, getDashboardElements(), consolidatedBatteryDataPoints);
+
+                    // FIX: Render BLE Keys when stats tab is first loaded
+                    // This ensures keys display even when filter state hasn't changed
+                    const bleKeysTableBody = document.querySelector('#bleKeysTable tbody');
+                    if (bleKeysTableBody) {
+                        const connectionEvents = BtsnoopTab.getBtsnoopConnectionEvents();
+                        const connectionMap = BtsnoopTab.getBtsnoopConnectionMap();
+                        console.log(`[LazyLoad Stats] Rendering BLE Keys - Events: ${connectionEvents.length}, Map size: ${connectionMap.size}, finalBleKeys: ${window.finalBleKeys?.size || 0}`);
+                        renderBleKeys(
+                            connectionEvents,
+                            connectionMap,
+                            bleKeysTableBody,
+                            window.finalBleKeys || new Map()
+                        );
+                    }
+
                     console.log(`[Perf Phase2]stats tab loaded in ${(performance.now() - statsStart).toFixed(2)}ms`);
                     break;
             }
@@ -619,6 +643,11 @@ document.addEventListener('DOMContentLoaded', () => {
     async function checkForPersistedLogs() {
         try {
             console.log('[Perf] Checking for persisted logs...');
+            // Re-order load: Load small meta-data first
+            const persistedFileName = await loadData('fileName');
+            currentZipFileName = persistedFileName?.value || '';
+            currentFileDisplay.textContent = `Restored: ${currentZipFileName || 'log files'}`;
+
             const persistedData = await loadData('logData');
             if (persistedData && persistedData.value) {
                 console.log(`[Perf] Found ${persistedData.value.length} persisted logs.`);
@@ -632,34 +661,171 @@ document.addEventListener('DOMContentLoaded', () => {
                 // OPTIMIZATION Phase 3: Sync data to filter worker
                 syncDataToWorker(originalLogLines);
 
-                const persistedFileName = await loadData('fileName');
-                currentZipFileName = persistedFileName?.value || '';
-                currentFileDisplay.textContent = `Restored: ${currentZipFileName || 'log files'}`;
+                // --- Restore Extended State (CCC, BTSnoop, Stats) ---
+                console.log('[Perf] Restoring extended state...');
+
+                const loadedCcc = await loadData('cccMessages');
+                if (loadedCcc?.value) {
+                    cccMessages = loadedCcc.value;
+                    // RENDER FIX: Explicitly render restored CCC messages
+                    CccTab.render(cccMessages);
+                    console.log(`[Perf] Restored ${cccMessages.length} CCC messages`);
+                }
+
+                const loadedBtsnoop = await loadData('btsnoopPackets');
+                if (loadedBtsnoop?.value) {
+                    BtsnoopTab.setBtsnoopPackets(loadedBtsnoop.value);
+                    BtsnoopTab.setIsBtsnoopProcessed(true);
+
+                    // BUGFIX: Show BTSnoop content view after loading from cache
+                    const btsnoopInitialView = document.getElementById('btsnoopInitialView');
+                    const btsnoopContentView = document.getElementById('btsnoopContentView');
+                    const btsnoopFilterContainer = document.getElementById('btsnoopFilterContainer');
+                    const btsnoopToolbar = document.getElementById('btsnoopToolbar');
+                    if (btsnoopContentView) btsnoopContentView.style.display = 'flex';
+                    if (btsnoopFilterContainer) btsnoopFilterContainer.style.display = 'block';
+                    if (btsnoopInitialView) btsnoopInitialView.style.display = 'none';
+                    if (btsnoopToolbar) btsnoopToolbar.style.display = 'block';
+
+                    // BUGFIX: Call setupBtsnoopTab to initialize scroll listeners, filters, and rendering
+                    await BtsnoopTab.setupBtsnoopTab({
+                        db: getDb,
+                        saveData,
+                        loadData,
+                        TimeTracker,
+                        btsnoopInitialView,
+                        btsnoopContentView,
+                        btsnoopFilterContainer
+                    });
+
+                    console.log(`[Perf] Restored ${loadedBtsnoop.value.length} BTSnoop packets`);
+                }
+
+                const loadedBtsnoopEvents = await loadData('btsnoopConnectionEvents');
+                if (loadedBtsnoopEvents?.value) {
+                    BtsnoopTab.setBtsnoopConnectionEvents(loadedBtsnoopEvents.value);
+                    BtsnoopTab.renderBtsnoopConnectionEvents(loadedBtsnoopEvents.value);
+                    console.log(`[Perf] Restored ${loadedBtsnoopEvents.value.length} BTSnoop connection events`);
+                }
+
+                // BUGFIX: Restore connection map for BLE address resolution
+                const loadedConnectionMap = await loadData('btsnoopConnectionMap');
+                if (loadedConnectionMap?.value) {
+                    const restoredMap = new Map(loadedConnectionMap.value);
+                    BtsnoopTab.setBtsnoopConnectionMap(restoredMap);
+                    console.log(`[Perf] Restored ${restoredMap.size} BTSnoop connection map entries`);
+                }
+
+                const loadedBattery = await loadData('batteryDataPoints');
+                if (loadedBattery?.value) {
+                    consolidatedBatteryDataPoints = loadedBattery.value.map(p => ({ ...p, ts: new Date(p.ts) }));
+                }
+
+                const loadedThermal = await loadData('thermalDataPoints');
+                if (loadedThermal?.value) {
+                    consolidatedThermalDataPoints = loadedThermal.value.map(p => ({ ...p, ts: new Date(p.ts) }));
+                }
+
+                const loadedBleKeys = await loadData('bleKeys');
+                if (loadedBleKeys?.value) {
+                    window.finalBleKeys = new Map(loadedBleKeys.value);
+                }
+
+                // BUGFIX: Always render BLE Keys using loaded connection events (keys are embedded in events)
+                const bleKeysTableBody = document.querySelector('#bleKeysTable tbody');
+                console.log(`[BLE Keys Debug] Table body element:`, bleKeysTableBody);
+                if (bleKeysTableBody) {
+                    const connectionEvents = BtsnoopTab.getBtsnoopConnectionEvents();
+                    const connectionMap = BtsnoopTab.getBtsnoopConnectionMap();
+                    console.log(`[BLE Keys Debug] Connection events:`, connectionEvents.length, `Connection map size:`, connectionMap.size);
+                    renderBleKeys(
+                        connectionEvents,
+                        connectionMap,
+                        bleKeysTableBody,
+                        window.finalBleKeys
+                    );
+                    const keyCount = connectionEvents.filter(e => e.keyType).length;
+                    console.log(`[Perf] Rendered ${keyCount} BLE Keys from ${connectionEvents.length} connection events`);
+                    console.log(`[BLE Keys Debug] Table innerHTML length afterrender:`, bleKeysTableBody.innerHTML.length);
+
+                    // CRITICAL: Setup sorting/resizing AFTER rendering to preserve content
+                    setupBleKeysTab('bleKeysTable');
+                    console.log(`[BLE Keys Debug] setupBleKeysTab called after render`);
+                } else {
+                    console.error(`[BLE Keys Debug] Table body not found!`);
+                }
+
+                const loadedAppVersions = await loadData('appVersions');
+                if (loadedAppVersions?.value) {
+                    allAppVersions = loadedAppVersions.value;
+                    StatsTab.renderAppVersions(allAppVersions, appVersionsTable, appSearchInput);
+                } else {
+                    // If fresh load failed, clear table
+                    StatsTab.renderAppVersions([], appVersionsTable, appSearchInput);
+                }
+
+                const loadedDashboardStats = await loadData('dashboardStats');
+                if (loadedDashboardStats?.value) {
+                    window.finalDashboardStats = loadedDashboardStats.value;
+                    // Hydrate dates
+                    if (window.finalDashboardStats.cpuDataPoints) window.finalDashboardStats.cpuDataPoints.forEach(p => p.ts = new Date(p.ts));
+                    if (window.finalDashboardStats.temperatureDataPoints) window.finalDashboardStats.temperatureDataPoints.forEach(p => p.ts = new Date(p.ts));
+                    // Re-link batteryStatsPoints reference
+                    window.finalDashboardStats.batteryStatsPoints = consolidatedBatteryDataPoints;
+                } else {
+                    // Fallback re-calc
+                    window.finalDashboardStats = StatsTab.processForDashboardStats(originalLogLines, consolidatedBatteryDataPoints, consolidatedThermalDataPoints);
+                }
+
+                // Render Dashboard
+                if (window.finalDashboardStats) {
+                    StatsTab.renderDashboardStats(window.finalDashboardStats, { cpuLoadStats, temperatureStats, batteryStats });
+                    if (cpuLoadPlotContainer) StatsTab.renderCpuPlot(window.finalDashboardStats.cpuDataPoints, cpuLoadPlotContainer);
+                    const tempContainer = document.getElementById('temperaturePlotContainer');
+                    if (tempContainer) StatsTab.renderTemperaturePlot(window.finalDashboardStats.temperatureDataPoints, tempContainer);
+                    if (batteryPlotContainer) StatsTab.renderBatteryPlot(consolidatedBatteryDataPoints, batteryPlotContainer);
+                }
 
                 // --- Re-process restored data to rebuild the UI state ---
-                const finalStats = { total: 0, E: 0, W: 0, I: 0, D: 0, V: 0 };
-                const finalHighlights = { accounts: new Set(), deviceEvents: [], walletEvents: [] };
-                const accountRegex = /Account {name=([^,]+), type=[^}]+}/g;
-                const lockRegex = /KeyguardUpdateMonitor.*Device.*policy: 1/;
-                const unlockRegex = /KeyguardUpdateMonitor.*Device.*policy: 2/;
+                // Try to load highlights from IndexedDB first
+                const loadedHighlights = await loadData('highlights');
+                let finalHighlights;
 
+                if (loadedHighlights?.value) {
+                    // Restore from IndexedDB (accounts is an array, convert back to Set)
+                    finalHighlights = {
+                        accounts: new Set(loadedHighlights.value.accounts || []),
+                        deviceEvents: loadedHighlights.value.deviceEvents || [],
+                        walletEvents: loadedHighlights.value.walletEvents || []
+                    };
+                    console.log(`[Perf] Restored highlights from IndexedDB: ${finalHighlights.accounts.size} accounts, ${finalHighlights.deviceEvents.length} device events`);
+                } else {
+                    // Fallback: reconstruct from log lines (accounts only, workers needed for device events)
+                    console.log('[Perf] No highlights in IndexedDB, reconstructing accounts from logs');
+                    finalHighlights = { accounts: new Set(), deviceEvents: [], walletEvents: [] };
+                    const accountRegex = /Account {name=([^,]+), type=[^}]+}/g;
+
+                    for (const line of originalLogLines) {
+                        if (line.isMeta) continue;
+                        const allAccountMatches = line.originalText.matchAll(accountRegex);
+                        for (const accountMatch of allAccountMatches) {
+                            if (accountMatch && accountMatch[1]) finalHighlights.accounts.add(accountMatch[1]);
+                        }
+                    }
+                }
+
+                const finalStats = { total: 0, E: 0, W: 0, I: 0, D: 0, V: 0 };
                 for (const line of originalLogLines) {
                     if (line.isMeta) continue;
                     finalStats.total++;
                     if (line.level && finalStats[line.level] !== undefined) finalStats[line.level]++;
-
-                    const allAccountMatches = line.originalText.matchAll(accountRegex);
-                    for (const accountMatch of allAccountMatches) {
-                        if (accountMatch && accountMatch[1]) finalHighlights.accounts.add(accountMatch[1]);
-                    }
                 }
 
                 StatsTab.renderStats(finalStats);
                 storedHighlights = finalHighlights; // Store highlights
                 renderHighlights(finalHighlights);
-                const dashboardStats = StatsTab.processForDashboardStats(originalLogLines, consolidatedBatteryDataPoints);
-                StatsTab.renderDashboardStats(dashboardStats, { cpuLoadStats, temperatureStats, batteryStats });
-                StatsTab.renderCpuPlot(dashboardStats.cpuDataPoints, cpuLoadPlotContainer);
+                // BUGFIX: Don't recalculate dashboardStats - already loaded and rendered above (lines 716-736)
+                // Removing duplicate calculation that was overwriting loaded data
 
                 initializeTimeFilterFromLines();
                 await renderUI(true); // Use fast initial render and wait for it to complete
@@ -819,30 +985,57 @@ document.addEventListener('DOMContentLoaded', () => {
         // Collapse/Expand All Files Button
         const collapseAllBtn = document.getElementById('collapseAllBtn');
         if (collapseAllBtn) {
-            collapseAllBtn.addEventListener('click', () => {
+            collapseAllBtn.addEventListener('click', async () => { // BUGFIX: Made async
+                // Prevent double-clicks
+                if (collapseAllBtn.disabled) return;
+                collapseAllBtn.disabled = true;
+
                 // Get all file headers from originalLogLines
                 const fileHeaders = originalLogLines.filter(line => line.isMeta);
+                console.log('[Debug] Collapse All Clicked. Headers found:', fileHeaders.length);
 
-                if (fileHeaders.length === 0) return;
+                if (fileHeaders.length === 0) {
+                    collapseAllBtn.disabled = false;
+                    return;
+                }
 
                 // Check if all are collapsed or not
                 const allCollapsed = fileHeaders.every(header => logViewCollapseState.has(header.originalText));
+                console.log('[CollapseAll Debug] BEFORE - All Collapsed state:', allCollapsed);
+                console.log('[CollapseAll Debug] BEFORE - logViewCollapseState size:', logViewCollapseState.size);
+                console.log('[CollapseAll Debug] BEFORE - logViewCollapseState contents:', Array.from(logViewCollapseState));
 
                 if (allCollapsed) {
                     // Expand all
+                    console.log('[CollapseAll Debug] ACTION: Expanding all...');
                     logViewCollapseState.clear();
-                    collapseAllBtn.textContent = '⊟'; // Square minus symbol
-                    collapseAllBtn.title = 'Collapse All Files';
                 } else {
                     // Collapse all
+                    console.log('[CollapseAll Debug] ACTION: Collapsing all...');
                     logViewCollapseState.clear();
                     fileHeaders.forEach(header => logViewCollapseState.add(header.originalText));
-                    collapseAllBtn.textContent = '⊞'; // Square plus symbol
-                    collapseAllBtn.title = 'Expand All Files';
                 }
 
-                // Refresh the view
-                refreshActiveTab();
+                console.log('[CollapseAll Debug] AFTER - logViewCollapseState size:', logViewCollapseState.size);
+                console.log('[CollapseAll Debug] AFTER - logViewCollapseState contents:', Array.from(logViewCollapseState));
+
+                // Re-filter to respect the new collapse state
+                console.log('[CollapseAll Debug] Calling refreshActiveTab()...');
+                await refreshActiveTab(); // BUGFIX: Await the async operation to prevent race conditions
+                console.log('[CollapseAll Debug] refreshActiveTab() completed');
+
+                // Update button text/title to match the NEW state
+                const nowAllCollapsed = fileHeaders.every(header => logViewCollapseState.has(header.originalText));
+                if (nowAllCollapsed) {
+                    collapseAllBtn.textContent = '⊞'; // Square plus symbol
+                    collapseAllBtn.title = 'Expand All Files';
+                } else {
+                    collapseAllBtn.textContent = '⊟'; // Square minus symbol
+                    collapseAllBtn.title = 'Collapse All Files';
+                }
+
+                // Re-enable button
+                collapseAllBtn.disabled = false;
             });
         }
 
@@ -1097,14 +1290,41 @@ document.addEventListener('DOMContentLoaded', () => {
             stats: false
         };
 
+        // Reset Stats Tab
+        StatsTab.reset();
+
+        // Reset BTSnoop Tab (if not implicitly handled by BtsnoopTab internal reset)
+        // BtsnoopTab has its own reset(), we should check if it's called.
+        // It is called. We also need to clear globals in main that might track it.
+        BtsnoopTab.reset();
+
+        // Clear global data structures
+        cccMessages = [];
+        window.finalBleKeys.clear();
+        window.finalDashboardStats = null;
+        allAppVersions = [];
+        consolidatedBatteryDataPoints = [];
+        consolidatedThermalDataPoints = [];
+        storedHighlights = null; // BUGFIX: Clear stored highlights to prevent re-rendering
+
+        // Reset File Display
+        if (currentFileDisplay) {
+            currentFileDisplay.textContent = 'No file chosen';
+        }
+        currentZipFileName = '';
+
         // Clear IndexedDB if requested
         if (clearStorage) {
             try {
                 console.log('[Perf] Calling clearData...');
                 await clearData();
                 console.log('[Perf] clearData success');
+                // Close the database connection to free resources
+                console.log('[Perf] Closing database connection...');
+                await closeDb();
+                console.log('[Perf] Database connection closed');
             } catch (e) {
-                console.error('[Perf] clearData failed', e);
+                console.error('[Perf] clearData/closeDb failed', e);
             }
         }
 
@@ -1155,8 +1375,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else if (files.length > 1) {
             currentFileDisplay.textContent = `${files.length} files selected`;
+            currentZipFileName = `${files.length} Files`; // Assign for persistence
         } else if (files.length === 1) {
             currentFileDisplay.textContent = `File: ${files[0].name}`;
+            currentZipFileName = files[0].name; // Assign for persistence
         }
         progressText.textContent = 'Initializing...';
         progressBar.style.width = '0%';
@@ -1515,6 +1737,32 @@ self.onmessage = async (event) => {
         console.log('[Perf] Requesting save for fileName...');
         debouncedSave('fileName', currentZipFileName);
 
+        // OPTIMIZATION: Persist extended state to support full reload (CCC, BTSnoop, Stats)
+        console.log('[Perf] Requesting save for extended state...');
+        debouncedSave('cccMessages', cccMessages);
+        debouncedSave('batteryDataPoints', consolidatedBatteryDataPoints);
+        debouncedSave('thermalDataPoints', consolidatedThermalDataPoints);
+        debouncedSave('bleKeys', Array.from(window.finalBleKeys.entries()));
+        console.log(`[Main] Saving ${window.finalBleKeys.size} BLE keys from main flow`);
+        debouncedSave('appVersions', allAppVersions);
+        // Save highlights (includes deviceEvents, walletEvents, accounts)
+        debouncedSave('highlights', {
+            accounts: Array.from(finalHighlights.accounts),
+            deviceEvents: finalHighlights.deviceEvents,
+            walletEvents: finalHighlights.walletEvents
+        });
+        debouncedSave('btsnoopPackets', BtsnoopTab.getBtsnoopPackets()); // Persist BTSnoop packets
+        debouncedSave('btsnoopConnectionEvents', BtsnoopTab.getBtsnoopConnectionEvents()); // Always save connection events
+        debouncedSave('btsnoopConnectionMap', Array.from(BtsnoopTab.getBtsnoopConnectionMap().entries())); // Save connection map for address resolution
+        // Note: btsnoopPackets is saved by BtsnoopTab logic, but we can ensure consistency
+        if (isBtsnoopProcessed) {
+            const btsnoopPackets = BtsnoopTab.getBtsnoopPackets();
+            debouncedSave('btsnoopPackets', btsnoopPackets);
+        }
+
+        // Save computed dashboard stats
+        debouncedSave('dashboardStats', window.finalDashboardStats);
+
         // --- Finalize UI ---
         console.log('[Time Range Debug] consolidatedMinTimestamp:', consolidatedMinTimestamp);
         console.log('[Time Range Debug] consolidatedMaxTimestamp:', consolidatedMaxTimestamp);
@@ -1722,12 +1970,20 @@ self.onmessage = async (event) => {
                 // FIX: Render BLE Keys in Stats tab too
                 const bleKeysTable = document.querySelector('#bleKeysTable tbody');
                 if (bleKeysTable) {
+                    const connectionEvents = BtsnoopTab.getBtsnoopConnectionEvents();
+                    const connectionMap = BtsnoopTab.getBtsnoopConnectionMap();
+                    console.log(`[RefreshActiveTab] Rendering BLE Keys - Events: ${connectionEvents.length}, Map size: ${connectionMap.size}, finalBleKeys: ${window.finalBleKeys?.size || 0}`);
                     renderBleKeys(
-                        BtsnoopTab.getBtsnoopConnectionEvents(),
-                        BtsnoopTab.getBtsnoopConnectionMap(),
+                        connectionEvents,
+                        connectionMap,
                         bleKeysTable,
                         window.finalBleKeys || new Map() // Pass global keys
                     );
+                }
+
+                // FIX: Re-render highlights (device events, accounts) when stats tab is activated
+                if (storedHighlights) {
+                    renderHighlights(storedHighlights);
                 }
 
                 // FIX: Re-render charts to ensure correct dimensions if parsed while tab was hidden
@@ -1794,12 +2050,28 @@ self.onmessage = async (event) => {
         );
     }
     // --- Clear & Reset Logic ---
-    clearStateBtn.addEventListener('click', async () => {
-        if (confirm('Are you sure you want to clear all loaded logs and reset the application? This cannot be undone.')) {
-            await clearPreviousState(true); // true to clear persisted data in IndexedDB
+    if (clearStateBtn) {
+        console.log('[Init] Attaching event listener to Clear & Reset button');
+        clearStateBtn.addEventListener('click', async () => {
+            console.log('[Clear & Reset] Button clicked');
+            // Use deleteDatabase for complete cleanup instead of just clearData
+            console.log('[Clear & Reset] Starting complete database deletion...');
+            try {
+                await deleteDatabase();
+                console.log('[Clear & Reset] Database deleted successfully');
+            } catch (e) {
+                console.error('[Clear & Reset] Database deletion failed:', e);
+            }
+            
+            // Clear in-memory state (without clearing IndexedDB again since we just deleted it)
+            await clearPreviousState(false);
             await applyFilters(); // Re-render the empty state
-        }
-    });
+            
+            console.log('[Clear & Reset] Complete - application reset');
+        });
+    } else {
+        console.error('[Init] ERROR: clearStateBtn element not found!');
+    }
 
     // =================================================================================
     // --- Filtering and Rendering ---
@@ -1854,6 +2126,7 @@ self.onmessage = async (event) => {
             }
 
             const chunk = originalLogLines.slice(i, i + CHUNK_SIZE);
+            console.log(`[ApplyFilters Debug] logViewCollapseState size: ${logViewCollapseState.size}, contents:`, Array.from(logViewCollapseState));
             const filteredChunk = applyMainFilters(chunk, collapseState, logViewCollapseState);
             tempFiltered.push(...filteredChunk);
 
@@ -2537,7 +2810,7 @@ self.onmessage = async (event) => {
         // Make tables sortable with default descending sort
         // Make tables sortable with default descending sort
         setupDeviceEventsTab('deviceEventsTable');
-        setupBleKeysTab('bleKeysTable');
+        // setupBleKeysTab('bleKeysTable'); // MOVED: Now called after rendering BLE Keys data
         makeSortable('btsnoopConnectionEventsTable', 1, 'desc'); // Sort by timestamp column
 
         // Make tables resizable
@@ -2968,7 +3241,13 @@ self.onmessage = async (event) => {
                         collapseSet.add(headerText);
                     }
                     console.log(`[Interaction] Toggled collapse for: ${headerText} `);
-                    refreshActiveTab(); // Re-filter and render
+
+                    // Just re-render, no need to refilter!
+                    if (activeViewport && activeViewport.id === 'connectivityLogViewport') {
+                        handleConnectivityScroll();
+                    } else {
+                        handleMainLogScroll();
+                    }
                     return;
                 }
 
@@ -3010,11 +3289,7 @@ self.onmessage = async (event) => {
         try {
             await openDb(); // Ensure the database is open before any other operations.
 
-            // Clean slate on refresh as requested
-            await clearData();
-            console.log('[Init] Cleared old data.');
-
-            // Attach file input listeners. The state is cleared inside processFiles.
+            // Attach file input listeners EARLY to allow interaction
             if (zipInput) {
                 zipInput.addEventListener('change', (event) => processFiles(event.target.files));
             }
@@ -3022,10 +3297,14 @@ self.onmessage = async (event) => {
                 logFilesInput.addEventListener('change', (event) => processFiles(event.target.files));
             }
 
+            // Check for persisted state
+            // Note: We do NOT call clearData() here anymore to support persistence.
+            await checkForPersistedLogs();
+
             initializeDynamicElements();
             // injectLogLevelStyles(); // Removed: Styles moved to styles.css
 
-            // No persistence check - we cleared everything
+            // No persistence check - we processed it above
             if (skeletonLoader) skeletonLoader.style.display = 'none';
 
             await applyFilters();
@@ -3048,6 +3327,18 @@ self.onmessage = async (event) => {
             }
             alert("Could not initialize the application. Please try clearing your browser cache and reloading.");
         }
+
+        // Add beforeunload handler to cleanup database connection when tab/window closes
+        window.addEventListener('beforeunload', () => {
+            console.log('[Cleanup] Tab closing - cleaning up database connection');
+            // Close the database connection (synchronous enough for beforeunload)
+            if (getDb()) {
+                getDb().close();
+                console.log('[Cleanup] Database connection closed on tab close');
+            }
+            // Note: We intentionally don't delete data here to preserve persistence
+            // Users can use "Clear & Reset" button if they want to delete data
+        });
     }
 
     // --- Expose for Testing ---
