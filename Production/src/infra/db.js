@@ -126,14 +126,28 @@ export const clearData = () => {
             // Get all store names from the database
             const storeNames = Array.from(database.objectStoreNames);
             if (storeNames.length === 0) {
+                console.log('[DB] No object stores to clear');
                 resolve();
                 return;
             }
             const transaction = database.transaction(storeNames, 'readwrite');
-            storeNames.forEach(name => transaction.objectStore(name).clear());
-            transaction.oncomplete = () => resolve();
-            transaction.onerror = (event) => reject('DB clear error: ' + event.target.error);
+            storeNames.forEach(name => {
+                try {
+                    transaction.objectStore(name).clear();
+                } catch (e) {
+                    console.error(`[DB] Error clearing store ${name}:`, e);
+                }
+            });
+            transaction.oncomplete = () => {
+                console.log('[DB] All data cleared');
+                resolve();
+            };
+            transaction.onerror = (event) => {
+                console.error('[DB] Clear transaction error:', event.target.error);
+                reject('DB clear error: ' + event.target.error);
+            };
         } catch (error) {
+            console.error('[DB] clearData error:', error);
             reject(error);
         }
     });
