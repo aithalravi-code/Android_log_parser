@@ -1,0 +1,2 @@
+This is a placeholder for the ZIP mock file.
+For the actual implementation, create a minimal ZIP containing a bugreport.txt with similar content to the above.

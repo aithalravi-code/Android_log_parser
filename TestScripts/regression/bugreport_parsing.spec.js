@@ -24,8 +24,8 @@ test.describe('Bugreport Parsing Test', () => {
         await page.reload();
         await page.waitForLoadState('domcontentloaded');
 
-        // Load the bugreport file
-        const filePath = path.resolve(__dirname, '../../TestData/fixtures/bugreport-husky-UQ1A.240105.004-2024-02-22-16-17-29.txt');
+        // Load the bugreport file (using mock data for CI)
+        const filePath = path.resolve(__dirname, '../../TestData/mock-data/bugreport-husky-UQ1A.240105.004-2024-02-22-16-17-29.txt');
 
         console.log('Loading file:', filePath);
 

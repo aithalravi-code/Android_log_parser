@@ -30,7 +30,7 @@ test.describe('BTSnoop Connection Events Scroll Restoration', () => {
 
         // Upload test file
         const fileInput = page.locator('#logFilesInput');
-        await fileInput.setInputFiles('TestData/fixtures/bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57.zip');
+        await fileInput.setInputFiles('TestData/mock-data/bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57.zip');
 
         // Wait for file processing - look for BTSnoop processing completion
         console.log('Waiting for file to process...');

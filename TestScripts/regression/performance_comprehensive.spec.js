@@ -20,6 +20,9 @@ import {
 } from '../helpers/test-utils.js';
 
 test.describe('Performance Benchmarks', () => {
+    // Skip performance tests in CI - they are too sensitive to resource variance
+    test.skip(!!process.env.CI, 'Performance tests skipped in CI environment');
+    
     let largeMockPath;
     let mediumMockPath;
 

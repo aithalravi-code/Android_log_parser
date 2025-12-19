@@ -8,8 +8,12 @@ Development/
 # Temporary workspace (NOT tracked)
 temp/
 
-# Test Data (NOT tracked)
-TestData/
+# Test Data (NOT tracked, except mock-data for CI)
+!TestData/
+!TestData/mock-data/
+!TestData/mock-data/**
+TestData/*
+!TestData/mock-data/
 
 # Test Reports (only summaries tracked)
 TestReports/unit/
