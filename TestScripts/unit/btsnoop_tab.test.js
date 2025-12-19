@@ -81,13 +81,13 @@ describe('BtsnoopTab', () => {
         it('should reject if DB is not open', async () => {
             const deps = { db: null, getDb: () => null };
             await expect(processForBtsnoop([{ path: 'btsnoop_hci.log' }], deps))
-                .rejects.toEqual('DB not open'); // Matches line 147
+                .rejects.toThrow('DB not open');
         });
 
         it('should reject if UI elements missing', async () => {
             const deps = { db: {}, getDb: () => ({}), btsnoopInitialView: null };
             await expect(processForBtsnoop([{ path: 'btsnoop_hci.log' }], deps))
-                .rejects.toContain('UI elements not found');
+                .rejects.toThrow('BTSnoop UI elements not found');
         });
 
         it('should handle no btsnoop files', async () => {
