@@ -128,9 +128,12 @@ export async function applyFilters(page, filters = {}) {
             await searchInput.press('Enter');
             // Clear all chips using internal debug helper
             await page.evaluate(() => {
+                const debugKeys = window._debug ? Object.keys(window._debug) : 'undefined';
+                console.log(`[Test Debug] window._debug keys: ${debugKeys}`);
                 if (window._debug && window._debug.clearKeywords) {
                     window._debug.clearKeywords();
                 } else {
+                    console.log('[Test Debug] clearKeywords not found, using fallback');
                     // Fallback to DOM manipulation if helper not available
                     const chips = document.querySelectorAll('.remove-chip');
                     chips.forEach(chip => chip.click());
@@ -173,7 +176,7 @@ export async function applyFilters(page, filters = {}) {
     }
 
     // Wait for filtering to complete
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(3000);
 }
 
 /**

@@ -14,9 +14,10 @@ test.describe('Complete User Workflows', () => {
     let mockCCCPath;
 
     test.beforeAll(async () => {
-        // Generate test files
-        mockLogPath = path.resolve(process.cwd(), 'temp/workflow_test.log');
-        mockCCCPath = path.resolve(process.cwd(), 'temp/workflow_ccc.log');
+        // Generate test files with unique names
+        const uniqueId = Math.random().toString(36).substring(7);
+        mockLogPath = path.resolve(process.cwd(), `temp/workflow_test_${uniqueId}.log`);
+        mockCCCPath = path.resolve(process.cwd(), `temp/workflow_ccc_${uniqueId}.log`);
 
         // Ensure temp directory exists
         const tempDir = path.dirname(mockLogPath);

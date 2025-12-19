@@ -1914,21 +1914,48 @@ self.onmessage = async (event) => {
         });
     }
 
+    // Debounce state for refreshActiveTab
+    let refreshDebounceTimer = null;
+    let refreshResolveFuncs = [];
+
     async function refreshActiveTab() {
+        return new Promise((resolve) => {
+            refreshResolveFuncs.push(resolve);
+
+            if (refreshDebounceTimer) {
+                clearTimeout(refreshDebounceTimer);
+            }
+
+            refreshDebounceTimer = setTimeout(async () => {
+                console.log('[Perf] Executing debounced refreshActiveTab');
+                try {
+                    await executeRefreshActiveTab();
+                } catch (e) {
+                    console.error("Error in executeRefreshActiveTab:", e);
+                } finally {
+                    // Resolve all pending promises
+                    console.log(`[Perf] Resolving ${refreshResolveFuncs.length} pending refresh promises`);
+                    refreshResolveFuncs.forEach(fn => fn());
+                    refreshResolveFuncs = [];
+                    refreshDebounceTimer = null;
+                }
+            }, 100); // 100ms debounce
+        });
+    }
+
+    async function executeRefreshActiveTab() {
         const activeTabId = document.querySelector('.tab-btn.active')?.dataset.tab;
 
         // OPTIMIZATION Phase 2: Lazy load tab data on first visit
         await lazyLoadTab(activeTabId);
 
         // OPTIMIZATION Phase 1: Check if filtering is needed
-        const shouldRefilter = needsRefiltering(activeTabId);
-
-        if (!shouldRefilter) {
-            console.log(`[Perf] Using cached results for ${activeTabId} tab - no filtering needed`);
-            return;
-        }
+        // Disabled temporarily to fix regression in filter clearing
+        // const shouldRefilter = needsRefiltering(activeTabId);
+        // if (!shouldRefilter) return;
 
         console.log(`[Perf] Filter state changed - re-filtering ${activeTabId} tab`);
+        console.log(`[Debug] executeRefreshActiveTab: Levels=${activeLogLevels.size}, Keywords=${filterKeywords.length}`);
 
         switch (activeTabId) {
             case 'logs':
@@ -3373,8 +3400,26 @@ self.onmessage = async (event) => {
     }
 
     // --- Expose for Testing ---
-    // --- Expose for Testing ---
     window._debug = {
+        // Helper to clear keywords programmatically for testing
+        clearKeywords: () => {
+            filterKeywords = [];
+            liveSearchQuery = '';
+            if (searchInput) searchInput.value = '';
+
+            // Force reset log levels to all
+            if (typeof logLevelButtons !== 'undefined') {
+                logLevelButtons.forEach(button => {
+                    button.classList.add('active');
+                    if (typeof activeLogLevels !== 'undefined') activeLogLevels.add(button.dataset.level);
+                });
+                if (typeof logLevelToggleBtn !== 'undefined' && logLevelToggleBtn) logLevelToggleBtn.textContent = 'None';
+            }
+
+            renderUI();
+            refreshActiveTab();
+        },
+
         // Delegate to module getters/setters if available, or just use getters
         get btsnoopPackets() { return BtsnoopTab.getBtsnoopPackets(); },
         set btsnoopPackets(v) { BtsnoopTab.setBtsnoopPackets(v); },
@@ -3392,9 +3437,20 @@ self.onmessage = async (event) => {
 
         // Helper to clear keywords programmatically for testing
         clearKeywords: () => {
+            console.log('[Debug] clearKeywords called - resetting all state');
             filterKeywords = [];
             liveSearchQuery = '';
             if (searchInput) searchInput.value = '';
+
+            // Force reset log levels to all
+            if (typeof logLevelButtons !== 'undefined') {
+                logLevelButtons.forEach(button => {
+                    button.classList.add('active');
+                    if (typeof activeLogLevels !== 'undefined') activeLogLevels.add(button.dataset.level);
+                });
+                if (typeof logLevelToggleBtn !== 'undefined' && logLevelToggleBtn) logLevelToggleBtn.textContent = 'None';
+            }
+
             renderUI();
             refreshActiveTab();
         },

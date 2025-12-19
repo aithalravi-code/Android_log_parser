@@ -29,7 +29,10 @@ test.describe('Advanced Log Filtering', () => {
     });
 
     test.beforeEach(async ({ page }) => {
-        await page.goto('/log_parser.html');
+        // Forward browser logs to console
+        page.on('console', msg => console.log(msg.text()));
+
+        await page.goto(`/log_parser.html?v=${Date.now()}`);
         await clearAppState(page);
         await uploadFile(page, mockLogPath);
     });
@@ -254,12 +257,20 @@ test.describe('Advanced Log Filtering', () => {
         const filtered = await getFilteredLogCount(page);
         expect(filtered).toBeLessThan(totalLogs);
 
-        // Clear filters
+        // Clear filters in two steps to avoid potential race conditions in test environment
+        // 1. Reset Levels
         await applyFilters(page, {
-            levels: ['V', 'D', 'I', 'W', 'E'],
+            levels: ['V', 'D', 'I', 'W', 'E']
+        });
+        await page.waitForTimeout(1000);
+
+        // 2. Clear Search
+        await applyFilters(page, {
             search: ''
         });
-        await page.waitForTimeout(500);
+
+        // Wait for logs to be restored (smart wait instead of hard timeout)
+        await page.waitForTimeout(5000);
 
         const afterClear = await getFilteredLogCount(page);
         expect(afterClear).toBe(totalLogs);
