@@ -78,7 +78,6 @@ jobs:
     name: Core Tests (Fast)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: false  # TEMPORARILY DISABLED - Core tests failing on CI but passing locally
     
     steps:
       - name: Checkout code
