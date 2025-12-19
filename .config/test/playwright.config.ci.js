@@ -41,7 +41,7 @@ export default defineConfig({
     ],
 
     use: {
-        baseURL: 'http://127.0.0.1:5173',
+        baseURL: 'http://localhost:5173',
         trace: 'retain-on-failure',
         screenshot: 'only-on-failure',
         video: 'retain-on-failure',
@@ -60,7 +60,7 @@ export default defineConfig({
     projects: [
         {
             name: 'chromium',
-            use: { ...devices['Desktop Chrome'] },
+            use: { ...devices['Desktop Chrome'], permissions: ['clipboard-read', 'clipboard-write'] },
         },
         {
             name: 'firefox',
@@ -74,7 +74,7 @@ export default defineConfig({
 
     webServer: {
         command: 'npm run preview', // Use production build for stable CI testing
-        url: 'http://127.0.0.1:5173/log_parser.html',
+        url: 'http://localhost:5173/log_parser.html',
         reuseExistingServer: true, // Always reuse to avoid conflicts
         timeout: 300000, // 5 minutes for extremely slow CI runners
     },
