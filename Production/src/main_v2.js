@@ -11,11 +11,11 @@ import JSZip from 'jszip';
 import { Chart, registerables } from 'chart.js';
 import { makeTableResizable } from './table-resize.js';
 import * as BtsnoopTab from './ui/tabs/BtsnoopTab.js';
-import * as StatsTab from './ui/tabs/StatsTab.js';
-import * as CccTab from './ui/tabs/CccTab.js';
+import * as CccTab from './ui/tabs/CccTab.js'; // Imports setup, render, reset
+import * as StatsTab from './ui/tabs/StatsTab.js'; // Imports setupStatsTab, etc.
 import { setupDeviceEventsTab, renderDeviceEvents } from './ui/tabs/DeviceEventsTab.js';
 import { setupBleKeysTab, renderBleKeys } from './ui/tabs/BleKeysTab.js';
-import { filterConnectivityLogs } from './ui/tabs/ConnectivityTab.js';
+import { filterConnectivityLogs, setupConnectivityTab as setupConnTabImpl, renderConnectivityLogs } from './ui/tabs/ConnectivityTab.js';
 import { makeSortable } from './table-sort.js';
 import { formatParam } from './utils/html.js';
 import * as FilterManager from './filters/FilterManager.js';
@@ -545,17 +545,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log(`[Perf Phase2]${tabId} tab ready(init deferred to setupCccTab)`);
                     break;
 
-                case 'stats':
+                case 'stats': {
                     console.log(`[Perf Phase2]Processing stats...`);
 
                     // Calculate log level statistics
                     const logStats = { total: 0, E: 0, W: 0, I: 0, D: 0, V: 0 };
                     for (const line of originalLogLines) {
                         if (line.isMeta) continue;
-                        logStats.total++;
                         if (line.level && logStats[line.level] !== undefined) {
                             logStats[line.level]++;
                         }
+                        logStats.total++;
                     }
 
                     // Render log level statistics and distribution chart
@@ -598,8 +598,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         );
                     }
 
-                    console.log(`[Perf Phase2]stats tab loaded in ${(performance.now() - statsStart).toFixed(2)}ms`);
+                    console.log(`[Perf Phase2]Stats init took ${(performance.now() - statsStart).toFixed(1)}ms`);
                     break;
+                }
             }
 
             const duration = performance.now() - startTime;
@@ -902,7 +903,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         attachLayerFilterListeners(nfcFilterButtons, activeNfcLayers, applyConnectivityFilters);
         attachLayerFilterListeners(bleFilterButtons, activeBleLayers, applyConnectivityFilters);
-        attachLayerFilterListeners(btsnoopFilterButtons, activeBtsnoopFilters, () => renderBtsnoopPackets());
+        attachLayerFilterListeners(btsnoopFilterButtons, activeBtsnoopFilters, () => BtsnoopTab.renderBtsnoopPackets());
         // DCK layer listeners removed as panel is gone
 
         // Attach listeners for filter configuration
@@ -1938,7 +1939,7 @@ self.onmessage = async (event) => {
                 if (!connectivityScrollListenerAttached) await setupConnectivityTab(); else await applyConnectivityFilters();
                 cacheFilteredResults('connectivity', filteredConnectivityLogLines);
                 break;
-            case 'btsnoop':
+            case 'btsnoop': {
                 // Delegate setup to the module
                 // FIX: Pass necessary dependencies including DB refs and UI containers
                 await BtsnoopTab.setupBtsnoopTab({
@@ -1962,11 +1963,26 @@ self.onmessage = async (event) => {
                 }
                 cacheFilteredResults('btsnoop', BtsnoopTab.getBtsnoopPackets());
                 break;
+            }
             case 'ccc':
-                await CccTab.setup(cccMessages, btsnoopConnectionMap, processForBtsnoop, isBtsnoopProcessed);
+                // FIX: Pass BtsnoopTab.processForBtsnoop logic wrapper if needed, or better, pass the direct function from global scope if it wraps it.
+                // In main.js, processForBtsnoop is defined at bottom. It wraps BtsnoopTab.processForBtsnoop.
+                // But we must ensure it is hoisted or defined. It is function decl, so it is hoisted.
+                // However, verification failed, possibly due to 'processForBtsnoop' usage issues inside CccTab?
+                // CccTab.setup calls 'processForBtsnoop(fileTasks, ...)'
+                // The main.js processForBtsnoop does NOT take arguments in the same way?
+                // implementation check: main.js processForBtsnoop() (no args) -> calls BtsnoopTab.processForBtsnoop(fileTasks, ...)
+                // CccTab calls ensureBtsnoopProcessedFn(fileTasks).
+                // So passing 'processForBtsnoop' (local) is WRONG because local processForBtsnoop takes NO args and uses closure 'fileTasks'.
+                // WE MUST WRAP IT to accept fileTasks if CccTab expects to pass them.
+                // CccTab line 114: await ensureBtsnoopProcessedFn(fileTasks);
+                // main.js processForBtsnoop line 2990: async function processForBtsnoop() { ... uses global fileTasks ... }
+                // So CccTab passes fileTasks, but main.js ignores it (which is fine if it uses same global).
+                // BUT, let's be explicit and robust.
+                await CccTab.setup(cccMessages, btsnoopConnectionMap, (tasks) => processForBtsnoop(), isBtsnoopProcessed);
                 cacheFilteredResults('ccc', true); // Mark as cached so needsRefiltering works correctly next time
                 break;
-            case 'stats':
+            case 'stats': {
                 // FIX: Render BLE Keys in Stats tab too
                 const bleKeysTable = document.querySelector('#bleKeysTable tbody');
                 if (bleKeysTable) {
@@ -1984,6 +2000,14 @@ self.onmessage = async (event) => {
                 // FIX: Re-render highlights (device events, accounts) when stats tab is activated
                 if (storedHighlights) {
                     renderHighlights(storedHighlights);
+                    // Also render battery chart if data exists
+                    if (consolidatedBatteryDataPoints && consolidatedBatteryDataPoints.length > 0) {
+                        try {
+                            StatsTab.renderBatteryChart(consolidatedBatteryDataPoints);
+                        } catch (e) {
+                            console.error("Error rendering battery chart:", e);
+                        }
+                    }
                 }
 
                 // FIX: Re-render charts to ensure correct dimensions if parsed while tab was hidden
@@ -1999,6 +2023,7 @@ self.onmessage = async (event) => {
 
                 cacheFilteredResults('stats', null);
                 break;
+            }
         }
     }
 
@@ -2745,9 +2770,18 @@ self.onmessage = async (event) => {
     });
 
     function addKeyword(keywordText) {
-        const keyword = keywordText.trim();
-        if (keyword && !filterKeywords.some(kw => kw.text.toLowerCase() === keyword.toLowerCase())) {
-            filterKeywords.push({ text: keyword, active: true });
+        const parts = keywordText.trim().split(/\s+/);
+        let added = false;
+
+        parts.forEach(part => {
+            const keyword = part.trim();
+            if (keyword && !filterKeywords.some(kw => kw.text.toLowerCase() === keyword.toLowerCase())) {
+                filterKeywords.push({ text: keyword, active: true });
+                added = true;
+            }
+        });
+
+        if (added) {
             liveSearchQuery = ''; // Clear live search when committing to a chip
             clearTimeout(debounceTimer); // Clear any pending live search
             searchInput.value = '';
@@ -2884,29 +2918,26 @@ self.onmessage = async (event) => {
     async function setupConnectivityTab() {
         const container = document.getElementById('connectivityLogContainer');
         if (!connectivityScrollListenerAttached && container) {
-            container.addEventListener('scroll', renderConnectivityVirtualLogs);
-            connectivityScrollListenerAttached = true;
+            // Use imported setup logic
+            const attached = setupConnTabImpl(container, renderConnectivityVirtualLogs);
+            if (attached) connectivityScrollListenerAttached = true;
+        } else if (!container) {
+            console.warn('Connectivity Container not found during setup!');
         }
         await applyConnectivityFilters();
     }
 
     function renderConnectivityVirtualLogs() {
-        const activeKeywords = filterKeywords.filter(kw => kw.active).map(kw => kw.text);
-        const keywordRegexes = activeKeywords.length > 0 ? activeKeywords.map(wildcardToRegex) : null;
-        const liveSearchRegex = liveSearchQuery ? wildcardToRegex(liveSearchQuery) : null;
-
-        // Re-use the generic virtual logger but targeting the connectivity container
-        renderVirtualList(
+        // Use imported render logic
+        renderConnectivityLogs(
             document.getElementById('connectivityLogContainer'),
             document.getElementById('connectivityLogSizer'),
             document.getElementById('connectivityLogViewport'),
             filteredConnectivityLogLines,
             connectivityViewCollapseState,
-            {
-                keywordRegexes,
-                liveSearchRegex,
-                selectedLine: userAnchorLine
-            }
+            filterKeywords,
+            liveSearchQuery,
+            userAnchorLine
         );
     }
 
@@ -3242,11 +3273,11 @@ self.onmessage = async (event) => {
                     }
                     console.log(`[Interaction] Toggled collapse for: ${headerText} `);
 
-                    // Just re-render, no need to refilter!
+                    // Re-filter to apply collapse state (since filtering handles the exclusion of lines)
                     if (activeViewport && activeViewport.id === 'connectivityLogViewport') {
-                        handleConnectivityScroll();
+                        applyConnectivityFilters();
                     } else {
-                        handleMainLogScroll();
+                        refreshActiveTab();
                     }
                     return;
                 }
@@ -3350,11 +3381,25 @@ self.onmessage = async (event) => {
         get isBtsnoopProcessed() { return isBtsnoopProcessed; },
         set isBtsnoopProcessed(v) { isBtsnoopProcessed = v; },
         renderBtsnoopPackets: () => BtsnoopTab.renderBtsnoopPackets(),
+        getBtsnoopConnectionEvents: () => BtsnoopTab.getBtsnoopConnectionEvents(),
         setupBtsnoopTab: BtsnoopTab.setupBtsnoopTab,
         get selectedBtsnoopPacket() { return BtsnoopTab.getSelectedBtsnoopPacket(); },
         set selectedBtsnoopPacket(v) { BtsnoopTab.setSelectedBtsnoopPacket(v); },
+
+        // Filter helpers
         originalLogLines: () => originalLogLines,
-        filteredLogLines: () => filteredLogLines
+        filteredLogLines: () => filteredLogLines,
+
+        // Helper to clear keywords programmatically for testing
+        clearKeywords: () => {
+            filterKeywords = [];
+            liveSearchQuery = '';
+            if (searchInput) searchInput.value = '';
+            renderUI();
+            refreshActiveTab();
+        },
+
+        filterWorker
     };
 
     initializeApp();

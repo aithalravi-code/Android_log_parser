@@ -123,7 +123,23 @@ export async function applyFilters(page, filters = {}) {
     // Apply search keyword
     if (search !== undefined) {
         const searchInput = page.locator('#searchInput');
-        await searchInput.fill(search);
+        if (search === '') {
+            await searchInput.fill('');
+            await searchInput.press('Enter');
+            // Clear all chips using internal debug helper
+            await page.evaluate(() => {
+                if (window._debug && window._debug.clearKeywords) {
+                    window._debug.clearKeywords();
+                } else {
+                    // Fallback to DOM manipulation if helper not available
+                    const chips = document.querySelectorAll('.remove-chip');
+                    chips.forEach(chip => chip.click());
+                }
+            });
+        } else {
+            await searchInput.fill(search);
+            await searchInput.press('Enter');
+        }
         await page.waitForTimeout(300);
     }
 

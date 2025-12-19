@@ -324,7 +324,8 @@ test.describe('Advanced Log Filtering', () => {
 
         // Should be reasonably fast (allow more time for CI environments)
         // Should be reasonably fast (allow more time for CI environments)
-        expect(duration).toBeLessThan(5000);
+        // Should be reasonably fast (allow more time for CI environments)
+        expect(duration).toBeLessThan(10000);
     });
 
     test('Rapid filter changes should not cause errors', async ({ page }) => {

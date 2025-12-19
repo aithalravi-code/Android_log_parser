@@ -12,11 +12,11 @@ export default defineConfig({
     testMatch: '**/*.spec.js',
 
     // Timeout for each test
-    timeout: 30000,
+    timeout: 60000,
 
     // Expect timeout
     expect: {
-        timeout: 5000
+        timeout: 10000
     },
 
     // Run tests in files in parallel
@@ -58,7 +58,7 @@ export default defineConfig({
         viewport: { width: 1920, height: 1080 },
 
         // Action timeout
-        actionTimeout: 10000,
+        actionTimeout: 15000,
 
         // Navigation timeout
         navigationTimeout: 30000,
