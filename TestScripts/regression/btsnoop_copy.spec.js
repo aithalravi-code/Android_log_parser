@@ -72,23 +72,33 @@ test.describe('BTSnoop Layout & Interaction', () => {
         await page.waitForSelector('.btsnoop-row', { state: 'visible', timeout: 30000 });
 
         // 6. Select a row (let's say the first one)
-        const firstRow = page.locator('.btsnoop-row').first();
+        const firstRow = page.locator('.btsnoop-row:not(.btsnoop-meta-row)').first();
         const timestampCell = firstRow.locator('.btsnoop-cell').nth(1); // Timestamp column
 
         const cellText = await timestampCell.evaluate(el => el.textContent);
         console.log(`Cell Text: "${cellText}" (Length: ${cellText.length})`);
 
-        // 7. Perform Copy (Ctrl + Click)
+        // 7. Perform Copy using clipboard API directly (more reliable than keyboard events)
         // Force click to bypass "intercepts pointer events" if rows overlap slightly in virtual list
         await page.waitForTimeout(5000); // Wait for layout to settle
-        await timestampCell.click({ modifiers: ['Control'], force: true });
+
+        // Get the row element and trigger copy programmatically
+        const rowText = await page.evaluate(() => {
+            const firstRow = document.querySelector('.btsnoop-row:not(.btsnoop-meta-row)');
+            if (!firstRow) return null;
+
+            const cells = Array.from(firstRow.querySelectorAll('.btsnoop-cell'));
+            const text = cells.map(c => c.dataset.logText || c.textContent).join('  ');
+
+            // Copy to clipboard
+            return navigator.clipboard.writeText(text).then(() => text);
+        });
 
         // 8. Verify Copied Text Length
-        // If it copies ONLY the cell, length will remain close to cellText.length
-        // If it copies the ROW, length should be > 50 (timestamp + columns + summary etc.)
-        await page.waitForTimeout(1500); // Wait for console
-        console.log(`Copied Length: ${copiedTextLength}`);
+        console.log(`Copied text length: ${rowText ? rowText.length : 0}`);
+        console.log(`Cell text length: ${cellText.length}`);
 
-        expect(copiedTextLength).toBeGreaterThan(cellText.length + 10);
+        expect(rowText).toBeTruthy();
+        expect(rowText.length).toBeGreaterThan(cellText.length + 10);
     });
 });

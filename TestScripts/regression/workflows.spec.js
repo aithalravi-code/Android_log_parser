@@ -108,6 +108,7 @@ test.describe('Real-World Usage Scenarios', () => {
     });
 
     test('search and navigate workflow', async ({ page }) => {
+        test.setTimeout(60000); // Increase timeout
         await page.goto('/log_parser.html');
 
         // Load numbered logs for easy verification
@@ -121,7 +122,11 @@ test.describe('Real-World Usage Scenarios', () => {
             buffer: Buffer.from(logs)
         });
 
-        await page.waitForSelector('.log-line', { timeout: 10000 });
+        // Wait for processing with proper timeout
+        await page.waitForFunction(() => {
+            const viewport = document.getElementById('logViewport');
+            return viewport && viewport.querySelectorAll('.log-line').length > 0;
+        }, null, { timeout: 30000 });
 
         // Use goto line feature
         await ensureSidebarExpanded(page);

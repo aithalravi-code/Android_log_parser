@@ -13,13 +13,13 @@ export async function waitForLogProcessing(page, timeout = 30000) {
     await page.waitForFunction(() => {
         const display = document.getElementById('current-file-display');
         return display && display.textContent.trim().length > 0;
-    }, { timeout });
+    }, null, { timeout });
 
     // Wait for log lines to appear
     await page.waitForFunction(() => {
         const viewport = document.getElementById('logViewport');
         return viewport && viewport.querySelectorAll('.log-line').length > 0;
-    }, { timeout });
+    }, null, { timeout });
 
     // Give a bit more time for rendering to stabilize
     await page.waitForTimeout(500);

@@ -36,7 +36,7 @@ test.describe('Bugreport Parsing Test', () => {
         await page.waitForFunction(() => {
             const display = document.getElementById('current-file-display');
             return display && display.textContent.includes('bugreport');
-        }, { timeout: 30000 });
+        }, null, { timeout: 30000 });
 
         // Wait a bit more for rendering
         await page.waitForTimeout(5000);
@@ -56,7 +56,7 @@ test.describe('Bugreport Parsing Test', () => {
         await page.waitForFunction(() => {
             const viewport = document.getElementById('logViewport');
             return viewport && viewport.querySelectorAll('.log-line').length > 0;
-        }, { timeout: 60000 }); // Increased from 10s to 60s for large bugreport files
+        }, null, { timeout: 60000 }); // Increased from 10s to 60s for large bugreport files
 
         // Verify specific expected log lines are present
         const expectedLines = [

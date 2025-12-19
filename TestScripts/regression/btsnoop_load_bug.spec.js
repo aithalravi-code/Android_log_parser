@@ -4,7 +4,7 @@ import fs from 'fs';
 
 test.describe('BTSnoop Reload Behavior', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('log_parser.html');
+        await page.goto('http://localhost:5173/log_parser.html');
         await page.waitForLoadState('networkidle');
 
         // Console logging for debugging
@@ -38,7 +38,7 @@ test.describe('BTSnoop Reload Behavior', () => {
             // A safer bet involves waiting for UI or checking console logs (done via listener in previous tests).
             // Here, let's just wait for the BTSnoop tab to be interactable.
             return document.querySelector('[data-tab="btsnoop"]');
-        });
+        }, null, { timeout: 60000 });
         await page.waitForTimeout(5000); // Wait for asyncs
 
         // Switch to BTSnoop Tab
