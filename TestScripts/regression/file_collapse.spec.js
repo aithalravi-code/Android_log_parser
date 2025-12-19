@@ -7,7 +7,7 @@ const __dirname = path.dirname(__filename);
 
 test.describe('File Collapsing', () => {
     test('should collapse and expand file sections when clicking headers', async ({ page }) => {
-        await page.goto('log_parser.html');
+        await page.goto('/log_parser.html');
 
         // Create mock files using buffers
         const file1Content = Array.from({ length: 50 }, (_, i) => `12-17 10:00:${String(i).padStart(2, '0')}.000 1000 1000 I Ref1: Log line ${i}\n`).join('');

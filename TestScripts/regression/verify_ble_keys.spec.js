@@ -5,7 +5,7 @@ import fs from 'fs';
 test.describe('BLE Keys Population Verification', () => {
     test.beforeEach(async ({ page }) => {
         page.on('console', msg => console.log(`[Browser Console] ${msg.type()}: ${msg.text()}`));
-        await page.goto('log_parser.html');
+        await page.goto('http://localhost:5173/log_parser.html');
         await page.waitForLoadState('networkidle');
     });
 
