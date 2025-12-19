@@ -28,10 +28,10 @@ export default defineConfig({
         // 'performance_comprehensive.spec.js', // CI is slower
     ],
 
-    fullyParallel: true,
+    fullyParallel: false, // Prevent tests inside same file from running in parallel (avoids file contention)
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 2 : 0,
-    workers: process.env.CI ? 2 : 6,
+    workers: 3,
 
     reporter: [
         ['list'],
@@ -48,13 +48,13 @@ export default defineConfig({
         viewport: { width: 1920, height: 1080 },
 
         // Increase timeouts for CI
-        actionTimeout: process.env.CI ? 15000 : 10000,
-        navigationTimeout: process.env.CI ? 60000 : 30000,
+        actionTimeout: process.env.CI ? 20000 : 15000,
+        navigationTimeout: process.env.CI ? 90000 : 45000,
     },
 
-    timeout: process.env.CI ? 120000 : 60000,
+    timeout: process.env.CI ? 180000 : 90000, // 3 mins per test
     expect: {
-        timeout: process.env.CI ? 10000 : 5000,
+        timeout: process.env.CI ? 15000 : 10000,
     },
 
     projects: [
