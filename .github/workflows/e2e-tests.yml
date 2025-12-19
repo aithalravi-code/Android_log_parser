@@ -39,18 +39,27 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps ${{ matrix.browser }}
       
-      - name: Start Vite dev server
-        run: npm run dev &
+      - name: Start Vite dev server in background
+        run: |
+          nohup npm run dev > /dev/null 2>&1 &
+          echo $! > .vite-pid
         env:
           CI: true
       
-      - name: Wait for dev server
-        run: npx wait-on http://localhost:5173 --timeout 60000
+      - name: Wait for dev server to be ready
+        run: npx wait-on http://127.0.0.1:5173 --timeout 60000
       
       - name: Run E2E tests
         run: npm run test:regression -- --project=${{ matrix.browser }}
         env:
           CI: true
+      
+      - name: Stop Vite dev server
+        if: always()
+        run: |
+          if [ -f .vite-pid ]; then
+            kill $(cat .vite-pid) || true
+          fi
       
       - name: Upload test results
         if: always()
@@ -100,18 +109,27 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
       
-      - name: Start Vite dev server
-        run: npm run dev &
+      - name: Start Vite dev server in background
+        run: |
+          nohup npm run dev > /dev/null 2>&1 &
+          echo $! > .vite-pid
         env:
           CI: true
       
-      - name: Wait for dev server
-        run: npx wait-on http://localhost:5173 --timeout 60000
+      - name: Wait for dev server to be ready
+        run: npx wait-on http://127.0.0.1:5173 --timeout 60000
       
       - name: Run core tests
         run: npm run test:core -- --project=chromium
         env:
           CI: true
+      
+      - name: Stop Vite dev server
+        if: always()
+        run: |
+          if [ -f .vite-pid ]; then
+            kill $(cat .vite-pid) || true
+          fi
       
       - name: Upload core test results
         if: always()
