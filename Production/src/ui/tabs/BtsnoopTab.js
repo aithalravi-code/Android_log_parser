@@ -56,8 +56,16 @@ export function getBtsnoopConnectionMap() {
     return btsnoopConnectionMap;
 }
 
+export function setBtsnoopConnectionMap(map) {
+    btsnoopConnectionMap = map;
+}
+
 export function getBtsnoopConnectionEvents() {
     return btsnoopConnectionEvents;
+}
+
+export function setBtsnoopConnectionEvents(events) {
+    btsnoopConnectionEvents = events;
 }
 
 export function getSelectedBtsnoopPacket() {
@@ -162,150 +170,150 @@ export async function processForBtsnoop(fileTasks, { db, getDb, saveData, loadDa
     console.log('[BTSnoop] [BTSNOOPTAB.JS] Starting BTSnoop Worker...');
     TimeTracker?.start('BTSnoop Processing');
 
-    return new Promise(async (resolve, reject) => {
-        const exportXlsxBtn = document.getElementById('exportBtsnoopXlsxBtn');
+    const database = db || await getDb(); // Get DB ref
 
-        const database = db || await getDb(); // Get DB ref
+    if (!database) {
+        console.error('[BTSnoop Debug] DB not open');
+        throw new Error('DB not open');
+    }
 
-        // FIX: Ensure the database is open before proceeding.
-        if (!database) {
-            console.error('[BTSnoop Debug] DB not open');
-            return reject('DB not open');
-        }
+    // UI check
+    if (!btsnoopInitialView || !btsnoopContentView || !btsnoopFilterContainer) {
+        console.error('[BTSnoop Debug] UI elements missing', { btsnoopInitialView, btsnoopContentView, btsnoopFilterContainer });
+        throw new Error('BTSnoop UI elements not found');
+    }
 
-        if (!btsnoopInitialView || !btsnoopContentView || !btsnoopFilterContainer) {
-            console.error('[BTSnoop Debug] UI elements missing', { btsnoopInitialView, btsnoopContentView, btsnoopFilterContainer });
-            return reject('BTSnoop UI elements not found');
-        }
-
-        // Check if worker code has changed    // Versioning for worker cache invalidation
-        const btsnoopWorkerVersion = '2025-12-14-18:00'; // Updated for Handle Resolution Fix
-        const storedVersion = localStorage.getItem('btsnoopWorkerVersion');
-        if (storedVersion !== btsnoopWorkerVersion) {
-            console.log('[BTSnoop] Worker code changed (v' + btsnoopWorkerVersion + '), clearing ALL cache...');
-            // Clear IndexedDB btsnoopStore
-            if (database) {
-                const tx = database.transaction([BTSNOOP_STORE_NAME], 'readwrite');
-                await tx.objectStore(BTSNOOP_STORE_NAME).clear();
-                await new Promise((resolve, reject) => {
-                    tx.oncomplete = resolve;
-                    tx.onerror = reject;
-                });
-            }
-            await saveData('btsnoopPackets', null);
-            btsnoopPackets = [];
-            btsnoopConnectionEvents = [];
-            isBtsnoopProcessed = false;
-            localStorage.setItem('btsnoopWorkerVersion', btsnoopWorkerVersion);
-        }
-
-        TimeTracker.start('BTSnoop Processing');
-        const tasks = fileTasks.filter(task => /btsnoop_hci\.log.*/.test(task.path));
-
-        if (tasks.length === 0) {
-            btsnoopInitialView.innerHTML = '<p>No btsnoop_hci.log files found.</p>';
-            TimeTracker.stop('BTSnoop Processing');
-            isBtsnoopProcessed = true;
-            return resolve();
-        }
-
-        // Reset state
-        btsnoopConnectionEvents = [];
-        btsnoopPackets = [];
-        btsnoopInitialView.innerHTML = `<p>Found ${tasks.length} file(s). Parsing...</p><div id="btsnoop-progress"></div>`;
-        const progressDiv = document.getElementById('btsnoop-progress');
-
-        try {
-            const bufferPromises = tasks.map(task => (task.file || task.blob).arrayBuffer());
-            const fileBuffers = await Promise.all(bufferPromises);
-            const fileNames = tasks.map(task => {
-                if (task.path) {
-                    return task.path;
-                }
-                if (task.file && task.file.webkitRelativePath) {
-                    return task.file.webkitRelativePath;
-                }
-                return task.file ? task.file.name : 'unknown.log';
+    // Check if worker code has changed    // Versioning for worker cache invalidation
+    const btsnoopWorkerVersion = '2025-12-14-18:00'; // Updated for Handle Resolution Fix
+    const storedVersion = localStorage.getItem('btsnoopWorkerVersion');
+    if (storedVersion !== btsnoopWorkerVersion) {
+        console.log('[BTSnoop] Worker code changed (v' + btsnoopWorkerVersion + '), clearing ALL cache...');
+        // Clear IndexedDB btsnoopStore
+        if (database) {
+            const tx = database.transaction([BTSNOOP_STORE_NAME], 'readwrite');
+            await tx.objectStore(BTSNOOP_STORE_NAME).clear();
+            await new Promise((resolve, reject) => {
+                tx.oncomplete = resolve;
+                tx.onerror = reject;
             });
-
-            const workerScript = getBtsnoopWorkerScript();
-            const blob = new Blob([workerScript], { type: 'application/javascript' });
-            const workerURL = URL.createObjectURL(blob);
-            const worker = new Worker(workerURL);
-            let totalPacketsStored = 0;
-            const storedHighlights = null; // Local highlights cache if needed
-
-            worker.onmessage = async (event) => {
-                const { type, packets, message, stack, connectionMap } = event.data;
-
-                if (type === 'chunk') {
-                    for (const packet of packets) {
-                        btsnoopPackets.push(packet);
-                    }
-                    totalPacketsStored += packets.length;
-                    progressDiv.textContent = `Parsed ${totalPacketsStored.toLocaleString()} packets...`;
-                } else if (type === 'connectionEvent') {
-                    btsnoopConnectionEvents.push(event.data.event);
-                    console.log(`[BTSnoop Debug] [BTSNOOPTAB.JS] Connection event added. Total: ${btsnoopConnectionEvents.length}`);
-                } else if (type === 'localAddressFound') {
-                    localBtAddress = event.data.address;
-                    // Note: We might need to expose this boostrap info back or use it locally
-                } else if (type === 'complete') {
-                    btsnoopConnectionMap = new Map();
-                    // FIX: Convert object string keys to Numbers for the Map
-                    if (connectionMap) {
-                        for (const [k, v] of Object.entries(connectionMap)) {
-                            btsnoopConnectionMap.set(Number(k), v);
-                        }
-                    }
-                    progressDiv.textContent = `Parsed ${totalPacketsStored.toLocaleString()} packets. Finalizing...`;
-
-                    await resolveBtsnoopHandles(btsnoopConnectionMap);
-
-                    progressDiv.textContent = 'Saving...';
-                    await saveData('btsnoopPackets', btsnoopPackets);
-
-                    // UI Updates
-                    const btsnoopToolbar = document.getElementById('btsnoopToolbar');
-                    btsnoopContentView.style.display = 'flex';
-                    btsnoopFilterContainer.style.display = 'block';
-                    btsnoopInitialView.style.display = 'none';
-                    if (btsnoopToolbar) {
-                        btsnoopToolbar.style.display = 'block';
-                    }
-
-                    TimeTracker.stop('BTSnoop Processing');
-                    isBtsnoopProcessed = true;
-
-                    renderBtsnoopConnectionEvents();
-                    // Initial render call - deps is in parent scope from processForBtsnoop
-                    await setupBtsnoopTab({ db: database, getDb, saveData, loadData, TimeTracker, btsnoopInitialView, btsnoopContentView, btsnoopFilterContainer });
-
-                    worker.terminate();
-                    URL.revokeObjectURL(workerURL);
-
-                    // Resolve with a flag indicating completion
-                    resolve({ needsHighlightsUpdate: true });
-                } else if (type === 'error') {
-                    reject(new Error(`BTSnoop Worker Error: ${message}\n${stack}`));
-                }
-            };
-
-            worker.onerror = (err) => {
-                console.error(err);
-                URL.revokeObjectURL(workerURL);
-                TimeTracker.stop('BTSnoop Processing');
-                reject(err);
-            };
-
-            worker.postMessage({ fileBuffers, fileNames, localBtAddress }, fileBuffers);
-
-        } catch (error) {
-            console.error('Error processing btsnoop:', error);
-            btsnoopInitialView.innerHTML = `<p>Error: ${error.message}</p>`;
-            TimeTracker.stop('BTSnoop Processing');
-            reject(error);
         }
+        await saveData('btsnoopPackets', null);
+        btsnoopPackets = [];
+        btsnoopConnectionEvents = [];
+        isBtsnoopProcessed = false;
+        localStorage.setItem('btsnoopWorkerVersion', btsnoopWorkerVersion);
+    }
+
+    TimeTracker.start('BTSnoop Processing');
+    const tasks = fileTasks.filter(task => /btsnoop_hci\.log.*/.test(task.path));
+
+    if (tasks.length === 0) {
+        btsnoopInitialView.innerHTML = '<p>No btsnoop_hci.log files found.</p>';
+        TimeTracker.stop('BTSnoop Processing');
+        isBtsnoopProcessed = true;
+        return;
+    }
+
+    // Reset state
+    btsnoopConnectionEvents = [];
+    btsnoopPackets = [];
+    btsnoopInitialView.innerHTML = `<p>Found ${tasks.length} file(s). Parsing...</p><div id="btsnoop-progress"></div>`;
+    const progressDiv = document.getElementById('btsnoop-progress');
+
+    let fileBuffers;
+    let fileNames;
+
+    try {
+        const bufferPromises = tasks.map(task => (task.file || task.blob).arrayBuffer());
+        fileBuffers = await Promise.all(bufferPromises);
+        fileNames = tasks.map(task => {
+            if (task.path) {
+                return task.path;
+            }
+            if (task.file && task.file.webkitRelativePath) {
+                return task.file.webkitRelativePath;
+            }
+            return task.file ? task.file.name : 'unknown.log';
+        });
+    } catch (error) {
+        console.error('Error loading btsnoop buffers:', error);
+        btsnoopInitialView.innerHTML = `<p>Error loading files: ${error.message}</p>`;
+        TimeTracker.stop('BTSnoop Processing');
+        throw error;
+    }
+
+    return new Promise((resolve, reject) => {
+        const workerScript = getBtsnoopWorkerScript();
+        const blob = new Blob([workerScript], { type: 'application/javascript' });
+        const workerURL = URL.createObjectURL(blob);
+        const worker = new Worker(workerURL);
+        let totalPacketsStored = 0;
+        const storedHighlights = null; // Local highlights cache if needed
+
+        worker.onmessage = async (event) => {
+            const { type, packets, message, stack, connectionMap } = event.data;
+
+            if (type === 'chunk') {
+                for (const packet of packets) {
+                    btsnoopPackets.push(packet);
+                }
+                totalPacketsStored += packets.length;
+                if (progressDiv) progressDiv.textContent = `Parsed ${totalPacketsStored.toLocaleString()} packets...`;
+            } else if (type === 'connectionEvent') {
+                btsnoopConnectionEvents.push(event.data.event);
+                console.log(`[BTSnoop Debug] [BTSNOOPTAB.JS] Connection event added. Total: ${btsnoopConnectionEvents.length}`);
+            } else if (type === 'localAddressFound') {
+                localBtAddress = event.data.address;
+                // Note: We might need to expose this boostrap info back or use it locally
+            } else if (type === 'complete') {
+                btsnoopConnectionMap = new Map();
+                // FIX: Convert object string keys to Numbers for the Map
+                if (connectionMap) {
+                    for (const [k, v] of Object.entries(connectionMap)) {
+                        btsnoopConnectionMap.set(Number(k), v);
+                    }
+                }
+                if (progressDiv) progressDiv.textContent = `Parsed ${totalPacketsStored.toLocaleString()} packets. Finalizing...`;
+
+                await resolveBtsnoopHandles(btsnoopConnectionMap);
+
+                if (progressDiv) progressDiv.textContent = 'Saving...';
+                await saveData('btsnoopPackets', btsnoopPackets);
+
+                // UI Updates
+                const btsnoopToolbar = document.getElementById('btsnoopToolbar');
+                btsnoopContentView.style.display = 'flex';
+                btsnoopFilterContainer.style.display = 'block';
+                btsnoopInitialView.style.display = 'none';
+                if (btsnoopToolbar) {
+                    btsnoopToolbar.style.display = 'block';
+                }
+
+                TimeTracker.stop('BTSnoop Processing');
+                isBtsnoopProcessed = true;
+
+                renderBtsnoopConnectionEvents();
+                // Initial render call - deps is in parent scope from processForBtsnoop
+                await setupBtsnoopTab({ db: database, getDb, saveData, loadData, TimeTracker, btsnoopInitialView, btsnoopContentView, btsnoopFilterContainer });
+
+                worker.terminate();
+                URL.revokeObjectURL(workerURL);
+
+                // Resolve with a flag indicating completion
+                resolve({ needsHighlightsUpdate: true });
+            } else if (type === 'error') {
+                reject(new Error(`BTSnoop Worker Error: ${message}\n${stack}`));
+            }
+        };
+
+        worker.onerror = (err) => {
+            console.error(err);
+            URL.revokeObjectURL(workerURL);
+            TimeTracker.stop('BTSnoop Processing');
+            reject(err);
+        };
+
+        worker.postMessage({ fileBuffers, fileNames, localBtAddress }, fileBuffers);
     });
 }
 

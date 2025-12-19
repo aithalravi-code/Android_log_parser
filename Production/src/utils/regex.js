@@ -11,7 +11,7 @@
  * wildcardToRegex('*NFC*') // Matches any string containing "NFC"
  */
 export function wildcardToRegex(pattern) {
-    const escapedPattern = pattern.replace(/([.+?^${}()|[\]\/\\])/g, '\\$1');
+    const escapedPattern = pattern.replace(/([.+?^${}()|[\]/\\])/g, '\\$1');
     // Revert to the faster, whole-word search by default.
     // The user can use asterisks for a "contains" search (e.g., *NFC*).
     if (!pattern.includes('*')) {

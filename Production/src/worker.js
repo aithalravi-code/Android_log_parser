@@ -1,11 +1,4 @@
 import {
-    bleTagRegex,
-    bleMessageRegex,
-    nfcTagRegex,
-    nfcMessageRegex,
-    dckRegex,
-    walletRegex,
-    kernelRegex,
     logcatRegex,
     dumpsysPackageRegex,
     customVersionRegex,

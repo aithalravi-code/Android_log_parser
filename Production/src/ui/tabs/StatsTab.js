@@ -3,11 +3,15 @@ import { logcatToDate } from '../../utils/date.js';
 import { makeTableResizable } from '../../table-resize.js';
 
 /**
- * Process log lines to extract CPU, temperature, and battery statistics
- * @param {Array} originalLogLines - Array of parsed log line objects
- * @param {Array} batteryDataPoints - Array of battery data points ({ts, level}) from workers
  * @returns {Object} Statistics object with CPU, temp, and battery data
  */
+export function reset() {
+    // StatsTab doesn't hold persistent internal state that isn't derived from inputs
+    // But if we want to clear any cached DOM elements or temporary state, do it here.
+    // For now, logging to confirm reset is called.
+    console.log('[StatsTab] Reset called.');
+}
+
 export function processForDashboardStats(originalLogLines, batteryDataPoints = [], workerThermalData = []) {
     const cpuRegex = /(\d+)% user \+ (\d+)% kernel|\bLoad:\s+([\d.]+)\b/i;
     const tempRegex = /(?:temp(?:erature)?|tsens_tz_sensor\d+):?\s*[:=]\s*(\d+)/i;
