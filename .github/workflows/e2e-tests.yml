@@ -47,7 +47,7 @@ jobs:
           CI: true
       
       - name: Wait for dev server to be ready
-        run: npx wait-on http://127.0.0.1:5173 --timeout 60000
+        run: npx wait-on http://localhost:5173/log_parser.html --timeout 60000
       
       - name: Run E2E tests
         run: npm run test:regression -- --project=${{ matrix.browser }}
@@ -117,7 +117,7 @@ jobs:
           CI: true
       
       - name: Wait for dev server to be ready
-        run: npx wait-on http://127.0.0.1:5173 --timeout 60000
+        run: npx wait-on http://localhost:5173/log_parser.html --timeout 60000
       
       - name: Run core tests
         run: npm run test:core -- --project=chromium
