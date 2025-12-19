@@ -29,7 +29,7 @@ export default defineConfig({
     retries: process.env.CI ? 2 : 0,
 
     // Number of workers
-    workers: process.env.CI ? 1 : undefined,
+    workers: process.env.CI ? 2 : 3,
 
     // Reporter configuration
     reporter: [
@@ -43,7 +43,7 @@ export default defineConfig({
     // Shared settings for all projects
     use: {
         // Base URL for navigation - use Vite dev server
-        baseURL: 'http://127.0.0.1:5173',
+        baseURL: 'http://localhost:5173',
 
         // Collect trace when retrying the failed test
         trace: 'on-first-retry',
@@ -88,7 +88,8 @@ export default defineConfig({
                 // Enable Chrome DevTools Protocol for performance monitoring
                 launchOptions: {
                     args: ['--enable-precise-memory-info']
-                }
+                },
+                permissions: ['clipboard-read', 'clipboard-write']
             }
         },
 
@@ -123,7 +124,7 @@ export default defineConfig({
     // Web server configuration - start Vite dev server for tests
     webServer: {
         command: 'npm run dev',
-        port: 5173,
+        url: 'http://localhost:5173/log_parser.html',
         timeout: 120000,
         reuseExistingServer: !process.env.CI
     }
