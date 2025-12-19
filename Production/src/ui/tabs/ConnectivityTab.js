@@ -1,3 +1,31 @@
+import { renderVirtualList } from '../components/VirtualList.js';
+import { wildcardToRegex } from '../../utils/regex.js';
+
+/**
+ * Sets up the Connectivity Tab (listeners).
+ */
+export function setupConnectivityTab(container, onScroll) {
+    if (container) {
+        container.addEventListener('scroll', onScroll);
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Renders the connectivity logs using the virtual list.
+ */
+export function renderConnectivityLogs(container, sizer, viewport, lines, collapseState, filterKeywords, liveSearchQuery, userAnchorLine) {
+    const activeKeywords = filterKeywords.filter(kw => kw.active).map(kw => kw.text);
+    const keywordRegexes = activeKeywords.length > 0 ? activeKeywords.map(wildcardToRegex) : null;
+    const liveSearchRegex = liveSearchQuery ? wildcardToRegex(liveSearchQuery) : null;
+
+    renderVirtualList(container, sizer, viewport, lines, collapseState, {
+        keywordRegexes,
+        liveSearchRegex,
+        selectedLine: userAnchorLine
+    });
+}
 
 /**
  * Filters log lines based on active technologies and specific layer filters.
