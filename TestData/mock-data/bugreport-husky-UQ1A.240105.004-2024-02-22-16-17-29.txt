@@ -1,0 +1,94 @@
+========================================================
+== dumpstate: 2024-02-22 16:17:29
+========================================================
+
+Build: test-build-UQ1A.240105.004
+Build fingerprint: 'google/test_device/test:14/UQ1A.240105.004/11234567:user/release-keys'
+Bootloader: TestBootloader-1.0
+Radio: TestRadio-1.0
+Network: TestCarrier
+
+------ SYSTEM LOG (logcat -v threadtime -v printable -v uid -d *:v) ------
+--------- beginning of main
+02-22 16:17:29.001  1000  1234  5678 I ActivityManager: Start proc 12345:com.test.app/u0a123 for activity {com.test.app/com.test.app.MainActivity}
+02-22 16:17:29.050  1000  1234  5679 D NetworkScheduler: NetworkScheduler.Stats: Task completed successfully
+02-22 16:17:29.100  1000  1234  5680 I RegisterSyncOperation: Sync operation registered for account test@example.com
+02-22 16:17:29.150  1000  1234  5681 V CCTUploader: Upload batch size: 5 events
+02-22 16:17:29.200  1000  1234  5682 W PowerManager: Screen timeout warning
+02-22 16:17:29.250  1000  1234  5683 E SystemServer: Critical system service failure
+02-22 16:17:29.300  1000  1234  5684 I ActivityManager: Process started successfully
+02-22 16:18:43.056  1000  2345  6789 D NetworkScheduler: NetworkScheduler.Stats: Network state changed
+02-22 16:18:43.058  1000  2345  6790 I RegisterSyncOperation: Sync scheduled for next interval
+02-22 16:18:43.079  1000  2345  6791 V CCTUploader: Batch upload initiated
+02-22 16:18:43.100  1000  2345  6792 I ActivityManager: Activity resumed: com.test.app/.MainActivity
+02-22 16:18:43.150  1000  2345  6793 D WindowManager: Window focus changed
+02-22 16:18:43.200  1000  2345  6794 I InputMethodManager: Keyboard shown
+02-22 16:18:43.250  1000  2345  6795 W NetworkScheduler: Retry scheduled for failed task
+02-22 16:18:43.300  1000  2345  6796 E CCTUploader: Upload failed, will retry
+02-22 16:18:43.350  1000  2345  6797 I ActivityManager: Background service started
+02-22 16:18:43.400  2000  3456  7890 D dumpstate: Collecting system information
+02-22 16:18:43.450  2000  3456  7891 I dumpstate: System dump in progress
+02-22 16:18:43.500  2000  3456  7892 V dumpstate: Verbose logging enabled
+02-22 16:18:43.550  2000  3456  7893 W dumpstate: Large dump size warning
+02-22 16:18:43.600  2000  3456  7894 E dumpstate: Failed to collect some data
+02-22 16:18:44.000  1000  1234  5685 I ActivityManager: Service connection established
+02-22 16:18:44.050  1000  1234  5686 D PackageManager: Package installed: com.test.newapp
+02-22 16:18:44.100  1000  1234  5687 I BatteryStats: Battery level: 85%
+02-22 16:18:44.150  1000  1234  5688 W ThermalManager: Device temperature: 38°C
+02-22 16:18:44.200  1000  1234  5689 E ConnectivityService: Network connectivity lost
+02-22 16:18:44.250  1000  1234  5690 I LocationManager: Location update received
+02-22 16:18:44.300  1000  1234  5691 D SensorManager: Sensor data updated
+02-22 16:18:44.350  1000  1234  5692 V MediaPlayer: Playback started
+02-22 16:18:44.400  1000  1234  5693 I NotificationManager: Notification posted
+02-22 16:18:44.450  1000  1234  5694 W AlarmManager: Alarm triggered
+02-22 16:18:44.500  1000  1234  5695 E CameraService: Camera error occurred
+02-22 16:18:45.000  1000  2345  6798 I ActivityManager: App process terminated
+02-22 16:18:45.050  1000  2345  6799 D NetworkScheduler: Task queue processed
+02-22 16:18:45.100  1000  2345  6800 V RegisterSyncOperation: Sync completed
+02-22 16:18:45.150  1000  2345  6801 I CCTUploader: Upload successful
+02-22 16:18:45.200  1000  2345  6802 W ActivityManager: Low memory warning
+02-22 16:18:45.250  1000  2345  6803 E SystemServer: Service crash detected
+02-22 16:18:45.300  1000  2345  6804 I PackageManager: App updated to version 2.0
+02-22 16:18:45.350  1000  2345  6805 D WindowManager: Display configuration changed
+02-22 16:18:45.400  1000  2345  6806 V InputMethodManager: Input method changed
+02-22 16:18:45.450  1000  2345  6807 I BatteryStats: Charging state changed
+02-22 16:18:45.500  1000  2345  6808 W ThermalManager: Thermal throttling active
+02-22 16:18:45.550  1000  2345  6809 E ConnectivityService: DNS resolution failed
+02-22 16:18:45.600  1000  2345  6810 I LocationManager: GPS signal acquired
+02-22 16:18:46.000  2000  3456  7895 D dumpstate: System state captured
+02-22 16:18:46.050  2000  3456  7896 I dumpstate: Dump file written
+02-22 16:18:46.100  2000  3456  7897 V dumpstate: Cleanup completed
+02-22 16:18:46.150  2000  3456  7898 W dumpstate: Some data unavailable
+02-22 16:18:46.200  2000  3456  7899 E dumpstate: Dump operation completed with errors
+
+--------- beginning of system
+02-22 16:17:30.000  1000  1000  1000 I Zygote: Process forked
+02-22 16:17:30.050  1000  1000  1001 D SystemServer: System services initialized
+02-22 16:17:30.100  1000  1000  1002 I PackageManager: Package database loaded
+02-22 16:17:30.150  1000  1000  1003 W ActivityManager: System ready
+02-22 16:17:30.200  1000  1000  1004 E SystemServer: Boot completed
+
+--------- beginning of crash
+02-22 16:18:47.000  1000  4567  8901 E AndroidRuntime: FATAL EXCEPTION: main
+02-22 16:18:47.001  1000  4567  8901 E AndroidRuntime: Process: com.test.crashapp, PID: 4567
+02-22 16:18:47.002  1000  4567  8901 E AndroidRuntime: java.lang.NullPointerException: Test exception
+02-22 16:18:47.003  1000  4567  8901 E AndroidRuntime:     at com.test.crashapp.MainActivity.onCreate(MainActivity.java:42)
+02-22 16:18:47.004  1000  4567  8901 E AndroidRuntime:     at android.app.Activity.performCreate(Activity.java:8000)
+
+------ MEMORY INFO (/proc/meminfo) ------
+MemTotal:        8000000 kB
+MemFree:         2000000 kB
+MemAvailable:    4000000 kB
+
+------ CPU INFO (top -n 1 -d 1 -m 30 -t) ------
+Tasks: 500 total
+%Cpu(s): 25.0 us, 10.0 sy
+
+------ PROCESSES AND THREADS (ps -A -T -Z -O pri,nice,rtprio,sched,pcy,time) ------
+USER           PID   TID PPID     VSZ    RSS WCHAN            ADDR S NAME
+system        1234  1234    1 1000000  50000 SyS_epoll_wait      0 S system_server
+u0_a123      12345 12345 1234  500000  25000 SyS_epoll_wait      0 S com.test.app
+
+========================================================
+== dumpstate: done
+========================================================

@@ -1,0 +1,34 @@
+{
+    "name": "android-log-parser",
+    "version": "1.0.0",
+    "description": "Android Log Parser with E2E Testing",
+    "type": "module",
+    "scripts": {
+        "dev": "vite --config .config/build/vite.config.js",
+        "build": "vite build --config .config/build/vite.config.js",
+        "preview": "vite preview --config .config/build/vite.config.js",
+        "test:unit": "vitest --config .config/test/vitest.config.js",
+        "test:regression": "playwright test -c .config/test/playwright.config.js",
+        "test:ci": "playwright test -c .config/test/playwright.config.ci.js",
+        "test:core": "playwright test -c .config/test/playwright.config.ci.js complete_workflows log_filtering_advanced",
+        "lint": "eslint ."
+    },
+    "dependencies": {
+        "chart.js": "^4.4.1",
+        "jszip": "^3.10.1",
+        "nouislider": "^15.7.1"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.39.2",
+        "@playwright/test": "^1.40.1",
+        "@vitest/ui": "^1.0.4",
+        "allure-playwright": "^2.15.1",
+        "eslint": "^9.39.2",
+        "fake-indexeddb": "^5.0.2",
+        "globals": "^16.5.0",
+        "vite": "^5.0.8",
+        "vite-plugin-singlefile": "^2.0.2",
+        "vitest": "^1.0.4",
+        "wait-on": "^9.0.3"
+    }
+}

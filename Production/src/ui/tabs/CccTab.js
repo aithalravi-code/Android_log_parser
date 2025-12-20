@@ -1,0 +1,1238 @@
+import { escapeHtml, formatParam } from '../../utils/html.js';
+import { makeTableResizable } from '../../table-resize.js';
+import { makeSortable } from '../../table-sort.js';
+// import * as XLSX from 'xlsx';
+
+let cccStatsData = [];
+const cccColumnFilters = new Map();
+let btsnoopConnectionMap = new Map();
+let currentRenderJobId = 0;
+let cccFilterDebounceTimer = null;
+let isCccTableInitialized = false; // Track if table HTML and listeners are set up
+
+
+// --- Constants ---
+const CONTROL_FLOW_P1_MAP = {
+    '00': 'Success / Continue',
+    '01': 'Flow Control / Wait',
+    '02': 'Error / Abort'
+};
+
+const CONTROL_FLOW_P2_MAP = {
+    '00': 'Success / No Info',
+    '01': 'Public Key Not Found / No Matching SPAKE2+',
+    '02': 'Public Key Expired / Cert Chain Received',
+    '03': 'Public Key Not Trusted / User Confirm',
+    '04': 'Invalid Signature',
+    '05': 'Invalid Channel',
+    '06': 'Invalid Data Format',
+    '07': 'Invalid Data Content',
+    '08': 'Preconditions Not Fulfilled',
+    '0B': 'Cert Verify Failed',
+    '0F': 'Time Extension',
+    '11': 'Key Creation/Verification Success',
+    '7F': 'Data/Format Error',
+    'A0': 'Key deleted / Not known',
+    'B0': 'Doors/Trunk not closed',
+    'B1': 'Vehicle not in parking state'
+};
+
+const AUTH_P1_MAP = {
+    '00': 'Standard Authentication',
+    '01': 'Fast Authentication',
+    '02': 'Transaction Authentication',
+    '03': 'Reserved',
+    '04': 'Reserved'
+};
+
+const AUTH_P2_MAP = {
+    '00': 'RFU',
+    '01': 'Door unlock',
+    '02': 'Door lock',
+    '03': 'First engine start (First contact)',
+    '04': 'First engine start (Subsequent contact)',
+    '05': 'Other authentication request by vehicle',
+    '06': 'User authentication request by vehicle',
+    '07': 'First standard transaction at owner pairing',
+    '08': 'Second standard transaction at owner pairing',
+    '10': 'Derive ranging key',
+    '11': 'First approach (Standard transaction)'
+};
+
+const COMMON_TAGS = {
+    '30': 'Sequence',
+    'A0': 'Status_Object',
+    '83': 'Status'
+};
+
+const APDU_TAGS = {
+    ...COMMON_TAGS,
+    '86': 'Endpoint_ePK',
+    '87': 'Vehicle_ePK',
+    '4D': 'Vehicle_Identifier',
+    '4C': 'Transaction_Identifier',
+    '9E': 'Signature',
+    '5C': 'Protocol_Version',
+    '4E': 'Key_Slot',
+    '57': 'Counter_Value',
+    '4A': 'Confidential_Mailbox',
+    '4B': 'Private_Mailbox',
+    '93': 'Usage'
+};
+
+const RKE_TAGS = {
+    ...COMMON_TAGS,
+    '7F70': 'Request_RKE_Action',
+    '7F72': 'Function_Status_Response',
+    '7F73': 'Subscribe_Vehicle_Function',
+    '7F74': 'Get_Function_Status',
+    '7F76': 'Continue_RKE_Action',
+    '7F77': 'Stop_RKE_Action',
+    '80': 'Function_ID',
+    '81': 'Action_ID',
+    '84': 'From_Function_ID',
+    '85': 'To_Function_ID',
+    '86': 'Full_Update_Flag',
+    '88': 'Arbitrary_Data'
+};
+
+const FUNCTION_IDS = {
+    '0001': 'Central_Locking',
+    '0010': 'Driving_Readiness'
+};
+
+const APDU_COMMANDS = {
+    '00A4': 'SELECT',
+    '8030': 'SPAKE2+_REQUEST',
+    '8032': 'SPAKE2+_VERIFY',
+    '84D4': 'WRITE_DATA',
+    '84CA': 'GET_DATA',
+    '84C0': 'GET_RESPONSE',
+    '803C': 'CONTROL_FLOW',
+    '8080': 'AUTH0',
+    '8081': 'AUTH1',
+    '8071': 'CREATE_RANGING_KEY',
+    '8072': 'TERMINATE_RANGING_SESSION',
+    '8073': 'EXCHANGE_RANGING_DATA',
+    '86E2': 'EXCHANGE'
+};
+
+const RKE_STATUS_MAP = {
+    '0001': { '00': 'Unlocked', '01': 'Locked', '02': 'Selective Unlocked', '03': 'Locked Safe' },
+    '0002': { '00': 'Closed', '01': 'Open', '02': 'Intermediate' },
+    '0010': { '00': 'Not Ready', '01': 'Ready', '02': 'Engine Running', '03': 'Engine Cranking' },
+    '0012': { '00': 'Off', '01': 'On' },
+    'default': { '00': 'Ok/Inactive', '01': 'Fail/Active' }
+};
+
+const UWB_TAGS = {};
+
+export const CCC_CONSTANTS = {
+    MESSAGE_TYPES: {
+        0x00: 'Framework',
+        0x01: 'SE',
+        0x02: 'UWB Ranging Service',
+        0x03: 'DK Event Notification',
+        0x04: 'Vehicle OEM App',
+        0x05: 'Supplementary Service',
+        0x06: 'Head Unit Pairing'
+    },
+    UWB_RANGING_MSGS: {
+        0x01: 'Ranging_Capability_RQ',
+        0x02: 'Ranging_Capability_RS',
+        0x03: 'Ranging_Session_RQ',
+        0x04: 'Ranging_Session_RS',
+        0x05: 'Ranging_Session_Setup_RQ',
+        0x06: 'Ranging_Session_Setup_RS',
+        0x07: 'Ranging_Suspend_RQ',
+        0x08: 'Ranging_Suspend_RS',
+        0x09: 'Ranging_Recovery_RQ',
+        0x0A: 'Ranging_Recovery_RS',
+        0x0B: 'Configurable_Ranging_Recovery_RQ',
+        0x0C: 'Configurable_Ranging_Recovery_RS'
+    },
+    DK_EVENT_CATEGORIES: {
+        0x01: 'Command Complete',
+        0x02: 'Ranging Session Status Changed',
+        0x03: 'Device Ranging Intent',
+        0x04: 'Vehicle Status Change',
+        0x05: 'RKE Request',
+        0x11: 'DK Event Notification'
+    },
+    SUPPLEMENTARY_MSGS: {
+        0x0D: 'Time_Sync',
+        0x0E: 'First_Approach_RQ',
+        0x0F: 'First_Approach_RS',
+        0x14: 'RKE_Auth_RQ',
+        0x15: 'RKE_Auth_RS'
+    },
+    FRAMEWORK_MSGS: {
+        0x04: 'OP_CONTROL_FLOW',
+        0x18: 'Proprietary / Unknown'
+    },
+    SE_MSGS: {
+        0x0B: 'DK_APDU_RQ',
+        0x0C: 'DK_APDU_RS'
+    }
+};
+
+// --- Helpers ---
+
+const parseTLV = (hex, tagMap = COMMON_TAGS) => {
+    let result = '';
+    let i = 0;
+    let maxIter = 100;
+    let currentFunctionId = null;
+
+    while (i < hex.length && maxIter-- > 0) {
+        const nextByte = hex.substring(i, i + 2).toUpperCase();
+        if (nextByte === '00' || nextByte === 'FF') {
+            i += 2;
+            continue;
+        }
+
+        let tag = nextByte;
+        if (!/^[0-9A-F]{2}$/i.test(tag)) {
+            break;
+        }
+
+        i += 2;
+        if ((parseInt(tag, 16) & 0x1F) === 0x1F) {
+            tag += hex.substring(i, i + 2).toUpperCase();
+            i += 2;
+        }
+
+        if (i + 2 > hex.length) {
+            break;
+        }
+        const lenHex = hex.substring(i, i + 2);
+        let len = parseInt(lenHex, 16);
+        i += 2;
+
+        if (len > 127) {
+            if (len === 0x81) {
+                if (i + 2 > hex.length) {
+                    break;
+                }
+                len = parseInt(hex.substring(i, i + 2), 16);
+                i += 2;
+            } else if (len === 0x82) {
+                if (i + 4 > hex.length) {
+                    break;
+                }
+                len = parseInt(hex.substring(i, i + 4), 16);
+                i += 4;
+            }
+        }
+
+        if (i + (len * 2) > hex.length) {
+            result += `<div class="tlv-block">${formatParam(`Tag_${tag}`, '[Truncated]')}</div>`;
+            break;
+        }
+
+        const val = hex.substring(i, i + (len * 2));
+        i += (len * 2);
+
+        const tagName = tagMap[tag] || `Tag_${tag}`;
+
+        if (tag.startsWith('7F') || tag === '30' || tag === 'A0') {
+            const nested = parseTLV(val, tagMap);
+            result += `<div class="tlv-block"><span class="ccc-param">${tagName}:</span><div class="tlv-indent">${nested}</div></div>`;
+        } else {
+            let displayVal = val;
+
+            if (tagMap === RKE_TAGS) {
+                if (tag === '80') {
+                    currentFunctionId = val;
+                    if (FUNCTION_IDS[val]) {
+                        displayVal = `${val} (${FUNCTION_IDS[val]})`;
+                    }
+                }
+                if (tag === '83') {
+                    const map = RKE_STATUS_MAP[currentFunctionId] || RKE_STATUS_MAP['default'];
+                    const statusText = map[val] || map['default'];
+                    if (statusText) {
+                        displayVal = `${val} (${statusText})`;
+                    }
+                }
+                if (tag === '86' && len === 0) {
+                    displayVal = 'True';
+                }
+            }
+
+            result += `<div class="tlv-block">${formatParam(tagName, displayVal)}</div>`;
+        }
+    }
+    return result;
+};
+
+const decodeHoppingConfig = (hex) => {
+    const val = parseInt(hex, 16);
+    const modes = [];
+    if (val & 0x80) {
+        modes.push('No Hopping');
+    }
+    if (val & 0x40) {
+        modes.push('Continuous');
+    }
+    if (val & 0x20) {
+        modes.push('Adaptive');
+    }
+    if (val & 0x10) {
+        modes.push('Default Sequence');
+    }
+    if (val & 0x08) {
+        modes.push('AES Hopping');
+    }
+
+    // F8 (1111 1000) -> b7, b6, b5, b4, b3 set.
+
+    const modeStr = modes.length > 0 ? modes.join(', ') : 'None';
+    return `0x${hex} (${modeStr})`;
+};
+
+const decodeChannelBitmask = (hex) => {
+    const val = parseInt(hex, 16);
+    const channels = [];
+    if (val & 0x01) {
+        channels.push('Channel 5');
+    }
+    if (val & 0x02) {
+        channels.push('Channel 9');
+    }
+
+    const chanStr = channels.length > 0 ? channels.join(', ') : 'None';
+    return `0x${hex} (${chanStr})`;
+};
+
+export const decodePayload = (type, subtype, payload) => {
+    let innerMsg = CCC_CONSTANTS.MESSAGE_TYPES[type] || `Type_0x${type.toString(16).padStart(2, '0')}`;
+    let params = '';
+
+    if (!payload) {
+        return { innerMsg, params: '' };
+    }
+
+    if (type === 0x00) {
+        if (subtype === 0x04) {
+            innerMsg = 'Data PDU';
+            const dataParts = payload.match(/.{1,2}/g);
+            params = formatParam('Data', dataParts ? dataParts.join(' ') : payload);
+            return { innerMsg, params };
+        }
+        if (subtype === 0x18) {
+            innerMsg = 'Encrypted PDU';
+            let info = '';
+            if (payload.toLowerCase().includes('a0')) {
+                info = formatParam('Info', '[Contains TLV Data]') + ' ';
+            }
+            const dataParts = payload.match(/.{1,2}/g);
+            params = info + formatParam('Data', dataParts ? dataParts.join(' ') : payload);
+            return { innerMsg, params };
+        }
+    }
+
+    if (type === 0x01) {
+        if (subtype === 0x0B) {
+            if (payload.length >= 4) {
+                const apdu = payload.substring(4);
+                const cla = apdu.substring(0, 2).toUpperCase();
+                const ins = apdu.substring(2, 4).toUpperCase();
+                const claIns = cla + ins;
+
+                if (cla === 'C9') {
+                    innerMsg = 'EXCHANGE_APDU';
+                    if (apdu.length >= 10) {
+                        const data = apdu.substring(10);
+                        params = parseTLV(data, APDU_TAGS);
+                    } else {
+                        params = formatParam('Data', apdu.match(/.{1,2}/g).join(' '));
+                    }
+                } else if (APDU_COMMANDS[claIns]) {
+                    const cmdName = APDU_COMMANDS[claIns];
+                    const p1 = apdu.substring(4, 6);
+                    const p2 = apdu.substring(6, 8);
+                    const dataStart = 10;
+                    const data = apdu.substring(dataStart);
+
+                    innerMsg = cmdName;
+                    let p1Text = p1;
+                    let p2Text = p2;
+
+                    if (cmdName === 'SELECT') {
+                        if (p1 === '04' && data.length > 0) {
+                            if (data.toLowerCase().includes('a000000809434343444b417631')) {
+                                params = formatParam('Applet', 'Digital Key') + formatParam('AID', data);
+                            } else {
+                                params = formatParam('AID', data);
+                            }
+                        }
+                        // Fall through to add P1/P2
+                    } else if (cmdName === 'CONTROL_FLOW') {
+                        p1Text = CONTROL_FLOW_P1_MAP[p1] || p1;
+                        p2Text = CONTROL_FLOW_P2_MAP[p2] || p2;
+                    } else if (cmdName === 'AUTH0' || cmdName === 'AUTH1') {
+                        p1Text = AUTH_P1_MAP[p1] || p1;
+                        p2Text = AUTH_P2_MAP[p2] || p2;
+                    }
+
+                    const commonParams = formatParam('P1', `${p1Text} (0x${p1})`) +
+                        formatParam('P2', `${p2Text} (0x${p2})`);
+
+                    if (!params) {
+                        params = '';
+                    }
+                    params = commonParams + params;
+
+                    if (data.length > 0) {
+                        // SELECT command data is typically just the AID (raw bytes), not TLV.
+                        // CREATE_RANGING_KEY is also arbitrary data.
+                        if (cmdName === 'SELECT') {
+                            // Already extracted above
+                        } else if (cmdName === 'CREATE_RANGING_KEY') {
+                            params += formatParam('Data', data.match(/.{1,2}/g).join(' '));
+                        } else {
+                            const tlv = parseTLV(data, APDU_TAGS);
+                            if (tlv) {
+                                params += formatParam('Data (TLV)', tlv);
+                            } else {
+                                params += formatParam('Data', data.match(/.{1,2}/g).join(' '));
+                            }
+                        }
+                    }
+                } else if (apdu.startsWith('8080')) {
+                    innerMsg = 'AUTH0';
+                    params = parseTLV(apdu.substring(10), APDU_TAGS);
+                } else {
+                    innerMsg = 'APDU';
+                    if (claIns === '8071') {
+                        innerMsg = 'CREATE_RANGING_KEY';
+                        // This command has arbitrary data, not TLV
+                        params = formatParam('Data', apdu.substring(10).match(/.{1,2}/g).join(' '));
+                    } else if (claIns === '8072') {
+                        innerMsg = 'TERMINATE_RANGING_SESSION';
+                        params = parseTLV(apdu.substring(10), APDU_TAGS);
+                    } else if (claIns === '8073') {
+                        innerMsg = 'EXCHANGE_RANGING_DATA';
+                        params = parseTLV(apdu.substring(10), APDU_TAGS);
+                    } else {
+                        params = formatParam('Data', apdu.match(/.{1,2}/g).join(' '));
+                    }
+                }
+                return { innerMsg, params };
+            }
+        }
+        if (subtype === 0x0C) {
+            if (payload.length >= 4) {
+                const lenVal = parseInt(payload.substring(0, 4), 16);
+                const apdu = payload.substring(4);
+                if (apdu.length >= 4) {
+                    const sw = apdu.substring(apdu.length - 4);
+                    const data = apdu.substring(0, apdu.length - 4);
+                    let statusText = sw;
+                    if (sw === '9000') {
+                        statusText = 'Success (9000)';
+                    }
+
+                    innerMsg = 'Response';
+
+                    const swHtml = formatParam('SW', statusText);
+                    let tlvHtml = '';
+
+                    if (data.length > 0) {
+                        const tlv = parseTLV(data, APDU_TAGS);
+                        if (tlv && !tlv.includes('[Truncated') && !data.startsWith('04')) {
+                            tlvHtml = formatParam('Data', tlv);
+                        } else {
+                            tlvHtml = formatParam('Data', data.match(/.{1,2}/g).join(' '));
+                        }
+                    }
+                    return { innerMsg, params: tlvHtml + swHtml };
+                }
+            }
+        }
+    }
+
+    if (type === 0x02) {
+        innerMsg = CCC_CONSTANTS.UWB_RANGING_MSGS[subtype] || `UWB_Msg_0x${subtype.toString(16).padStart(2, '0')}`;
+        if (subtype === 0x03) {
+            if (payload.length >= 24) {
+                params = formatParam('Length', '0x' + payload.substring(0, 4)) +
+                    formatParam('Protocol', '0x' + payload.substring(4, 8)) +
+                    formatParam('ConfigID', '0x' + payload.substring(8, 12)) +
+                    formatParam('SessionID', '0x' + payload.substring(12, 20)) +
+                    formatParam('PulseShape', '0x' + payload.substring(20, 22)) +
+                    formatParam('Channel', decodeChannelBitmask(payload.substring(22, 24)));
+                if (payload.length > 24) {
+                    params += formatParam('Data (Remaining)', payload.substring(24).match(/.{1,2}/g).join(' '));
+                }
+            } else {
+                params = formatParam('Data', payload.match(/.{1,2}/g).join(' '));
+            }
+        }
+        if (subtype === 0x04) {
+            if (payload.length >= 4) {
+                params = formatParam('Length', '0x' + payload.substring(0, 4));
+                const content = payload.substring(4);
+                if (content.length >= 16) {
+                    const ranMult = parseInt(content.substring(0, 2), 16);
+                    const slotMask = content.substring(2, 4);
+                    const syncMask = content.substring(4, 12);
+                    const channelHex = content.substring(12, 14);
+                    const hoppingHex = content.substring(14, 16);
+
+                    params += formatParam('RAN_Multiplier', ranMult) +
+                        formatParam('Slot_BitMask', '0x' + slotMask) +
+                        formatParam('SYNC_Code_Index_BitMask', '0x' + syncMask) +
+                        formatParam('Selected_UWB_Channel', decodeChannelBitmask(channelHex)) +
+                        formatParam('Hopping_Config_Bitmask', decodeHoppingConfig(hoppingHex));
+
+                    if (content.length > 16) {
+                        params += formatParam('Data (Remaining)', content.substring(16).match(/.{1,2}/g).join(' '));
+                    }
+                } else {
+                    const tlv = parseTLV(content, UWB_TAGS);
+                    if (tlv) {
+                        params += tlv;
+                    } else {
+                        params += formatParam('Data', content.match(/.{1,2}/g)?.join(' ') || content);
+                    }
+                }
+            }
+        }
+        if (subtype === 0x05) {
+            if (payload.length >= 4) {
+                params = formatParam('Length', '0x' + payload.substring(0, 4));
+                const content = payload.substring(4);
+                if (content.length >= 18) {
+                    params += formatParam('Session_RAN_Multiplier', parseInt(content.substring(0, 2), 16)) +
+                        formatParam('Number_Chaps_per_Slot', parseInt(content.substring(2, 4), 16)) +
+                        formatParam('Number_Responders_Nodes', parseInt(content.substring(4, 6), 16)) +
+                        formatParam('Number_Slots_per_Round', parseInt(content.substring(6, 8), 16)) +
+                        formatParam('SYNC_Code_Index', parseInt(content.substring(8, 16), 16));
+
+                    const combinedByte = parseInt(content.substring(16, 18), 16);
+                    const channelMask = combinedByte & 0x07; // b0-b2
+                    const hoppingConfig = combinedByte & 0xF8; // b3-b7 (AES, Default, Adaptive, Cont, No Hop)
+
+                    params += formatParam('Channel_Bitmask', decodeChannelBitmask(channelMask.toString(16))) +
+                        formatParam('Hopping_Config_Bitmask', decodeHoppingConfig(hoppingConfig.toString(16)));
+                    if (content.length > 18) {
+                        params += formatParam('Data (Remaining)', content.substring(18).match(/.{1,2}/g).join(' '));
+                    }
+                } else {
+                    params += formatParam('Data', content.match(/.{1,2}/g)?.join(' ') || '');
+                }
+            }
+        }
+        if (subtype === 0x06) {
+            // Ranging_Session_Setup_RS - CCC Spec Table 19-35
+            // Format: [Length:4 hex chars][Data...]
+            // Data params are in little-endian byte order
+            if (payload.length >= 4) {
+                params = formatParam('Length', '0x' + payload.substring(0, 4));
+                const content = payload.substring(4);
+                if (content.length >= 34) {
+                    const stsIndex = content.substring(0, 8); // STS_Index0: 4 bytes
+                    const uwbTime = content.substring(8, 24); // UWB_Time0: 8 bytes
+                    const hopKey = content.substring(24, 32);
+                    const syncIdx = content.substring(32, 34);
+
+                    const stsDec = parseInt(stsIndex, 16);
+                    const uwbDec = BigInt('0x' + uwbTime).toString();
+                    const syncDec = parseInt(syncIdx, 16);
+
+                    params += formatParam('STS_Index0', `0x${stsIndex} (${stsDec})`) +
+                        formatParam('UWB_Time0', `0x${uwbTime} (${uwbDec})`) +
+                        formatParam('HOP_Key', '0x' + hopKey) +
+                        formatParam('SYNC_Index', `0x${syncIdx} (${syncDec})`);
+                    if (content.length > 34) {
+                        params += formatParam('Data (Remaining)', content.substring(34).match(/.{1,2}/g).join(' '));
+                    }
+                } else {
+                    params += formatParam('Data', content.match(/.{1,2}/g)?.join(' ') || '');
+                }
+            }
+        }
+        if (subtype === 0x07) {
+            if (payload.startsWith('0004') && payload.length >= 12) {
+                params = formatParam('UWB Session ID', '0x' + payload.substring(4, 12));
+                if (payload.length > 12) {
+                    params += formatParam('Data (Remaining)', payload.substring(12).match(/.{1,2}/g).join(' '));
+                }
+            }
+        }
+        if (subtype === 0x08) {
+            const status = payload.length >= 2 ? payload.substring(payload.length - 2) : payload;
+            const statusText = status === '00' ? 'Accepted' : status === '01' ? 'Delayed' : 'Unknown (0x' + status + ')';
+            params = formatParam('Suspend Response', statusText);
+        }
+        if (subtype === 0x09) {
+            if (payload.startsWith('0004') && payload.length >= 12) {
+                params = formatParam('UWB Session ID', '0x' + payload.substring(4, 12));
+                if (payload.length > 12) {
+                    params += formatParam('Data (Remaining)', payload.substring(12).match(/.{1,2}/g).join(' '));
+                }
+            }
+        }
+        if (subtype === 0x0A) {
+            // Ranging_Recovery_RS - CCC Spec Table 19-43
+            // Format: [Length:4 hex chars][Data...]
+            if (payload.length >= 28) { // Need at least 4 (length) + 24 (data)
+                const length = payload.substring(0, 4); // Length field
+                const data = payload.substring(4); // Actual data starts here
+
+                const stsIndex = data.substring(0, 8); // STS_Index0: 4 bytes
+                const uwbTime = data.substring(8, 24); // UWB_Time0: 8 bytes
+
+                const stsDec = parseInt(stsIndex, 16);
+                const uwbDec = BigInt('0x' + uwbTime).toString();
+
+                params = formatParam('Length', '0x' + length) +
+                    formatParam('STS_Index0', `0x${stsIndex} (${stsDec})`) +
+                    formatParam('UWB_Time0', `0x${uwbTime} (${uwbDec})`);
+                if (data.length > 24) {
+                    params += formatParam('Data (Remaining)', data.substring(24).match(/.{1,2}/g).join(' '));
+                }
+            }
+        }
+        if (params && params !== '') {
+            return { innerMsg, params };
+        }
+    }
+
+    if (type === 0x03) {
+        if (subtype === 0x11) {
+            if (payload.length > 4) {
+                const actualPayload = payload.substring(4);
+                const category = actualPayload.substring(0, 2);
+                const data = actualPayload.substring(2);
+
+                // CCC Digital Key R3 Spec Section 19.3.8: DK Event Notification SubEvent Categories
+                const CATEGORIES = {
+                    '01': 'Command Complete',
+                    '02': 'Ranging Session Status Changed',
+                    '03': 'Device Ranging Intent',
+                    '04': 'Vehicle Status Changed',
+                    '05': 'RKE Request',
+                    '06': 'RKE Acknowledge'
+                };
+
+                innerMsg = CATEGORIES[category] || `Category_0x${category}`;
+                params = formatParam('Data', data);
+
+                if (category === '01') {
+                    const code = data.length >= 2 ? data.substring(0, 2) : '';
+                    // CCC Digital Key R3 Spec Table 19-73: Command_Status codes
+                    const commandStatusMap = {
+                        '00': 'Deselect SE',
+                        '01': 'BLE Pairing Ready',
+                        '02': 'Require Capability Exchange',
+                        '03': 'Request Standard Transaction',
+                        '04': 'Request Owner Pairing',
+                        '80': 'General Error',
+                        '81': 'Device SE Busy',
+                        '82': 'Device SE Transaction State Lost',
+                        '83': 'Device Busy',
+                        '84': 'Command Temporarily Blocked',
+                        '85': 'Unsupported Channel Bitmask',
+                        '86': 'OP Device Not Inside Vehicle',
+                        '87': 'Device Resource Available',
+                        'FC': 'OOB Mismatch',
+                        'FD': 'BLE Pairing Failed',
+                        'FE': 'FA Crypto Operation Failed',
+                        'FF': 'Wrong Parameters'
+                    };
+                    const codeDesc = commandStatusMap[code.toUpperCase()] || 'Unknown Status';
+                    params = formatParam('Status', codeDesc) + formatParam('Code', '0x' + code.toUpperCase());
+                }
+
+                if (category === '02') {
+                    const code = data.length >= 2 ? data.substring(0, 2) : '';
+                    // CCC Digital Key R3 Spec Table 19-75: Session_Status codes
+                    const sessionStatusMap = {
+                        '00': 'Ranging Session URSK Refresh',
+                        '01': 'Ranging Session URSK Not Found',
+                        '02': 'Ranging Session Not Required',
+                        '03': 'Ranging Session Secure Ranging Failed',
+                        '04': 'Ranging Session Terminated',
+                        '06': 'Ranging Session Recovery Failed',
+                        '07': 'Ranging Session Suspended'
+                    };
+                    params = formatParam('Session Status', sessionStatusMap[code.toUpperCase()] || 'Unknown (' + code + ')');
+                }
+
+                if (category === '03') {
+                    const code = data.length >= 2 ? data.substring(0, 2) : '';
+                    // CCC Digital Key R3 Spec Table 19-77: DR_Intent codes
+                    const drIntentMap = {
+                        '00': 'Low Approach Confidence',
+                        '01': 'Medium Approach Confidence',
+                        '02': 'High Approach Confidence'
+                    };
+                    params = formatParam('Device Ranging Intent', drIntentMap[code.toUpperCase()] || 'Unknown (' + code + ')');
+                }
+
+                if (category === '04' || category === '05') {
+                    params = parseTLV(data, RKE_TAGS);
+                }
+
+                const upperData = data.toUpperCase();
+                if ((category !== '04' && category !== '05') && (upperData.startsWith('7F') || upperData.startsWith('30'))) {
+                    params = parseTLV(data, RKE_TAGS);
+                }
+                return { innerMsg, params };
+            }
+        }
+        if (subtype === 0x03) {
+            return { innerMsg: 'Legacy Intent', params: formatParam('Data', payload) };
+        }
+    }
+
+    if (type === 0x05) {
+        if (subtype === 0x0D) {
+            innerMsg = 'Time_Sync';
+            // Payload should be Length(2 bytes) + 23 bytes data = 25 bytes (50 hex chars)
+            // But we accept if it has at least the data length (46 chars) + length (4 chars) = 50
+            if (payload.length >= 50) {
+                const lengthHex = payload.substring(0, 4);
+                const data = payload.substring(4);
+
+                const eventCountHex = data.substring(0, 16);
+                const uwbTimeHex = data.substring(16, 32);
+                const uncertaintyHex = data.substring(32, 34);
+                const skewHex = data.substring(34, 36);
+                const ppmHex = data.substring(36, 40);
+                const successHex = data.substring(40, 42);
+                const retryDelayHex = data.substring(42, 46);
+
+                const eventCount = BigInt('0x' + eventCountHex);
+                const uwbTime = BigInt('0x' + uwbTimeHex);
+                const uncertainty = parseInt(uncertaintyHex, 16);
+                const ppm = parseInt(ppmHex, 16);
+                const success = parseInt(successHex, 16);
+                const retryDelay = parseInt(retryDelayHex, 16);
+
+                // Formula: 2^(Uncertainty/8) µs
+                const uncertaintyUs = Math.pow(2, uncertainty / 8).toFixed(2);
+
+                const successMap = { 0: 'Failed', 1: 'Success', 2: 'Failed (Proc 0 N/A)' };
+                const successText = successMap[success] || 'Unknown';
+
+                params = formatParam('Length', '0x' + lengthHex) +
+                    formatParam('EventCount', `0x${eventCountHex} (${eventCount.toString()})`) +
+                    formatParam('UWB Time', `0x${uwbTimeHex} (${uwbTime.toString()} µs)`) +
+                    formatParam('Uncertainty', `0x${uncertaintyHex} (${uncertainty} = ~${uncertaintyUs} µs)`) +
+                    formatParam('Skew', `0x${skewHex}`) +
+                    formatParam('PPM', `0x${ppmHex} (${ppm} ppm)`) +
+                    formatParam('Success', `0x${successHex} (${successText})`) +
+                    formatParam('RetryDelay', `0x${retryDelayHex} (${retryDelay} ms)`);
+
+                if (data.length > 46) {
+                    params += formatParam('Data (Remaining)', data.substring(46).match(/.{1,2}/g).join(' '));
+                }
+
+                return { innerMsg, params };
+            }
+        }
+    }
+
+    if (type === 0x05) {
+        if (subtype === 0x0D) {
+            innerMsg = 'Time_Sync';
+            params = parseTLV(payload, {
+                '57': 'Counter_Value',
+                '58': 'UWB_Device_Time_Uncertainty',
+                '59': 'UWB_Clock_Skew_Measurement_available',
+                '5A': 'Device_max_PPM',
+                '5B': 'Success',
+                '5C': 'RetryDelay'
+            });
+        }
+        if (subtype === 0x0E) {
+            innerMsg = 'First_Approach_RQ';
+            // First_Approach_RQ contains two encrypted blocks (AES-128-CCM):
+            // Block 1: E1_Payload (8 bytes) + IV1 (8 bytes) + Tag1 (4 bytes) - encrypted DK_Identifier with Kble_intro
+            // Block 2: E2_Payload (38 bytes) + IV2 (8 bytes) + Tag2 (4 bytes) - encrypted BTAddrA||Ca||ra with Kble_oob
+            if (payload.length >= 140) {
+                // Block 1: DK_Identifier encrypted with Kble_intro
+                const e1 = payload.substring(0, 16);
+                const iv1 = payload.substring(16, 32);
+                const tag1 = payload.substring(32, 40);
+
+                // Block 2: BTAddrA||Ca||ra encrypted with Kble_oob
+                const e2 = payload.substring(40, 116);
+                const iv2 = payload.substring(116, 132);
+                const tag2 = payload.substring(132, 140);
+
+                params = `<div class="tlv-block">${formatParam('E1 (DK_Identifier)', e1)}</div>` +
+                    `<div class="tlv-indent">${formatParam('IV1', iv1)} ${formatParam('Tag1', tag1)}</div>` +
+                    `<div class="tlv-block">${formatParam('E2 (BTAddr||Ca||ra)', e2)}</div>` +
+                    `<div class="tlv-indent">${formatParam('IV2', iv2)} ${formatParam('Tag2', tag2)}</div>`;
+            } else {
+                params = formatParam('Raw Data', payload);
+            }
+        }
+        if (subtype === 0x0F) {
+            innerMsg = 'First_Approach_RS';
+            // E_Payload(Variable), IV(8), Tag(4)
+            // Tag is last 4 bytes (8 chars), IV is before that (8 bytes/16 chars)
+            if (payload.length >= 24) {
+                const tagStart = payload.length - 8;
+                const ivStart = tagStart - 16;
+                const ePayload = payload.substring(0, ivStart);
+                const iv = payload.substring(ivStart, tagStart);
+                const tag = payload.substring(tagStart);
+
+                const p1 = formatParam('E_Payload', ePayload);
+                const p2 = formatParam('IV', iv);
+                const p3 = formatParam('Tag', tag);
+                params = `${p1} ${p2} ${p3}`;
+            } else {
+                params = formatParam('Raw Data', payload);
+            }
+        }
+        if (subtype === 0x14) {
+            innerMsg = 'RKE_Auth_RQ';
+            // RKE Challenge (16 bytes)
+            params = formatParam('RKE Challenge', payload);
+        }
+        if (subtype === 0x15) {
+            innerMsg = 'RKE_Auth_RS';
+            // Arbitrary Data Attestation (Variable)
+            params = formatParam('Arbitrary Data', payload);
+        }
+    }
+
+    return { innerMsg, params: formatParam('Payload', (payload.match(/.{1,2}/g) || [payload]).join(' ')) };
+};
+
+// --- Exported Functions ---
+
+export function reset() {
+    cccStatsData = [];
+    cccColumnFilters.clear();
+    btsnoopConnectionMap = new Map();
+    currentRenderJobId++; // Invalidate any ongoing rendering
+    isCccTableInitialized = false; // Allow table to be re-initialized
+    console.log('[CccTab] State reset');
+}
+
+export async function setup(cccMessages, connectionMap, ensureBtsnoopProcessedFn, isBtsnoopProcessed) {
+
+    // Only process BTSnoop if it hasn't been processed yet
+    if (ensureBtsnoopProcessedFn && !isBtsnoopProcessed) {
+        await ensureBtsnoopProcessedFn();
+    }
+
+    // Capture connection map
+    btsnoopConnectionMap = connectionMap || new Map();
+
+    // Update cccStatsData with the CCC messages extracted from log lines
+    if ((!cccStatsData || cccStatsData.length === 0) && cccMessages && cccMessages.length > 0) {
+        cccStatsData = cccMessages;
+    } else if (cccMessages && cccMessages.length > 0) {
+        // Replace with fresh data if new messages are provided
+        const freshData = cccMessages;
+        if (freshData.length > cccStatsData.length) {
+            cccStatsData = freshData;
+        }
+    }
+
+    console.log('[CccTab] setup() called, cccMessages length:', cccMessages?.length || 0);
+    render(cccStatsData);
+}
+
+export function render(messages) {
+    console.log('[CccTab] render() called, messages length:', messages?.length || 0, 'isCccTableInitialized:', isCccTableInitialized);
+    cccStatsData = messages || [];
+
+    const container = document.getElementById('cccStatsContainer');
+    if (!container) {
+        return;
+    }
+
+    // Only initialize table HTML and listeners once
+    if (!isCccTableInitialized && !container.querySelector('table')) {
+        container.innerHTML = `
+        <div class="table-container" style="overflow-x: auto;">
+            <table class="log-table ccc-table" id="cccStatsTable">
+                <thead>
+                    <tr id="cccHeaderRow">
+                        <th style="width: 140px;">Time</th>
+                        <th style="width: 150px;">BLE Address</th>
+                        <th style="width: 60px;">Dir</th>
+                        <th style="width: 150px;">Message Category</th>
+                        <th style="width: 125px;">Message Type</th>
+                        <th style="width: 90px;">Message</th>
+                        <th style="width: 400px;">Parameters</th>
+                        <th style="width: 200px;">Raw Data</th>
+                    </tr>
+                    <tr class="filter-row">
+                        <th style="width: 140px;"><input type="text" placeholder="Filter..." data-col="0"></th>
+                        <th style="width: 150px;"><input type="text" placeholder="Filter..." data-col="1"></th>
+                        <th style="width: 60px;"><input type="text" placeholder="Filter..." data-col="2"></th>
+                        <th style="width: 150px;"><input type="text" placeholder="Filter..." data-col="3"></th>
+                        <th style="width: 125px;"><input type="text" placeholder="Filter..." data-col="4"></th>
+                        <th style="width: 90px;"><input type="text" placeholder="Filter..." data-col="5"></th>
+                        <th style="width: 400px;"><input type="text" placeholder="Filter..." data-col="6"></th>
+                        <th style="width: 200px;"><input type="text" placeholder="Filter..." data-col="7"></th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>`;
+
+        const inputs = container.querySelectorAll('.filter-row input');
+        inputs.forEach(input => {
+            input.addEventListener('input', (e) => {
+                const colIndex = parseInt(e.target.dataset.col, 10);
+                const value = e.target.value.toLowerCase();
+                if (value) {
+                    cccColumnFilters.set(colIndex, value);
+                } else {
+                    cccColumnFilters.delete(colIndex);
+                }
+
+                // Debounce: Wait 300ms after user stops typing before re-rendering
+                clearTimeout(cccFilterDebounceTimer);
+                cccFilterDebounceTimer = setTimeout(() => {
+                    updateCccTableBody(container);
+                }, 300);
+            });
+        });
+
+        if (typeof makeTableResizable === 'function') {
+            makeTableResizable('cccStatsTable');
+        }
+
+        const exportCccBtn = document.getElementById('exportCccBtn');
+        if (exportCccBtn) {
+            exportCccBtn.addEventListener('click', () => {
+                if (!cccStatsData || cccStatsData.length === 0) {
+                    alert('No CCC data to export.');
+                    return;
+                }
+
+                const exportData = cccStatsData.map(msg => {
+                    const categoryName = CCC_CONSTANTS.MESSAGE_TYPES[msg.type] || `Unknown (0x${msg.type.toString(16).padStart(2, '0').toUpperCase()})`;
+                    let typeName = 'Unknown';
+                    if (msg.type === 0x02) {
+                        typeName = CCC_CONSTANTS.UWB_RANGING_MSGS[msg.subtype] || typeName;
+                    } else if (msg.type === 0x03) {
+                        typeName = CCC_CONSTANTS.DK_EVENT_CATEGORIES[msg.subtype] || typeName;
+                    } else if (msg.type === 0x01 && CCC_CONSTANTS.SE_MSGS && CCC_CONSTANTS.SE_MSGS[msg.subtype]) {
+                        typeName = CCC_CONSTANTS.SE_MSGS[msg.subtype];
+                    } else if (msg.type === 0x05) {
+                        typeName = CCC_CONSTANTS.SUPPLEMENTARY_MSGS[msg.subtype] || typeName;
+                    } else if (msg.type === 0x00 && CCC_CONSTANTS.FRAMEWORK_MSGS && CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype]) {
+                        typeName = CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype];
+                    }
+
+                    const innerMessage = msg._decoded ? (msg._decoded.innerMsg || '-') : '-';
+                    const params = msg._decoded ? (msg._decoded.params || '') : '';
+                    const paramsText = params.replace(/<[^>]*>/g, '');
+
+                    let handleNumber = -1;
+                    if (msg.handle !== undefined && msg.handle !== null) {
+                        if (typeof msg.handle === 'string' && msg.handle.startsWith('0x')) {
+                            handleNumber = parseInt(msg.handle, 16);
+                        } else {
+                            handleNumber = Number(msg.handle);
+                        }
+                    }
+                    const peerAddress = msg.peerAddress || btsnoopConnectionMap.get(handleNumber)?.address || 'N/A';
+
+                    return {
+                        Time: msg.timestamp,
+                        'BLE Address': peerAddress,
+                        Dir: msg.direction,
+                        'Category': categoryName,
+                        'Type': typeName,
+                        'Message': innerMessage,
+                        'Parameters': paramsText,
+                        'Raw Data': msg.fullHex
+                    };
+                });
+
+                // Create workbook
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                const wb = XLSX.utils.book_new();
+
+                // Helper to auto-fit columns
+                const autoFitColumns = (ws) => {
+                    if (!ws || !ws['!ref']) {
+                        return;
+                    }
+                    const range = XLSX.utils.decode_range(ws['!ref']);
+                    const colWidths = [];
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        let maxLen = 0;
+                        for (let R = range.s.r; R <= range.e.r; ++R) {
+                            const cellRef = XLSX.utils.encode_cell({ c: C, r: R });
+                            if (ws[cellRef] && ws[cellRef].v) {
+                                maxLen = Math.max(maxLen, String(ws[cellRef].v).length);
+                            }
+                        }
+                        colWidths[C] = { wch: Math.min(maxLen + 2, 50) };
+                    }
+                    ws['!cols'] = colWidths;
+                };
+
+                // Helper to apply styles
+                const applyStyles = (ws) => {
+                    if (!ws || !ws['!ref']) {
+                        return;
+                    }
+                    const range = XLSX.utils.decode_range(ws['!ref']);
+                    const thinBorder = { style: 'thin', color: { rgb: '000000' } };
+                    const borderStyle = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+
+                    for (let R = range.s.r; R <= range.e.r; ++R) {
+                        for (let C = range.s.c; C <= range.e.c; ++C) {
+                            const cellRef = XLSX.utils.encode_cell({ c: C, r: R });
+                            if (!ws[cellRef]) {
+                                continue;
+                            }
+
+                            const style = {
+                                font: { name: 'Arial', sz: 10 },
+                                border: borderStyle,
+                                alignment: { vertical: 'top', wrapText: true }
+                            };
+
+                            if (R === 0) {
+                                style.font = { name: 'Arial', sz: 10, bold: true, color: { rgb: '000000' } };
+                                style.fill = { fgColor: { rgb: 'E0E0E0' } };
+                                style.alignment = { horizontal: 'center', vertical: 'center', wrapText: true };
+                            }
+                            ws[cellRef].s = style;
+                        }
+                    }
+                };
+
+                autoFitColumns(ws);
+                applyStyles(ws);
+                XLSX.utils.book_append_sheet(wb, ws, 'CCC_Analysis');
+
+                // Generate default filename with timestamp
+                const now = new Date();
+                const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                const defaultFilename = `ccc_analysis_${timestamp}.xlsx`;
+
+                // Trigger download with save dialog
+                XLSX.writeFile(wb, defaultFilename);
+            });
+        }
+
+        // Make table sortable and mark as initialized BEFORE calling updateCccTableBody
+        makeSortable('cccStatsTable', 0, 'desc');
+        isCccTableInitialized = true;
+    }
+
+    // Always update the table body with current data
+    updateCccTableBody(container);
+
+    // Note: Scroll restoration for row selection is handled by the global click handler in main.js
+    // The table ID 'cccStatsTable' is registered in the selectedTableRows Map
+}
+
+function updateCccTableBody(container) {
+    console.log('[CccTab] updateCccTableBody() called, renderJobId:', currentRenderJobId + 1);
+    const tbody = container.querySelector('tbody');
+    if (!tbody) {
+        return;
+    }
+
+    currentRenderJobId++;
+    const myJobId = currentRenderJobId;
+
+    // Show loading state initially if data exists
+    if (cccStatsData.length > 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #888;">Processing data...</td></tr>';
+    } else {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #888;">No data available.</td></tr>';
+        return;
+    }
+
+    // Defer processing to prevent blocking
+    setTimeout(() => {
+        if (myJobId !== currentRenderJobId) {
+            return;
+        }
+
+        const allData = cccStatsData;
+        const total = allData.length;
+        let i = 0;
+        let isFirstChunk = true;
+        let anyMatchesFound = false; // Track if any row matched filters across all chunks
+
+        function processChunk() {
+            if (myJobId !== currentRenderJobId) {
+                return;
+            }
+
+            const startTime = performance.now();
+            const chunkHtmlParts = [];
+            let chunkHasMatches = false;
+
+            // Process for up to 12ms (leaving ~4ms for browser overhead in a 60fps frame)
+            while (i < total && (performance.now() - startTime < 12)) {
+                const msg = allData[i];
+                i++; // Increment index immediately
+
+                // --- 1. Decode Payload (Lazy) ---
+                if (!msg._decoded) {
+                    try {
+                        msg._decoded = decodePayload(msg.type, msg.subtype, msg.payload);
+                    } catch (e) {
+                        // Fallback for decoding errors
+                        msg._decoded = { innerMsg: 'Error', params: 'Decoding error' };
+                    }
+                }
+
+                // --- 2. Resolve Display Values ---
+                const categoryName = (msg.type !== undefined && CCC_CONSTANTS.MESSAGE_TYPES[msg.type]) || (msg.type !== undefined ? `Unknown (0x${msg.type.toString(16).padStart(2, '0').toUpperCase()})` : 'Unknown Type');
+
+                let typeName = 'Unknown';
+                if (msg.type === 0x02) {
+                    typeName = CCC_CONSTANTS.UWB_RANGING_MSGS[msg.subtype] || typeName;
+                } else if (msg.type === 0x03) {
+                    typeName = CCC_CONSTANTS.DK_EVENT_CATEGORIES[msg.subtype] || typeName;
+                } else if (msg.type === 0x01 && CCC_CONSTANTS.SE_MSGS && CCC_CONSTANTS.SE_MSGS[msg.subtype]) {
+                    typeName = CCC_CONSTANTS.SE_MSGS[msg.subtype];
+                } else if (msg.type === 0x05) {
+                    typeName = CCC_CONSTANTS.SUPPLEMENTARY_MSGS[msg.subtype] || typeName;
+                } else if (msg.type === 0x00 && CCC_CONSTANTS.FRAMEWORK_MSGS && CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype]) {
+                    typeName = CCC_CONSTANTS.FRAMEWORK_MSGS[msg.subtype];
+                }
+
+                const subtypeHex = (msg.subtype !== undefined) ? `0x${msg.subtype.toString(16).padStart(2, '0').toUpperCase()}` : 'N/A';
+                let displayType = typeName;
+                let displayTypeHtml = typeName;
+                if (typeName === 'Unknown') {
+                    displayType = subtypeHex;
+                    displayTypeHtml = subtypeHex;
+                } else {
+                    displayType = `${typeName} (${subtypeHex})`;
+                    displayTypeHtml = `${typeName} <span style="font-size: 0.85em; color: #888;">(${subtypeHex})</span>`;
+                }
+
+                const innerMessage = msg._decoded.innerMsg || '-';
+                // Truncate params if huge to prevent DOM freeze
+                const params = msg._decoded.params || '';
+                let paramsText = '';
+                if (params.length > 10000) {
+                    paramsText = '[Large Data]';
+                } else {
+                    paramsText = params.replace(/<[^>]*>/g, '');
+                }
+
+                let handleNumber = -1;
+                if (msg.handle !== undefined && msg.handle !== null) {
+                    if (typeof msg.handle === 'string' && msg.handle.startsWith('0x')) {
+                        handleNumber = parseInt(msg.handle, 16);
+                    } else {
+                        handleNumber = Number(msg.handle);
+                    }
+                }
+                const peerAddress = msg.peerAddress || btsnoopConnectionMap.get(handleNumber)?.address || 'N/A';
+
+                // --- 3. Filter Check ---
+                if (cccColumnFilters.size > 0) {
+                    const columns = [
+                        msg.timestamp,
+                        peerAddress,
+                        msg.direction,
+                        categoryName,
+                        displayType,
+                        innerMessage,
+                        paramsText,
+                        msg.fullHex
+                    ];
+
+                    const passesFilter = Array.from(cccColumnFilters.entries()).every(([colIndex, filterValue]) => {
+                        const cellValue = String(columns[colIndex]).toLowerCase();
+                        return cellValue.includes(filterValue);
+                    });
+
+                    if (!passesFilter) {
+                        continue;
+                    }
+                }
+
+                chunkHasMatches = true;
+                anyMatchesFound = true; // At least one row has matched so far
+
+                // --- 4. Generate Row HTML ---
+                // Safety check for timestamp
+                const safeTimestamp = msg.timestamp || '';
+                const rowId = `ccc-${safeTimestamp.replace(/[^a-zA-Z0-9]/g, '')}-${msg.type}-${msg.subtype}`;
+
+                chunkHtmlParts.push(`<tr data-row-id="${rowId}">
+                    <td class="copy-cell" data-log-text="${safeTimestamp}">${safeTimestamp}</td>
+                    <td class="copy-cell" data-log-text="${peerAddress}">${peerAddress}</td>
+                    <td><span class="badge ${msg.direction === 'Sending' ? 'badge-out' : 'badge-in'}">${msg.direction}</span></td>
+                    <td class="copy-cell" data-log-text="${categoryName}">${categoryName}</td>
+                    <td class="copy-cell" data-log-text="${displayType.replace(/<[^>]*>/g, '')}">${displayTypeHtml}</td>
+                    <td class="copy-cell" data-log-text="${innerMessage}">${innerMessage}</td>
+                    <td class="copy-cell params-cell" data-log-text="${paramsText}" style="overflow-wrap: anywhere; word-break: break-all;">${params}</td>
+                    <td class="copy-cell" data-log-text="${msg.fullHex}" style="color: #999;">${msg.fullHex}</td>
+                </tr>`);
+            }
+
+            // --- 5. Append Chunk to DOM ---
+            if (chunkHtmlParts.length > 0) {
+                if (isFirstChunk) {
+                    tbody.innerHTML = chunkHtmlParts.join('');
+                    isFirstChunk = false;
+                } else {
+                    tbody.insertAdjacentHTML('beforeend', chunkHtmlParts.join(''));
+                }
+            } else if (isFirstChunk && i >= total) {
+                // If this is the first chunk and we've processed all data, and no matches were found in this chunk
+                // (meaning no matches were found at all), then display "No matching messages found."
+                tbody.innerHTML = '<tr><td colspan="8">No matching messages found.</td></tr>';
+                isFirstChunk = false; // Prevent logic issue in empty set
+            }
+
+            // --- 6. Schedule Next Chunk ---
+            if (i < total) {
+                // Use setTimeout with 0 which is sufficient to yield to UI thread
+                setTimeout(processChunk, 0);
+            } else if (!anyMatchesFound) {
+                // If we've processed all data (i >= total) and no matches were found across any chunk
+                tbody.innerHTML = '<tr><td colspan="8">No matching messages found.</td></tr>';
+            } else {
+                // Rendering complete - restore scroll position to previously selected row
+                restoreScrollPosition();
+            }
+        }
+
+        // Helper to restore scroll position after rendering
+        function restoreScrollPosition() {
+            const table = document.getElementById('cccStatsTable');
+            if (!table) {
+                return;
+            }
+
+            // Check if there's a selected row ID stored (set by global click handler in main.js)
+            const selectedRowId = window.selectedTableRows?.get('cccStatsTable');
+            if (!selectedRowId) {
+                return;
+            }
+
+            // Find and restore the selected row
+            const row = table.querySelector(`tr[data-row-id="${selectedRowId}"]`);
+            if (row) {
+                row.classList.add('selected');
+                row.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                console.log(`[CccTab] Restored selection for cccStatsTable -> ${selectedRowId}`);
+            }
+        }
+
+        processChunk();
+    }, 0);
+}
+
+

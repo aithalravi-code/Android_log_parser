@@ -1,0 +1,94 @@
+========================================================
+== dumpstate: 2025-09-24 10:26:57
+========================================================
+
+Build: test-build-BP3A.250905.014
+Build fingerprint: 'google/caiman/caiman:15/BP3A.250905.014/12345678:user/release-keys'
+Bootloader: TestBootloader-2.0
+Radio: TestRadio-2.0
+Network: TestCarrier
+
+------ SYSTEM LOG (logcat -v threadtime -v printable -v uid -d *:v) ------
+--------- beginning of main
+09-24 10:26:57.001  1000  1234  5678 I ActivityManager: Start proc 12345:com.android.bluetooth/u0a123 for service {com.android.bluetooth/.btservice.AdapterService}
+09-24 10:26:57.050  1000  1234  5679 D BluetoothAdapterService: onCreate()
+09-24 10:26:57.100  1000  1234  5680 I BluetoothAdapterService: Bluetooth Adapter Service started
+09-24 10:26:57.150  1000  1234  5681 D BluetoothManagerService: Bluetooth state changed: STATE_ON
+09-24 10:26:57.200  1000  1234  5682 I bt_stack: BTM_BleLoadLocalKeys: Loading BLE keys
+09-24 10:26:57.250  1000  1234  5683 D bt_btif: btif_dm_load_ble_local_keys: IRK loaded
+09-24 10:26:57.300  1000  1234  5684 I bt_btif_config: btif_config_get_bin: Loading LE_LOCAL_KEY_IRK
+09-24 10:26:58.001  1000  1234  5685 D bt_hci: HCI Event: Connection Complete
+09-24 10:26:58.050  1000  1234  5686 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:01
+09-24 10:26:58.100  1000  1234  5687 D bt_stack: BTM_SecAddDevice: Adding device AA:BB:CC:DD:EE:01
+09-24 10:26:58.150  1000  1234  5688 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:01
+09-24 10:26:58.200  1000  1234  5689 D BluetoothDevice: Device name: Test Device 1
+09-24 10:26:58.500  1000  1234  5690 D bt_hci: HCI Event: Connection Complete
+09-24 10:26:58.550  1000  1234  5691 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:02
+09-24 10:26:58.600  1000  1234  5692 D bt_stack: BTM_SecAddDevice: Adding device AA:BB:CC:DD:EE:02
+09-24 10:26:58.650  1000  1234  5693 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:02
+09-24 10:26:58.700  1000  1234  5694 D BluetoothDevice: Device name: Test Device 2
+09-24 10:26:59.001  1000  1234  5695 D bt_hci: HCI Event: Disconnection Complete
+09-24 10:26:59.050  1000  1234  5696 I bt_btif: bta_dm_acl_down: Device disconnected: AA:BB:CC:DD:EE:01
+09-24 10:26:59.100  1000  1234  5697 D bt_stack: BTM_SecDeleteDevice: Removing device AA:BB:CC:DD:EE:01
+09-24 10:26:59.500  1000  1234  5698 D bt_hci: HCI Event: Connection Complete
+09-24 10:26:59.550  1000  1234  5699 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:03
+09-24 10:26:59.600  1000  1234  5700 D bt_stack: BTM_SecAddDevice: Adding device AA:BB:CC:DD:EE:03
+09-24 10:26:59.650  1000  1234  5701 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:03
+09-24 10:26:59.700  1000  1234  5702 D BluetoothDevice: Device name: Test Device 3
+09-24 10:27:00.001  1000  1234  5703 D bt_hci: HCI Event: LE Connection Complete
+09-24 10:27:00.050  1000  1234  5704 I bt_btif: bta_dm_acl_up: LE Device connected: BB:CC:DD:EE:FF:01
+09-24 10:27:00.100  1000  1234  5705 D bt_stack: BTM_SecAddDevice: Adding LE device BB:CC:DD:EE:FF:01
+09-24 10:27:00.150  1000  1234  5706 I bt_btif: btif_dm_upstreams_evt: LE_ACL_UP event for BB:CC:DD:EE:FF:01
+09-24 10:27:00.200  1000  1234  5707 D BluetoothDevice: LE Device name: BLE Device 1
+09-24 10:27:00.500  1000  1234  5708 D bt_hci: HCI Event: LE Connection Complete
+09-24 10:27:00.550  1000  1234  5709 I bt_btif: bta_dm_acl_up: LE Device connected: BB:CC:DD:EE:FF:02
+09-24 10:27:00.600  1000  1234  5710 D bt_stack: BTM_SecAddDevice: Adding LE device BB:CC:DD:EE:FF:02
+09-24 10:27:00.650  1000  1234  5711 I bt_btif: btif_dm_upstreams_evt: LE_ACL_UP event for BB:CC:DD:EE:FF:02
+09-24 10:27:00.700  1000  1234  5712 D BluetoothDevice: LE Device name: BLE Device 2
+09-24 10:27:01.001  1000  1234  5713 D bt_hci: HCI CMD: Read Remote Version Information
+09-24 10:27:01.050  1000  1234  5714 I bt_stack: BTM_ReadRemoteVersion: Reading version for AA:BB:CC:DD:EE:02
+09-24 10:27:01.100  1000  1234  5715 D bt_hci: HCI Event: Read Remote Version Complete
+09-24 10:27:01.150  1000  1234  5716 I bt_stack: BTM_ReadRemoteVersionComplete: Version 5.2
+09-24 10:27:01.500  1000  1234  5717 D bt_hci: HCI Event: LE Disconnection Complete
+09-24 10:27:01.550  1000  1234  5718 I bt_btif: bta_dm_acl_down: LE Device disconnected: BB:CC:DD:EE:FF:01
+09-24 10:27:01.600  1000  1234  5719 D bt_stack: BTM_SecDeleteDevice: Removing LE device BB:CC:DD:EE:FF:01
+09-24 10:27:02.001  1000  1234  5720 D bt_hci: HCI Event: LE Connection Complete
+09-24 10:27:02.050  1000  1234  5721 I bt_btif: bta_dm_acl_up: LE Device connected: BB:CC:DD:EE:FF:03
+09-24 10:27:02.100  1000  1234  5722 D bt_stack: BTM_SecAddDevice: Adding LE device BB:CC:DD:EE:FF:03
+09-24 10:27:02.150  1000  1234  5723 I bt_btif: btif_dm_upstreams_evt: LE_ACL_UP event for BB:CC:DD:EE:FF:03
+09-24 10:27:02.200  1000  1234  5724 D BluetoothDevice: LE Device name: BLE Device 3
+09-24 10:27:02.500  1000  1234  5725 I ActivityManager: Bluetooth service running normally
+09-24 10:27:02.550  1000  1234  5726 D NetworkScheduler: NetworkScheduler.Stats: Task completed successfully
+09-24 10:27:02.600  1000  1234  5727 I RegisterSyncOperation: Sync operation registered
+09-24 10:27:02.650  1000  1234  5728 V CCTUploader: Upload batch size: 3 events
+09-24 10:27:03.001  1000  1234  5729 D bt_hci: HCI Event: Disconnection Complete
+09-24 10:27:03.050  1000  1234  5730 I bt_btif: bta_dm_acl_down: Device disconnected: AA:BB:CC:DD:EE:02
+09-24 10:27:03.100  1000  1234  5731 D bt_stack: BTM_SecDeleteDevice: Removing device AA:BB:CC:DD:EE:02
+09-24 10:27:03.500  1000  1234  5732 D bt_hci: HCI Event: LE Disconnection Complete
+09-24 10:27:03.550  1000  1234  5733 I bt_btif: bta_dm_acl_down: LE Device disconnected: BB:CC:DD:EE:FF:02
+09-24 10:27:03.600  1000  1234  5734 D bt_stack: BTM_SecDeleteDevice: Removing LE device BB:CC:DD:EE:FF:02
+
+--------- beginning of system
+09-24 10:26:56.000  1000  1000  1000 I Zygote: Process forked
+09-24 10:26:56.050  1000  1000  1001 D SystemServer: System services initialized
+09-24 10:26:56.100  1000  1000  1002 I PackageManager: Package database loaded
+09-24 10:26:56.150  1000  1000  1003 W ActivityManager: System ready
+09-24 10:26:56.200  1000  1000  1004 E SystemServer: Boot completed
+
+------ MEMORY INFO (/proc/meminfo) ------
+MemTotal:       12000000 kB
+MemFree:         3000000 kB
+MemAvailable:    6000000 kB
+
+------ CPU INFO (top -n 1 -d 1 -m 30 -t) ------
+Tasks: 600 total
+%Cpu(s): 20.0 us, 8.0 sy
+
+------ PROCESSES AND THREADS (ps -A -T -Z -O pri,nice,rtprio,sched,pcy,time) ------
+USER           PID   TID PPID     VSZ    RSS WCHAN            ADDR S NAME
+system        1234  1234    1 1200000  60000 SyS_epoll_wait      0 S system_server
+bluetooth     5678  5678 1234  800000  40000 SyS_epoll_wait      0 S com.android.bluetooth
+
+========================================================
+== dumpstate: done
+========================================================
