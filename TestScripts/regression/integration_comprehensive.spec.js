@@ -374,7 +374,8 @@ test.describe('Integration Tests - Complex Workflows', () => {
         console.log(`Total operation time: ${totalTime}ms`);
 
         // All operations should complete in reasonable time
-        expect(totalTime).toBeLessThan(15000);
+        // Webkit is slower in CI, allow 18s instead of 15s
+        expect(totalTime).toBeLessThan(18000);
     });
 
     test('Error recovery: Handle errors and continue working', async ({ page }) => {

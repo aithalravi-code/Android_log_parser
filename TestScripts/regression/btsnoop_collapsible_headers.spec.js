@@ -129,6 +129,8 @@ test.describe('BTSnoop Collapsible Headers', () => {
         console.log('Header Row Display (Before):', displayBefore);
 
         await firstHeader.click();
+        // Wait for webkit to update DOM after click
+        await page.waitForTimeout(800);
         expect(await firstHeader.textContent()).toContain('▶');
 
         // DEBUG: Check computed style after click
@@ -154,6 +156,7 @@ test.describe('BTSnoop Collapsible Headers', () => {
         expect(viewportHtml).toContain('device2/btsnoop_hci.log');
 
         await firstHeader.click();
+        await page.waitForTimeout(800);
         expect(await firstHeader.textContent()).toContain('▼');
 
 
