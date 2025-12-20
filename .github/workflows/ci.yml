@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 permissions:
-  contents: read
+  contents: write  # Required for deploying to gh-pages
   actions: read
   checks: write
 
