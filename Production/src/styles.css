@@ -1251,6 +1251,7 @@ input[type="file"]:hover {
     display: flex;
     flex-direction: column;
     height: 100%;
+    width: 100%; /* Ensure full width usage */
 }
 
 .btsnoop-table {
@@ -1384,8 +1385,10 @@ input[type="file"]:hover {
     /* Make table a block element */
     overflow-x: auto;
     /* Allow horizontal scrolling on the table itself */
-    max-height: 600px;
-    /* Set a max height to enable vertical scrolling */
+    max-height: calc(100vh - 300px);
+    /* Responsive height based on viewport - adjusts to screen resolution */
+    min-height: 400px;
+    /* Minimum height for usability on smaller screens */
     overflow-y: auto;
     /* Enable vertical scrolling */
 }
