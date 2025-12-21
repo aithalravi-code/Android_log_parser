@@ -2029,7 +2029,7 @@ self.onmessage = async (event) => {
                     // Also render battery chart if data exists
                     if (consolidatedBatteryDataPoints && consolidatedBatteryDataPoints.length > 0) {
                         try {
-                            StatsTab.renderBatteryChart(consolidatedBatteryDataPoints);
+                            StatsTab.renderBatteryPlot(consolidatedBatteryDataPoints, batteryPlotContainer);
                         } catch (e) {
                             console.error("Error rendering battery chart:", e);
                         }
