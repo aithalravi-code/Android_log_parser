@@ -1263,8 +1263,7 @@ input[type="file"]:hover {
 .btsnoop-table {
     /* A single class for both header and body tables */
     width: 100%;
-    min-width: 1200px;
-    /* Ensure table is wide enough to trigger horizontal scroll */
+    /* Allow table to expand to full container width */
     table-layout: auto;
     /* FIX: Allow table to expand with content, enabling horizontal scroll */
     border-collapse: collapse;
@@ -2696,8 +2695,7 @@ table thead tr:nth-child(2) th {
 .btsnoop-table {
     /* A single class for both header and body tables */
     width: 100%;
-    min-width: 1200px;
-    /* Ensure table is wide enough to trigger horizontal scroll */
+    /* Allow table to expand to full container width */
     table-layout: auto;
     /* FIX: Allow table to expand with content, enabling horizontal scroll */
     border-collapse: collapse;
