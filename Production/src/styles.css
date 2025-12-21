@@ -108,13 +108,16 @@ main {
     position: relative;
     display: flex;
     flex-direction: column;
-    transition: margin-left 0.35s ease-in-out;
+    transition: margin-left 0.35s ease-in-out, margin-right 0.35s ease-in-out;
+    box-sizing: border-box;
+    /* Ensure padding is included in width */
 }
 
 .left-panel.collapsed {
     /* When collapsed, move it off-screen to the left */
     margin-left: -300px;
-    /* Default width, will be adjusted by JS for resized panel */
+    /* Also compensate for the flex gap to maximize main content width */
+    margin-right: -1.5rem;
 }
 
 .main-content {
