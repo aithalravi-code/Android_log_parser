@@ -124,6 +124,8 @@ main {
     min-width: 0;
     /* Important for flexbox children */
     position: relative;
+    transition: width 0.35s ease-in-out;
+    /* Smooth expansion when sidebar collapses */
 }
 
 .panel-toggle-btn {
@@ -1251,7 +1253,8 @@ input[type="file"]:hover {
     display: flex;
     flex-direction: column;
     height: 100%;
-    width: 100%; /* Ensure full width usage */
+    width: 100%;
+    /* Ensure full width usage */
 }
 
 .btsnoop-table {
