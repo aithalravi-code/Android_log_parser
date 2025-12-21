@@ -370,3 +370,19 @@ export async function waitForLoadingComplete(page, timeout = 30000) {
         await page.waitForTimeout(100);
     }
 }
+
+/**
+ * Ensure the left sidebar/panel is expanded
+ * This is necessary because the panel auto-collapses after file loading for better readability
+ * @param {Page} page - Playwright page object
+ */
+export async function ensureSidebarExpanded(page) {
+    const leftPanel = page.locator('.left-panel');
+    const isCollapsed = await leftPanel.evaluate(el => el.classList.contains('collapsed'));
+
+    if (isCollapsed) {
+        await page.click('#panel-toggle-btn');
+        // Wait for the collapse/expand transition (0.35s)
+        await page.waitForTimeout(400);
+    }
+}

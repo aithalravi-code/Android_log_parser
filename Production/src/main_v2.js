@@ -832,11 +832,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 await renderUI(true); // Use fast initial render and wait for it to complete
 
                 // Auto-collapse left panel to maximize log viewing space
-                // if (leftPanel && panelToggleBtn && !leftPanel.classList.contains('collapsed')) {
-                //     leftPanel.classList.add('collapsed');
-                //     panelToggleBtn.innerHTML = '&raquo;';
-                //     console.log('[UI] Auto-collapsed left panel after restoring logs');
-                // }
+                if (leftPanel && panelToggleBtn && !leftPanel.classList.contains('collapsed')) {
+                    leftPanel.classList.add('collapsed');
+                    panelToggleBtn.innerHTML = '&raquo;';
+                    console.log('[UI] Auto-collapsed left panel after restoring logs');
+                }
 
                 return true; // Explicitly return true on success
             }
@@ -1825,11 +1825,11 @@ self.onmessage = async (event) => {
 
 
         // Auto-collapse left panel to maximize log viewing space
-        // if (leftPanel && panelToggleBtn && !leftPanel.classList.contains('collapsed')) {
-        //     leftPanel.classList.add('collapsed');
-        //     panelToggleBtn.innerHTML = '&raquo;';
-        //     console.log('[UI] Auto-collapsed left panel after file loading');
-        // }
+        if (leftPanel && panelToggleBtn && !leftPanel.classList.contains('collapsed')) {
+            leftPanel.classList.add('collapsed');
+            panelToggleBtn.innerHTML = '&raquo;';
+            console.log('[UI] Auto-collapsed left panel after file loading');
+        }
 
         progressText.textContent = 'Complete!';
 

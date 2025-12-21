@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 import { generateMockLogFile } from '../helpers/test-data-generator.js';
-import { uploadFile, clearAppState, switchTab } from '../helpers/test-utils.js';
+import { uploadFile, clearAppState, switchTab, ensureSidebarExpanded } from '../helpers/test-utils.js';
 
 test.describe('Accessibility', () => {
     let mockLogPath;
@@ -80,6 +80,9 @@ test.describe('Accessibility', () => {
     });
 
     test('Buttons are keyboard activatable', async ({ page }) => {
+        // Ensure sidebar is expanded to access filter buttons
+        await ensureSidebarExpanded(page);
+
         // Focus on a button and press Enter
         const logLevelBtn = page.locator('[data-level="E"]');
         await logLevelBtn.focus();
@@ -111,6 +114,9 @@ test.describe('Accessibility', () => {
     });
 
     test('Search input is keyboard accessible', async ({ page }) => {
+        // Ensure sidebar is expanded to access search input
+        await ensureSidebarExpanded(page);
+
         const searchInput = page.locator('#searchInput');
         await searchInput.focus();
 
@@ -130,6 +136,9 @@ test.describe('Accessibility', () => {
     });
 
     test('Focus visible indicators present', async ({ page }) => {
+        // Ensure sidebar is expanded to access search input
+        await ensureSidebarExpanded(page);
+
         const searchInput = page.locator('#searchInput');
         await searchInput.focus();
         await page.waitForTimeout(200);

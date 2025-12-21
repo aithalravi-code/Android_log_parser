@@ -12,6 +12,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { ensureSidebarExpanded } from '../helpers/test-utils.js';
 
 test.describe('UI Elements', () => {
     test.beforeEach(async ({ page }) => {
@@ -35,6 +36,9 @@ test.describe('UI Elements', () => {
     });
 
     test('should have all required UI elements', async ({ page }) => {
+        // Ensure sidebar is expanded to access filter controls
+        await ensureSidebarExpanded(page);
+
         // Check filter section
         const searchInput = page.locator('#searchInput');
         await expect(searchInput).toBeAttached();
@@ -102,6 +106,9 @@ test.describe('Filter Controls', () => {
     });
 
     test('should have log level filter buttons', async ({ page }) => {
+        // Ensure sidebar is expanded to access filter buttons
+        await ensureSidebarExpanded(page);
+
         // Check for log level buttons
         const errorFilter = page.locator('[data-level="E"]');
         const warningFilter = page.locator('[data-level="W"]');
@@ -142,6 +149,9 @@ test.describe('Filter Controls', () => {
     });
 
     test('should have search input', async ({ page }) => {
+        // Ensure sidebar is expanded to access search input
+        await ensureSidebarExpanded(page);
+
         const searchInput = page.locator('#searchInput');
         await expect(searchInput).toBeVisible();
 

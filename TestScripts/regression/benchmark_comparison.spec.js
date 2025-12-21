@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
+import { ensureSidebarExpanded } from '../helpers/test-utils.js';
 
 const MOCK_LOG_PATH = path.resolve(process.cwd(), 'mock_regression_log.txt');
 const NEW_BUILD_PATH = path.resolve(process.cwd(), 'dist/log_parser.html');
@@ -69,6 +70,10 @@ test.describe.serial('Performance Benchmark: Old vs New', () => {
         // 4. Filter Time (Toggle Verbose)
         await page.click('[data-tab="logs"]');
         await page.waitForSelector('.log-line');
+
+        // Ensure sidebar is expanded to access filter buttons
+        await ensureSidebarExpanded(page);
+
         const startFilter = Date.now();
         // Toggle Verbose OFF (assuming it's ON by default or we click to toggle)
         // Find the "V" filter button.

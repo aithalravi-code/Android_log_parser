@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { ensureSidebarExpanded } from '../helpers/test-utils.js';
 
 test.describe('Error Handling', () => {
     test('should handle invalid file upload gracefully', async ({ page }) => {
@@ -86,6 +87,9 @@ test.describe('Filter Edge Cases', () => {
 
         await page.waitForTimeout(500);
 
+        // Ensure sidebar is expanded to access search input
+        await ensureSidebarExpanded(page);
+
         // Try a very long search query
         const searchInput = page.locator('#searchInput');
         const longQuery = 'a'.repeat(1000);
@@ -108,6 +112,9 @@ test.describe('Filter Edge Cases', () => {
         });
 
         await page.waitForTimeout(500);
+
+        // Ensure sidebar is expanded to access search input
+        await ensureSidebarExpanded(page);
 
         const searchInput = page.locator('#searchInput');
 
