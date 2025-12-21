@@ -1377,8 +1377,8 @@ input[type="file"]:hover {
     color: #d4d4d4;
     font-family: 'Consolas', 'Monaco', monospace;
     font-size: 13px;
-    table-layout: fixed;
-    /* Enforce column widths */
+    table-layout: auto;
+    /* Allow table to expand and use full width */
 }
 
 .ccc-table,
