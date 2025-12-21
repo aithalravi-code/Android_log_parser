@@ -1,0 +1,942 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - heading "Android Log Viewer" [level=1] [ref=e4]
+    - generic [ref=e5]: "File: filter_test.log"
+  - main [ref=e6]:
+    - generic [ref=e7]:
+      - button "»" [ref=e8] [cursor=pointer]
+      - group [ref=e9]:
+        - generic "File Selection" [ref=e10] [cursor=pointer]
+        - generic [ref=e11]:
+          - generic [ref=e12]:
+            - radio "ZIP or Log Files" [checked] [ref=e13]
+            - generic [ref=e14]: ZIP or Log Files
+            - radio "Folder" [ref=e15]
+            - generic [ref=e16]: Folder
+          - generic [ref=e17]:
+            - generic [ref=e18]: "Choose ZIP or individual log files:"
+            - button "Choose ZIP or individual log files:" [ref=e19]
+        - button "Clear & Reset" [ref=e21] [cursor=pointer]
+      - generic [ref=e22]:
+        - generic [ref=e24]:
+          - generic [ref=e25]: "Filter by Level:"
+          - button "Verbose" [ref=e26] [cursor=pointer]
+          - button "Debug" [ref=e27] [cursor=pointer]
+          - button "Info" [ref=e28] [cursor=pointer]
+          - button "Warn" [ref=e29] [cursor=pointer]
+          - button "Error" [ref=e30] [cursor=pointer]
+          - button "Fatal" [ref=e31] [cursor=pointer]
+          - button "None" [ref=e32] [cursor=pointer]
+        - generic [ref=e33]:
+          - generic [ref=e34]: "Keyword Search:"
+          - generic [ref=e35]:
+            - button "OR" [ref=e36] [cursor=pointer]
+            - button "AND" [ref=e37] [cursor=pointer]
+          - textbox "Keyword Search:" [active] [ref=e39]:
+            - /placeholder: Live search or type & Enter... (#123 to jump to line)
+          - generic [ref=e40]:
+            - generic [ref=e41] [cursor=pointer]: TestTagx
+            - generic [ref=e42] [cursor=pointer]: messagex
+        - generic [ref=e43]:
+          - generic [ref=e44]: "Time Range:"
+          - generic [ref=e45]:
+            - textbox "Time Range:" [ref=e46]: 2025-09-23T12:00
+            - textbox [ref=e47]: 2025-09-23T12:16:39
+          - generic [ref=e50]:
+            - slider [ref=e53]
+            - slider [ref=e55]
+    - generic [ref=e58]:
+      - navigation [ref=e59]:
+        - button "Logs" [ref=e60] [cursor=pointer]
+        - button "CCC_Focus" [ref=e61] [cursor=pointer]
+        - button "CCC BLE Decoded packets" [ref=e62] [cursor=pointer]
+        - button "BTSnoop" [ref=e63] [cursor=pointer]
+        - button "Stats" [ref=e64] [cursor=pointer]
+      - generic [ref=e65]:
+        - generic [ref=e67]:
+          - button "⊟" [ref=e68] [cursor=pointer]
+          - button "📊" [ref=e69] [cursor=pointer]
+          - button "📥" [ref=e70] [cursor=pointer]
+        - generic [ref=e73]:
+          - generic [ref=e74] [cursor=pointer]: "[-] --- Log from filter_test.log ---"
+          - generic [ref=e75] [cursor=pointer]:
+            - generic [ref=e76]: "2"
+            - generic [ref=e77]:
+              - generic [ref=e78]: 09-23 12:00:00.000
+              - generic [ref=e79]: 2791 -10893 1409
+              - generic [ref=e80]: D
+              - generic "WindowManager" [ref=e81]
+              - generic "Log message 0 - WindowManager activity" [ref=e82]:
+                - text: Log
+                - mark [ref=e83]: message
+                - text: 0 - WindowManager activity
+          - generic [ref=e84] [cursor=pointer]:
+            - generic [ref=e85]: "3"
+            - generic [ref=e86]:
+              - generic [ref=e87]: 09-23 12:00:01.000
+              - generic [ref=e88]: 2967 -10940 1737
+              - generic [ref=e89]: D
+              - generic "TestTag" [ref=e90]:
+                - mark [ref=e91]: TestTag
+              - generic "Log message 1 - TestTag activity" [ref=e92]:
+                - text: Log
+                - mark [ref=e93]: message
+                - text: 1 -
+                - mark [ref=e94]: TestTag
+                - text: activity
+          - generic [ref=e95] [cursor=pointer]:
+            - generic [ref=e96]: "4"
+            - generic [ref=e97]:
+              - generic [ref=e98]: 09-23 12:00:02.000
+              - generic [ref=e99]: 2933 -10739 1781
+              - generic [ref=e100]: D
+              - generic "WindowManager" [ref=e101]
+              - generic "Log message 2 - WindowManager activity" [ref=e102]:
+                - text: Log
+                - mark [ref=e103]: message
+                - text: 2 - WindowManager activity
+          - generic [ref=e104] [cursor=pointer]:
+            - generic [ref=e105]: "5"
+            - generic [ref=e106]:
+              - generic [ref=e107]: 09-23 12:00:03.000
+              - generic [ref=e108]: 2570 -10484 1574
+              - generic [ref=e109]: I
+              - generic "ActivityManager" [ref=e110]
+              - generic "Log message 3 - ActivityManager activity" [ref=e111]:
+                - text: Log
+                - mark [ref=e112]: message
+                - text: 3 - ActivityManager activity
+          - generic [ref=e113] [cursor=pointer]:
+            - generic [ref=e114]: "6"
+            - generic [ref=e115]:
+              - generic [ref=e116]: 09-23 12:00:04.000
+              - generic [ref=e117]: 2476 -10237 1436
+              - generic [ref=e118]: V
+              - generic "ActivityManager" [ref=e119]
+              - generic "Log message 4 - ActivityManager activity" [ref=e120]:
+                - text: Log
+                - mark [ref=e121]: message
+                - text: 4 - ActivityManager activity
+          - generic [ref=e122] [cursor=pointer]:
+            - generic [ref=e123]: "7"
+            - generic [ref=e124]:
+              - generic [ref=e125]: 09-23 12:00:05.000
+              - generic [ref=e126]: 2307 -10816 1799
+              - generic [ref=e127]: W
+              - generic "WindowManager" [ref=e128]
+              - generic "Log message 5 - WindowManager activity" [ref=e129]:
+                - text: Log
+                - mark [ref=e130]: message
+                - text: 5 - WindowManager activity
+          - generic [ref=e131] [cursor=pointer]:
+            - generic [ref=e132]: "8"
+            - generic [ref=e133]:
+              - generic [ref=e134]: 09-23 12:00:06.000
+              - generic [ref=e135]: 2112 -10071 1346
+              - generic [ref=e136]: E
+              - generic "SystemUI" [ref=e137]
+              - generic "Log message 6 - SystemUI activity" [ref=e138]:
+                - text: Log
+                - mark [ref=e139]: message
+                - text: 6 - SystemUI activity
+            - button "📋" [ref=e140]
+          - generic [ref=e141] [cursor=pointer]:
+            - generic [ref=e142]: "9"
+            - generic [ref=e143]:
+              - generic [ref=e144]: 09-23 12:00:07.000
+              - generic [ref=e145]: 2956 -10607 1798
+              - generic [ref=e146]: W
+              - generic "WindowManager" [ref=e147]
+              - generic "Log message 7 - WindowManager activity" [ref=e148]:
+                - text: Log
+                - mark [ref=e149]: message
+                - text: 7 - WindowManager activity
+          - generic [ref=e150] [cursor=pointer]:
+            - generic [ref=e151]: "10"
+            - generic [ref=e152]:
+              - generic [ref=e153]: 09-23 12:00:08.000
+              - generic [ref=e154]: 2842 -10210 1306
+              - generic [ref=e155]: E
+              - generic "ActivityManager" [ref=e156]
+              - generic "Log message 8 - ActivityManager activity" [ref=e157]:
+                - text: Log
+                - mark [ref=e158]: message
+                - text: 8 - ActivityManager activity
+          - generic [ref=e159] [cursor=pointer]:
+            - generic [ref=e160]: "11"
+            - generic [ref=e161]:
+              - generic [ref=e162]: 09-23 12:00:09.000
+              - generic [ref=e163]: 2806 -10048 1376
+              - generic [ref=e164]: I
+              - generic "WindowManager" [ref=e165]
+              - generic "Log message 9 - WindowManager activity" [ref=e166]:
+                - text: Log
+                - mark [ref=e167]: message
+                - text: 9 - WindowManager activity
+          - generic [ref=e168] [cursor=pointer]:
+            - generic [ref=e169]: "12"
+            - generic [ref=e170]:
+              - generic [ref=e171]: 09-23 12:00:10.000
+              - generic [ref=e172]: 2473 -10007 1280
+              - generic [ref=e173]: E
+              - generic "SystemUI" [ref=e174]
+              - generic "Log message 10 - SystemUI activity" [ref=e175]:
+                - text: Log
+                - mark [ref=e176]: message
+                - text: 10 - SystemUI activity
+          - generic [ref=e177] [cursor=pointer]:
+            - generic [ref=e178]: "13"
+            - generic [ref=e179]:
+              - generic [ref=e180]: 09-23 12:00:11.000
+              - generic [ref=e181]: 2306 -10950 1536
+              - generic [ref=e182]: E
+              - generic "WindowManager" [ref=e183]
+              - generic "Log message 11 - WindowManager activity" [ref=e184]:
+                - text: Log
+                - mark [ref=e185]: message
+                - text: 11 - WindowManager activity
+          - generic [ref=e186] [cursor=pointer]:
+            - generic [ref=e187]: "14"
+            - generic [ref=e188]:
+              - generic [ref=e189]: 09-23 12:00:12.000
+              - generic [ref=e190]: 2587 -10456 1308
+              - generic [ref=e191]: I
+              - generic "ActivityManager" [ref=e192]
+              - generic "Log message 12 - ActivityManager activity" [ref=e193]:
+                - text: Log
+                - mark [ref=e194]: message
+                - text: 12 - ActivityManager activity
+          - generic [ref=e195] [cursor=pointer]:
+            - generic [ref=e196]: "15"
+            - generic [ref=e197]:
+              - generic [ref=e198]: 09-23 12:00:13.000
+              - generic [ref=e199]: 2201 -10437 1332
+              - generic [ref=e200]: W
+              - generic "PackageManager" [ref=e201]
+              - generic "Log message 13 - PackageManager activity" [ref=e202]:
+                - text: Log
+                - mark [ref=e203]: message
+                - text: 13 - PackageManager activity
+          - generic [ref=e204] [cursor=pointer]:
+            - generic [ref=e205]: "16"
+            - generic [ref=e206]:
+              - generic [ref=e207]: 09-23 12:00:14.000
+              - generic [ref=e208]: 2225 -10661 1942
+              - generic [ref=e209]: E
+              - generic "SystemUI" [ref=e210]
+              - generic "Log message 14 - SystemUI activity" [ref=e211]:
+                - text: Log
+                - mark [ref=e212]: message
+                - text: 14 - SystemUI activity
+          - generic [ref=e213] [cursor=pointer]:
+            - generic [ref=e214]: "17"
+            - generic [ref=e215]:
+              - generic [ref=e216]: 09-23 12:00:15.000
+              - generic [ref=e217]: 2904 -10831 1252
+              - generic [ref=e218]: D
+              - generic "TestTag" [ref=e219]:
+                - mark [ref=e220]: TestTag
+              - generic "Log message 15 - TestTag activity" [ref=e221]:
+                - text: Log
+                - mark [ref=e222]: message
+                - text: 15 -
+                - mark [ref=e223]: TestTag
+                - text: activity
+          - generic [ref=e224] [cursor=pointer]:
+            - generic [ref=e225]: "18"
+            - generic [ref=e226]:
+              - generic [ref=e227]: 09-23 12:00:16.000
+              - generic [ref=e228]: 2043 -10427 1086
+              - generic [ref=e229]: E
+              - generic "WindowManager" [ref=e230]
+              - generic "Log message 16 - WindowManager activity" [ref=e231]:
+                - text: Log
+                - mark [ref=e232]: message
+                - text: 16 - WindowManager activity
+          - generic [ref=e233] [cursor=pointer]:
+            - generic [ref=e234]: "19"
+            - generic [ref=e235]:
+              - generic [ref=e236]: 09-23 12:00:17.000
+              - generic [ref=e237]: 2533 -10679 1528
+              - generic [ref=e238]: W
+              - generic "PackageManager" [ref=e239]
+              - generic "Log message 17 - PackageManager activity" [ref=e240]:
+                - text: Log
+                - mark [ref=e241]: message
+                - text: 17 - PackageManager activity
+          - generic [ref=e242] [cursor=pointer]:
+            - generic [ref=e243]: "20"
+            - generic [ref=e244]:
+              - generic [ref=e245]: 09-23 12:00:18.000
+              - generic [ref=e246]: 2732 -10920 1904
+              - generic [ref=e247]: V
+              - generic "PackageManager" [ref=e248]
+              - generic "Log message 18 - PackageManager activity" [ref=e249]:
+                - text: Log
+                - mark [ref=e250]: message
+                - text: 18 - PackageManager activity
+          - generic [ref=e251] [cursor=pointer]:
+            - generic [ref=e252]: "21"
+            - generic [ref=e253]:
+              - generic [ref=e254]: 09-23 12:00:19.000
+              - generic [ref=e255]: 2381 -10990 1818
+              - generic [ref=e256]: W
+              - generic "TestTag" [ref=e257]:
+                - mark [ref=e258]: TestTag
+              - generic "Log message 19 - TestTag activity" [ref=e259]:
+                - text: Log
+                - mark [ref=e260]: message
+                - text: 19 -
+                - mark [ref=e261]: TestTag
+                - text: activity
+          - generic [ref=e262] [cursor=pointer]:
+            - generic [ref=e263]: "22"
+            - generic [ref=e264]:
+              - generic [ref=e265]: 09-23 12:00:20.000
+              - generic [ref=e266]: 2816 -10463 1244
+              - generic [ref=e267]: W
+              - generic "WindowManager" [ref=e268]
+              - generic "Log message 20 - WindowManager activity" [ref=e269]:
+                - text: Log
+                - mark [ref=e270]: message
+                - text: 20 - WindowManager activity
+          - generic [ref=e271] [cursor=pointer]:
+            - generic [ref=e272]: "23"
+            - generic [ref=e273]:
+              - generic [ref=e274]: 09-23 12:00:21.000
+              - generic [ref=e275]: 2121 -10074 1958
+              - generic [ref=e276]: W
+              - generic "SystemUI" [ref=e277]
+              - generic "Log message 21 - SystemUI activity" [ref=e278]:
+                - text: Log
+                - mark [ref=e279]: message
+                - text: 21 - SystemUI activity
+          - generic [ref=e280] [cursor=pointer]:
+            - generic [ref=e281]: "24"
+            - generic [ref=e282]:
+              - generic [ref=e283]: 09-23 12:00:22.000
+              - generic [ref=e284]: 2445 -10744 1960
+              - generic [ref=e285]: I
+              - generic "TestTag" [ref=e286]:
+                - mark [ref=e287]: TestTag
+              - generic "Log message 22 - TestTag activity" [ref=e288]:
+                - text: Log
+                - mark [ref=e289]: message
+                - text: 22 -
+                - mark [ref=e290]: TestTag
+                - text: activity
+          - generic [ref=e291] [cursor=pointer]:
+            - generic [ref=e292]: "25"
+            - generic [ref=e293]:
+              - generic [ref=e294]: 09-23 12:00:23.000
+              - generic [ref=e295]: 2389 -10663 1852
+              - generic [ref=e296]: V
+              - generic "PackageManager" [ref=e297]
+              - generic "Log message 23 - PackageManager activity" [ref=e298]:
+                - text: Log
+                - mark [ref=e299]: message
+                - text: 23 - PackageManager activity
+          - generic [ref=e300] [cursor=pointer]:
+            - generic [ref=e301]: "26"
+            - generic [ref=e302]:
+              - generic [ref=e303]: 09-23 12:00:24.000
+              - generic [ref=e304]: 2106 -10332 1105
+              - generic [ref=e305]: V
+              - generic "ActivityManager" [ref=e306]
+              - generic "Log message 24 - ActivityManager activity" [ref=e307]:
+                - text: Log
+                - mark [ref=e308]: message
+                - text: 24 - ActivityManager activity
+          - generic [ref=e309] [cursor=pointer]:
+            - generic [ref=e310]: "27"
+            - generic [ref=e311]:
+              - generic [ref=e312]: 09-23 12:00:25.000
+              - generic [ref=e313]: 2674 -10567 1694
+              - generic [ref=e314]: D
+              - generic "SystemUI" [ref=e315]
+              - generic "Log message 25 - SystemUI activity" [ref=e316]:
+                - text: Log
+                - mark [ref=e317]: message
+                - text: 25 - SystemUI activity
+          - generic [ref=e318] [cursor=pointer]:
+            - generic [ref=e319]: "28"
+            - generic [ref=e320]:
+              - generic [ref=e321]: 09-23 12:00:26.000
+              - generic [ref=e322]: 2148 -10816 1328
+              - generic [ref=e323]: W
+              - generic "WindowManager" [ref=e324]
+              - generic "Log message 26 - WindowManager activity" [ref=e325]:
+                - text: Log
+                - mark [ref=e326]: message
+                - text: 26 - WindowManager activity
+          - generic [ref=e327] [cursor=pointer]:
+            - generic [ref=e328]: "29"
+            - generic [ref=e329]:
+              - generic [ref=e330]: 09-23 12:00:27.000
+              - generic [ref=e331]: 2735 -10043 1231
+              - generic [ref=e332]: V
+              - generic "SystemUI" [ref=e333]
+              - generic "Log message 27 - SystemUI activity" [ref=e334]:
+                - text: Log
+                - mark [ref=e335]: message
+                - text: 27 - SystemUI activity
+          - generic [ref=e336] [cursor=pointer]:
+            - generic [ref=e337]: "30"
+            - generic [ref=e338]:
+              - generic [ref=e339]: 09-23 12:00:28.000
+              - generic [ref=e340]: 2842 -10742 1789
+              - generic [ref=e341]: W
+              - generic "ActivityManager" [ref=e342]
+              - generic "Log message 28 - ActivityManager activity" [ref=e343]:
+                - text: Log
+                - mark [ref=e344]: message
+                - text: 28 - ActivityManager activity
+          - generic [ref=e345] [cursor=pointer]:
+            - generic [ref=e346]: "31"
+            - generic [ref=e347]:
+              - generic [ref=e348]: 09-23 12:00:29.000
+              - generic [ref=e349]: 2153 -10248 1222
+              - generic [ref=e350]: D
+              - generic "SystemUI" [ref=e351]
+              - generic "Log message 29 - SystemUI activity" [ref=e352]:
+                - text: Log
+                - mark [ref=e353]: message
+                - text: 29 - SystemUI activity
+          - generic [ref=e354] [cursor=pointer]:
+            - generic [ref=e355]: "32"
+            - generic [ref=e356]:
+              - generic [ref=e357]: 09-23 12:00:30.000
+              - generic [ref=e358]: 2100 -10550 1280
+              - generic [ref=e359]: D
+              - generic "TestTag" [ref=e360]:
+                - mark [ref=e361]: TestTag
+              - generic "Log message 30 - TestTag activity" [ref=e362]:
+                - text: Log
+                - mark [ref=e363]: message
+                - text: 30 -
+                - mark [ref=e364]: TestTag
+                - text: activity
+          - generic [ref=e365] [cursor=pointer]:
+            - generic [ref=e366]: "33"
+            - generic [ref=e367]:
+              - generic [ref=e368]: 09-23 12:00:31.000
+              - generic [ref=e369]: 2877 -10858 1990
+              - generic [ref=e370]: W
+              - generic "ActivityManager" [ref=e371]
+              - generic "Log message 31 - ActivityManager activity" [ref=e372]:
+                - text: Log
+                - mark [ref=e373]: message
+                - text: 31 - ActivityManager activity
+          - generic [ref=e374] [cursor=pointer]:
+            - generic [ref=e375]: "34"
+            - generic [ref=e376]:
+              - generic [ref=e377]: 09-23 12:00:32.000
+              - generic [ref=e378]: 2093 -10029 1921
+              - generic [ref=e379]: I
+              - generic "WindowManager" [ref=e380]
+              - generic "Log message 32 - WindowManager activity" [ref=e381]:
+                - text: Log
+                - mark [ref=e382]: message
+                - text: 32 - WindowManager activity
+          - generic [ref=e383] [cursor=pointer]:
+            - generic [ref=e384]: "35"
+            - generic [ref=e385]:
+              - generic [ref=e386]: 09-23 12:00:33.000
+              - generic [ref=e387]: 2720 -10693 1919
+              - generic [ref=e388]: V
+              - generic "TestTag" [ref=e389]:
+                - mark [ref=e390]: TestTag
+              - generic "Log message 33 - TestTag activity" [ref=e391]:
+                - text: Log
+                - mark [ref=e392]: message
+                - text: 33 -
+                - mark [ref=e393]: TestTag
+                - text: activity
+          - generic [ref=e394] [cursor=pointer]:
+            - generic [ref=e395]: "36"
+            - generic [ref=e396]:
+              - generic [ref=e397]: 09-23 12:00:34.000
+              - generic [ref=e398]: 2694 -10379 1636
+              - generic [ref=e399]: E
+              - generic "ActivityManager" [ref=e400]
+              - generic "Log message 34 - ActivityManager activity" [ref=e401]:
+                - text: Log
+                - mark [ref=e402]: message
+                - text: 34 - ActivityManager activity
+          - generic [ref=e403] [cursor=pointer]:
+            - generic [ref=e404]: "37"
+            - generic [ref=e405]:
+              - generic [ref=e406]: 09-23 12:00:35.000
+              - generic [ref=e407]: 2322 -10916 1371
+              - generic [ref=e408]: E
+              - generic "PackageManager" [ref=e409]
+              - generic "Log message 35 - PackageManager activity" [ref=e410]:
+                - text: Log
+                - mark [ref=e411]: message
+                - text: 35 - PackageManager activity
+          - generic [ref=e412] [cursor=pointer]:
+            - generic [ref=e413]: "38"
+            - generic [ref=e414]:
+              - generic [ref=e415]: 09-23 12:00:36.000
+              - generic [ref=e416]: 2379 -10762 1551
+              - generic [ref=e417]: E
+              - generic "TestTag" [ref=e418]:
+                - mark [ref=e419]: TestTag
+              - generic "Log message 36 - TestTag activity" [ref=e420]:
+                - text: Log
+                - mark [ref=e421]: message
+                - text: 36 -
+                - mark [ref=e422]: TestTag
+                - text: activity
+          - generic [ref=e423] [cursor=pointer]:
+            - generic [ref=e424]: "39"
+            - generic [ref=e425]:
+              - generic [ref=e426]: 09-23 12:00:37.000
+              - generic [ref=e427]: 2218 -10965 1903
+              - generic [ref=e428]: D
+              - generic "ActivityManager" [ref=e429]
+              - generic "Log message 37 - ActivityManager activity" [ref=e430]:
+                - text: Log
+                - mark [ref=e431]: message
+                - text: 37 - ActivityManager activity
+          - generic [ref=e432] [cursor=pointer]:
+            - generic [ref=e433]: "40"
+            - generic [ref=e434]:
+              - generic [ref=e435]: 09-23 12:00:38.000
+              - generic [ref=e436]: 2379 -10949 1143
+              - generic [ref=e437]: I
+              - generic "WindowManager" [ref=e438]
+              - generic "Log message 38 - WindowManager activity" [ref=e439]:
+                - text: Log
+                - mark [ref=e440]: message
+                - text: 38 - WindowManager activity
+          - generic [ref=e441] [cursor=pointer]:
+            - generic [ref=e442]: "41"
+            - generic [ref=e443]:
+              - generic [ref=e444]: 09-23 12:00:39.000
+              - generic [ref=e445]: 2303 -10256 1005
+              - generic [ref=e446]: V
+              - generic "WindowManager" [ref=e447]
+              - generic "Log message 39 - WindowManager activity" [ref=e448]:
+                - text: Log
+                - mark [ref=e449]: message
+                - text: 39 - WindowManager activity
+          - generic [ref=e450] [cursor=pointer]:
+            - generic [ref=e451]: "42"
+            - generic [ref=e452]:
+              - generic [ref=e453]: 09-23 12:00:40.000
+              - generic [ref=e454]: 2289 -10323 1961
+              - generic [ref=e455]: E
+              - generic "WindowManager" [ref=e456]
+              - generic "Log message 40 - WindowManager activity" [ref=e457]:
+                - text: Log
+                - mark [ref=e458]: message
+                - text: 40 - WindowManager activity
+          - generic [ref=e459] [cursor=pointer]:
+            - generic [ref=e460]: "43"
+            - generic [ref=e461]:
+              - generic [ref=e462]: 09-23 12:00:41.000
+              - generic [ref=e463]: 2883 -10318 1947
+              - generic [ref=e464]: D
+              - generic "SystemUI" [ref=e465]
+              - generic "Log message 41 - SystemUI activity" [ref=e466]:
+                - text: Log
+                - mark [ref=e467]: message
+                - text: 41 - SystemUI activity
+          - generic [ref=e468] [cursor=pointer]:
+            - generic [ref=e469]: "44"
+            - generic [ref=e470]:
+              - generic [ref=e471]: 09-23 12:00:42.000
+              - generic [ref=e472]: 2308 -10278 1473
+              - generic [ref=e473]: I
+              - generic "PackageManager" [ref=e474]
+              - generic "Log message 42 - PackageManager activity" [ref=e475]:
+                - text: Log
+                - mark [ref=e476]: message
+                - text: 42 - PackageManager activity
+          - generic [ref=e477] [cursor=pointer]:
+            - generic [ref=e478]: "45"
+            - generic [ref=e479]:
+              - generic [ref=e480]: 09-23 12:00:43.000
+              - generic [ref=e481]: 2235 -10780 1495
+              - generic [ref=e482]: V
+              - generic "ActivityManager" [ref=e483]
+              - generic "Log message 43 - ActivityManager activity" [ref=e484]:
+                - text: Log
+                - mark [ref=e485]: message
+                - text: 43 - ActivityManager activity
+          - generic [ref=e486] [cursor=pointer]:
+            - generic [ref=e487]: "46"
+            - generic [ref=e488]:
+              - generic [ref=e489]: 09-23 12:00:44.000
+              - generic [ref=e490]: 2809 -10306 1667
+              - generic [ref=e491]: D
+              - generic "TestTag" [ref=e492]:
+                - mark [ref=e493]: TestTag
+              - generic "Log message 44 - TestTag activity" [ref=e494]:
+                - text: Log
+                - mark [ref=e495]: message
+                - text: 44 -
+                - mark [ref=e496]: TestTag
+                - text: activity
+          - generic [ref=e497] [cursor=pointer]:
+            - generic [ref=e498]: "47"
+            - generic [ref=e499]:
+              - generic [ref=e500]: 09-23 12:00:45.000
+              - generic [ref=e501]: 2050 -10682 1571
+              - generic [ref=e502]: W
+              - generic "WindowManager" [ref=e503]
+              - generic "Log message 45 - WindowManager activity" [ref=e504]:
+                - text: Log
+                - mark [ref=e505]: message
+                - text: 45 - WindowManager activity
+          - generic [ref=e506] [cursor=pointer]:
+            - generic [ref=e507]: "48"
+            - generic [ref=e508]:
+              - generic [ref=e509]: 09-23 12:00:46.000
+              - generic [ref=e510]: 2374 -10509 1021
+              - generic [ref=e511]: E
+              - generic "SystemUI" [ref=e512]
+              - generic "Log message 46 - SystemUI activity" [ref=e513]:
+                - text: Log
+                - mark [ref=e514]: message
+                - text: 46 - SystemUI activity
+          - generic [ref=e515] [cursor=pointer]:
+            - generic [ref=e516]: "49"
+            - generic [ref=e517]:
+              - generic [ref=e518]: 09-23 12:00:47.000
+              - generic [ref=e519]: 2656 -10484 1338
+              - generic [ref=e520]: I
+              - generic "PackageManager" [ref=e521]
+              - generic "Log message 47 - PackageManager activity" [ref=e522]:
+                - text: Log
+                - mark [ref=e523]: message
+                - text: 47 - PackageManager activity
+          - generic [ref=e524] [cursor=pointer]:
+            - generic [ref=e525]: "50"
+            - generic [ref=e526]:
+              - generic [ref=e527]: 09-23 12:00:48.000
+              - generic [ref=e528]: 2627 -10748 1435
+              - generic [ref=e529]: I
+              - generic "TestTag" [ref=e530]:
+                - mark [ref=e531]: TestTag
+              - generic "Log message 48 - TestTag activity" [ref=e532]:
+                - text: Log
+                - mark [ref=e533]: message
+                - text: 48 -
+                - mark [ref=e534]: TestTag
+                - text: activity
+          - generic [ref=e535] [cursor=pointer]:
+            - generic [ref=e536]: "51"
+            - generic [ref=e537]:
+              - generic [ref=e538]: 09-23 12:00:49.000
+              - generic [ref=e539]: 2829 -10499 1991
+              - generic [ref=e540]: D
+              - generic "ActivityManager" [ref=e541]
+              - generic "Log message 49 - ActivityManager activity" [ref=e542]:
+                - text: Log
+                - mark [ref=e543]: message
+                - text: 49 - ActivityManager activity
+          - generic [ref=e544] [cursor=pointer]:
+            - generic [ref=e545]: "52"
+            - generic [ref=e546]:
+              - generic [ref=e547]: 09-23 12:00:50.000
+              - generic [ref=e548]: 2008 -10153 1548
+              - generic [ref=e549]: I
+              - generic "SystemUI" [ref=e550]
+              - generic "Log message 50 - SystemUI activity" [ref=e551]:
+                - text: Log
+                - mark [ref=e552]: message
+                - text: 50 - SystemUI activity
+          - generic [ref=e553] [cursor=pointer]:
+            - generic [ref=e554]: "53"
+            - generic [ref=e555]:
+              - generic [ref=e556]: 09-23 12:00:51.000
+              - generic [ref=e557]: 2334 -10387 1492
+              - generic [ref=e558]: W
+              - generic "WindowManager" [ref=e559]
+              - generic "Log message 51 - WindowManager activity" [ref=e560]:
+                - text: Log
+                - mark [ref=e561]: message
+                - text: 51 - WindowManager activity
+          - generic [ref=e562] [cursor=pointer]:
+            - generic [ref=e563]: "54"
+            - generic [ref=e564]:
+              - generic [ref=e565]: 09-23 12:00:52.000
+              - generic [ref=e566]: 2577 -10148 1648
+              - generic [ref=e567]: V
+              - generic "PackageManager" [ref=e568]
+              - generic "Log message 52 - PackageManager activity" [ref=e569]:
+                - text: Log
+                - mark [ref=e570]: message
+                - text: 52 - PackageManager activity
+          - generic [ref=e571] [cursor=pointer]:
+            - generic [ref=e572]: "55"
+            - generic [ref=e573]:
+              - generic [ref=e574]: 09-23 12:00:53.000
+              - generic [ref=e575]: 2109 -10190 1068
+              - generic [ref=e576]: V
+              - generic "PackageManager" [ref=e577]
+              - generic "Log message 53 - PackageManager activity" [ref=e578]:
+                - text: Log
+                - mark [ref=e579]: message
+                - text: 53 - PackageManager activity
+          - generic [ref=e580] [cursor=pointer]:
+            - generic [ref=e581]: "56"
+            - generic [ref=e582]:
+              - generic [ref=e583]: 09-23 12:00:54.000
+              - generic [ref=e584]: 2637 -10501 1543
+              - generic [ref=e585]: E
+              - generic "WindowManager" [ref=e586]
+              - generic "Log message 54 - WindowManager activity" [ref=e587]:
+                - text: Log
+                - mark [ref=e588]: message
+                - text: 54 - WindowManager activity
+          - generic [ref=e589] [cursor=pointer]:
+            - generic [ref=e590]: "57"
+            - generic [ref=e591]:
+              - generic [ref=e592]: 09-23 12:00:55.000
+              - generic [ref=e593]: 2951 -10216 1898
+              - generic [ref=e594]: E
+              - generic "PackageManager" [ref=e595]
+              - generic "Log message 55 - PackageManager activity" [ref=e596]:
+                - text: Log
+                - mark [ref=e597]: message
+                - text: 55 - PackageManager activity
+          - generic [ref=e598] [cursor=pointer]:
+            - generic [ref=e599]: "58"
+            - generic [ref=e600]:
+              - generic [ref=e601]: 09-23 12:00:56.000
+              - generic [ref=e602]: 2054 -10229 1800
+              - generic [ref=e603]: W
+              - generic "ActivityManager" [ref=e604]
+              - generic "Log message 56 - ActivityManager activity" [ref=e605]:
+                - text: Log
+                - mark [ref=e606]: message
+                - text: 56 - ActivityManager activity
+          - generic [ref=e607] [cursor=pointer]:
+            - generic [ref=e608]: "59"
+            - generic [ref=e609]:
+              - generic [ref=e610]: 09-23 12:00:57.000
+              - generic [ref=e611]: 2210 -10508 1511
+              - generic [ref=e612]: E
+              - generic "ActivityManager" [ref=e613]
+              - generic "Log message 57 - ActivityManager activity" [ref=e614]:
+                - text: Log
+                - mark [ref=e615]: message
+                - text: 57 - ActivityManager activity
+          - generic [ref=e616] [cursor=pointer]:
+            - generic [ref=e617]: "60"
+            - generic [ref=e618]:
+              - generic [ref=e619]: 09-23 12:00:58.000
+              - generic [ref=e620]: 2183 -10396 1310
+              - generic [ref=e621]: V
+              - generic "PackageManager" [ref=e622]
+              - generic "Log message 58 - PackageManager activity" [ref=e623]:
+                - text: Log
+                - mark [ref=e624]: message
+                - text: 58 - PackageManager activity
+          - generic [ref=e625] [cursor=pointer]:
+            - generic [ref=e626]: "61"
+            - generic [ref=e627]:
+              - generic [ref=e628]: 09-23 12:00:59.000
+              - generic [ref=e629]: 2061 -10317 1206
+              - generic [ref=e630]: E
+              - generic "WindowManager" [ref=e631]
+              - generic "Log message 59 - WindowManager activity" [ref=e632]:
+                - text: Log
+                - mark [ref=e633]: message
+                - text: 59 - WindowManager activity
+          - generic [ref=e634] [cursor=pointer]:
+            - generic [ref=e635]: "62"
+            - generic [ref=e636]:
+              - generic [ref=e637]: 09-23 12:01:00.000
+              - generic [ref=e638]: 2581 -10751 1813
+              - generic [ref=e639]: D
+              - generic "ActivityManager" [ref=e640]
+              - generic "Log message 60 - ActivityManager activity" [ref=e641]:
+                - text: Log
+                - mark [ref=e642]: message
+                - text: 60 - ActivityManager activity
+          - generic [ref=e643] [cursor=pointer]:
+            - generic [ref=e644]: "63"
+            - generic [ref=e645]:
+              - generic [ref=e646]: 09-23 12:01:01.000
+              - generic [ref=e647]: 2102 -10695 1114
+              - generic [ref=e648]: E
+              - generic "TestTag" [ref=e649]:
+                - mark [ref=e650]: TestTag
+              - generic "Log message 61 - TestTag activity" [ref=e651]:
+                - text: Log
+                - mark [ref=e652]: message
+                - text: 61 -
+                - mark [ref=e653]: TestTag
+                - text: activity
+          - generic [ref=e654] [cursor=pointer]:
+            - generic [ref=e655]: "64"
+            - generic [ref=e656]:
+              - generic [ref=e657]: 09-23 12:01:02.000
+              - generic [ref=e658]: 2356 -10248 1984
+              - generic [ref=e659]: I
+              - generic "PackageManager" [ref=e660]
+              - generic "Log message 62 - PackageManager activity" [ref=e661]:
+                - text: Log
+                - mark [ref=e662]: message
+                - text: 62 - PackageManager activity
+          - generic [ref=e663] [cursor=pointer]:
+            - generic [ref=e664]: "65"
+            - generic [ref=e665]:
+              - generic [ref=e666]: 09-23 12:01:03.000
+              - generic [ref=e667]: 2535 -10071 1717
+              - generic [ref=e668]: V
+              - generic "PackageManager" [ref=e669]
+              - generic "Log message 63 - PackageManager activity" [ref=e670]:
+                - text: Log
+                - mark [ref=e671]: message
+                - text: 63 - PackageManager activity
+          - generic [ref=e672] [cursor=pointer]:
+            - generic [ref=e673]: "66"
+            - generic [ref=e674]:
+              - generic [ref=e675]: 09-23 12:01:04.000
+              - generic [ref=e676]: 2399 -10550 1378
+              - generic [ref=e677]: W
+              - generic "TestTag" [ref=e678]:
+                - mark [ref=e679]: TestTag
+              - generic "Log message 64 - TestTag activity" [ref=e680]:
+                - text: Log
+                - mark [ref=e681]: message
+                - text: 64 -
+                - mark [ref=e682]: TestTag
+                - text: activity
+          - generic [ref=e683] [cursor=pointer]:
+            - generic [ref=e684]: "67"
+            - generic [ref=e685]:
+              - generic [ref=e686]: 09-23 12:01:05.000
+              - generic [ref=e687]: 2730 -10334 1253
+              - generic [ref=e688]: W
+              - generic "SystemUI" [ref=e689]
+              - generic "Log message 65 - SystemUI activity" [ref=e690]:
+                - text: Log
+                - mark [ref=e691]: message
+                - text: 65 - SystemUI activity
+          - generic [ref=e692] [cursor=pointer]:
+            - generic [ref=e693]: "68"
+            - generic [ref=e694]:
+              - generic [ref=e695]: 09-23 12:01:06.000
+              - generic [ref=e696]: 2102 -10184 1953
+              - generic [ref=e697]: V
+              - generic "WindowManager" [ref=e698]
+              - generic "Log message 66 - WindowManager activity" [ref=e699]:
+                - text: Log
+                - mark [ref=e700]: message
+                - text: 66 - WindowManager activity
+          - generic [ref=e701] [cursor=pointer]:
+            - generic [ref=e702]: "69"
+            - generic [ref=e703]:
+              - generic [ref=e704]: 09-23 12:01:07.000
+              - generic [ref=e705]: 2769 -10381 1550
+              - generic [ref=e706]: E
+              - generic "PackageManager" [ref=e707]
+              - generic "Log message 67 - PackageManager activity" [ref=e708]:
+                - text: Log
+                - mark [ref=e709]: message
+                - text: 67 - PackageManager activity
+          - generic [ref=e710] [cursor=pointer]:
+            - generic [ref=e711]: "70"
+            - generic [ref=e712]:
+              - generic [ref=e713]: 09-23 12:01:08.000
+              - generic [ref=e714]: 2052 -10994 1094
+              - generic [ref=e715]: D
+              - generic "ActivityManager" [ref=e716]
+              - generic "Log message 68 - ActivityManager activity" [ref=e717]:
+                - text: Log
+                - mark [ref=e718]: message
+                - text: 68 - ActivityManager activity
+          - generic [ref=e719] [cursor=pointer]:
+            - generic [ref=e720]: "71"
+            - generic [ref=e721]:
+              - generic [ref=e722]: 09-23 12:01:09.000
+              - generic [ref=e723]: 2887 -10898 1870
+              - generic [ref=e724]: E
+              - generic "TestTag" [ref=e725]:
+                - mark [ref=e726]: TestTag
+              - generic "Log message 69 - TestTag activity" [ref=e727]:
+                - text: Log
+                - mark [ref=e728]: message
+                - text: 69 -
+                - mark [ref=e729]: TestTag
+                - text: activity
+          - generic [ref=e730] [cursor=pointer]:
+            - generic [ref=e731]: "72"
+            - generic [ref=e732]:
+              - generic [ref=e733]: 09-23 12:01:10.000
+              - generic [ref=e734]: 2439 -10319 1816
+              - generic [ref=e735]: E
+              - generic "PackageManager" [ref=e736]
+              - generic "Log message 70 - PackageManager activity" [ref=e737]:
+                - text: Log
+                - mark [ref=e738]: message
+                - text: 70 - PackageManager activity
+          - generic [ref=e739] [cursor=pointer]:
+            - generic [ref=e740]: "73"
+            - generic [ref=e741]:
+              - generic [ref=e742]: 09-23 12:01:11.000
+              - generic [ref=e743]: 2455 -10356 1404
+              - generic [ref=e744]: E
+              - generic "ActivityManager" [ref=e745]
+              - generic "Log message 71 - ActivityManager activity" [ref=e746]:
+                - text: Log
+                - mark [ref=e747]: message
+                - text: 71 - ActivityManager activity
+          - generic [ref=e748] [cursor=pointer]:
+            - generic [ref=e749]: "74"
+            - generic [ref=e750]:
+              - generic [ref=e751]: 09-23 12:01:12.000
+              - generic [ref=e752]: 2318 -10479 1864
+              - generic [ref=e753]: V
+              - generic "ActivityManager" [ref=e754]
+              - generic "Log message 72 - ActivityManager activity" [ref=e755]:
+                - text: Log
+                - mark [ref=e756]: message
+                - text: 72 - ActivityManager activity
+          - generic [ref=e757] [cursor=pointer]:
+            - generic [ref=e758]: "75"
+            - generic [ref=e759]:
+              - generic [ref=e760]: 09-23 12:01:13.000
+              - generic [ref=e761]: 2858 -10518 1590
+              - generic [ref=e762]: V
+              - generic "SystemUI" [ref=e763]
+              - generic "Log message 73 - SystemUI activity" [ref=e764]:
+                - text: Log
+                - mark [ref=e765]: message
+                - text: 73 - SystemUI activity
+          - generic [ref=e766] [cursor=pointer]:
+            - generic [ref=e767]: "76"
+            - generic [ref=e768]:
+              - generic [ref=e769]: 09-23 12:01:14.000
+              - generic [ref=e770]: 2833 -10416 1977
+              - generic [ref=e771]: W
+              - generic "TestTag" [ref=e772]:
+                - mark [ref=e773]: TestTag
+              - generic "Log message 74 - TestTag activity" [ref=e774]:
+                - text: Log
+                - mark [ref=e775]: message
+                - text: 74 -
+                - mark [ref=e776]: TestTag
+                - text: activity
+          - generic [ref=e777] [cursor=pointer]:
+            - generic [ref=e778]: "77"
+            - generic [ref=e779]:
+              - generic [ref=e780]: 09-23 12:01:15.000
+              - generic [ref=e781]: 2692 -10753 1699
+              - generic [ref=e782]: V
+              - generic "SystemUI" [ref=e783]
+              - generic "Log message 75 - SystemUI activity" [ref=e784]:
+                - text: Log
+                - mark [ref=e785]: message
+                - text: 75 - SystemUI activity
+      - text: ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅
+```

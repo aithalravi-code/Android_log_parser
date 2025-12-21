@@ -710,15 +710,17 @@ export function renderBtsnoopConnectionEvents(events = null) {
                 }).join(' ');
             }
 
+            const rowData = [event.packetNum, event.timestamp, event.eventType, event.handle, event.address, event.parameters || '', event.rawData].join('  ');
             return `
-            <tr data-row-id="btsnoop-conn-${event.packetNum}" class="${event.eventType === 'connect' ? 'connect-event' : 'disconnect-event'}">
-                <td>${event.packetNum}</td>
-                <td>${event.timestamp}</td>
-                <td><span class="event-badge ${event.eventType === 'connect' ? 'badge-connect' : 'badge-disconnect'}">${event.eventType}</span></td>
-                <td>${event.handle}</td>
-                <td>${event.address}</td>
-                <td class="params-cell">${formattedParams}</td>
-                <td>${event.rawData}</td>
+            <tr data-row-id="btsnoop-conn-${event.packetNum}" class="${event.eventType === 'connect' ? 'connect-event' : 'disconnect-event'}" style="position: relative;">
+                <td class="copy-cell" data-log-text="${event.packetNum}">${event.packetNum}</td>
+                <td class="copy-cell" data-log-text="${event.timestamp}">${event.timestamp}</td>
+                <td class="copy-cell" data-log-text="${event.eventType}"><span class="event-badge ${event.eventType === 'connect' ? 'badge-connect' : 'badge-disconnect'}">${event.eventType}</span></td>
+                <td class="copy-cell" data-log-text="${event.handle}">${event.handle}</td>
+                <td class="copy-cell" data-log-text="${event.address}">${event.address}</td>
+                <td class="copy-cell params-cell" data-log-text="${event.parameters || ''}">${formattedParams}</td>
+                <td class="copy-cell" data-log-text="${event.rawData}">${event.rawData}</td>
+                <td style="width: 40px; text-align: center;"><button class="copy-log-btn" data-log-text="${rowData.replace(/"/g, '&quot;')}">📋</button></td>
             </tr>
         `;
         }).join('');
@@ -1406,6 +1408,8 @@ function handleBtsnoopClick(e) {
                         copyCell.title = originalTitle;
                         copyCell.classList.remove('copied-feedback');
                     }, 1000);
+                    // Prevent event from propagating to other listeners that might copy single cell
+                    e.stopImmediatePropagation();
                 });
             }
         }

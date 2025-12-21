@@ -1,0 +1,97 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - heading "Android Log Viewer" [level=1] [ref=e4]
+    - generic [ref=e5]: "File: bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57.zip"
+  - main [ref=e6]:
+    - generic [ref=e7]:
+      - button "»" [ref=e8] [cursor=pointer]
+      - group [ref=e9]:
+        - generic "File Selection" [ref=e10] [cursor=pointer]
+        - generic [ref=e11]:
+          - generic [ref=e12]:
+            - radio "ZIP or Log Files" [checked] [ref=e13]
+            - generic [ref=e14]: ZIP or Log Files
+            - radio "Folder" [ref=e15]
+            - generic [ref=e16]: Folder
+          - generic [ref=e17]:
+            - generic [ref=e18]: "Choose ZIP or individual log files:"
+            - button "Choose ZIP or individual log files:" [ref=e19]
+        - button "Clear & Reset" [ref=e21] [cursor=pointer]
+      - generic [ref=e22]:
+        - generic [ref=e24]:
+          - generic [ref=e25]: "Filter by Level:"
+          - button "Verbose" [ref=e26] [cursor=pointer]
+          - button "Debug" [ref=e27] [cursor=pointer]
+          - button "Info" [ref=e28] [cursor=pointer]
+          - button "Warn" [ref=e29] [cursor=pointer]
+          - button "Error" [ref=e30] [cursor=pointer]
+          - button "Fatal" [ref=e31] [cursor=pointer]
+          - button "None" [ref=e32] [cursor=pointer]
+        - generic [ref=e33]:
+          - generic [ref=e34]: "Keyword Search:"
+          - generic [ref=e35]:
+            - button "OR" [ref=e36] [cursor=pointer]
+            - button "AND" [ref=e37] [cursor=pointer]
+          - textbox "Keyword Search:" [ref=e39]:
+            - /placeholder: Live search or type & Enter... (#123 to jump to line)
+        - generic [ref=e41]:
+          - generic [ref=e42]: "Time Range:"
+          - generic [ref=e43]:
+            - textbox "Time Range:" [ref=e44]: 2025-09-24T10:26:56
+            - textbox [ref=e45]: 2025-09-24T10:27:03.6
+          - generic [ref=e48]:
+            - slider [ref=e51]
+            - slider [ref=e53]
+    - generic [ref=e56]:
+      - navigation [ref=e57]:
+        - button "Logs" [ref=e58] [cursor=pointer]
+        - button "CCC_Focus" [ref=e59] [cursor=pointer]
+        - button "CCC BLE Decoded packets" [ref=e60] [cursor=pointer]
+        - button "BTSnoop" [active] [ref=e61] [cursor=pointer]
+        - button "Stats" [ref=e62] [cursor=pointer]
+      - generic [ref=e63]:
+        - generic [ref=e64]:
+          - generic [ref=e66]:
+            - button "CMD" [ref=e67] [cursor=pointer]
+            - button "EVT" [ref=e68] [cursor=pointer]
+            - button "ACL" [ref=e69] [cursor=pointer]
+            - button "L2CAP" [ref=e70] [cursor=pointer]
+            - button "SMP" [ref=e71] [cursor=pointer]
+            - button "ATT" [ref=e72] [cursor=pointer]
+          - generic [ref=e73]:
+            - button "⊟" [ref=e74] [cursor=pointer]
+            - button "📥" [ref=e75] [cursor=pointer]
+        - generic [ref=e79]:
+          - generic [ref=e80] [cursor=pointer]:
+            - text: No.
+            - text: ⇅ ⇅
+          - generic [ref=e82] [cursor=pointer]:
+            - text: Timestamp
+            - text: ⇅ ⇅
+          - generic [ref=e84] [cursor=pointer]:
+            - text: Source
+            - text: ⇅ ⇅
+          - generic [ref=e86] [cursor=pointer]:
+            - text: Destination
+            - text: ⇅ ⇅
+          - generic [ref=e88] [cursor=pointer]:
+            - text: Type
+            - text: ⇅ ⇅
+          - generic [ref=e90] [cursor=pointer]:
+            - text: Summary
+            - text: ⇅ ⇅
+          - generic [ref=e92] [cursor=pointer]:
+            - text: Data
+            - text: ⇅ ⇅
+          - textbox "Filter No...." [ref=e95]
+          - textbox "Filter Timestamp..." [ref=e97]
+          - textbox "Filter Source..." [ref=e99]
+          - textbox "Filter Destination..." [ref=e101]
+          - textbox "Filter Type..." [ref=e103]
+          - textbox "Filter Summary..." [ref=e105]
+          - textbox "Filter Data..." [ref=e107]
+      - text: ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅
+```

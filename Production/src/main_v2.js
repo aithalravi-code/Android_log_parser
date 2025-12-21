@@ -596,7 +596,20 @@ document.addEventListener('DOMContentLoaded', () => {
                             bleKeysTableBody,
                             window.finalBleKeys || new Map()
                         );
+
+                        // CRITICAL: Setup sorting/resizing AFTER rendering to preserve content
+                        setupBleKeysTab('bleKeysTable');
+                        console.log(`[LazyLoad Stats] Setup BLE Keys table (sorting/resizing)`);
                     }
+
+
+                    // FIX: Also render BTSnoop Connection Events table
+                    const btsnoopConnectionEventsTable = document.getElementById('btsnoopConnectionEventsTable');
+                    if (btsnoopConnectionEventsTable) {
+                        BtsnoopTab.renderBtsnoopConnectionEvents(); // Call without args to use module-local events
+                        console.log(`[LazyLoad Stats] Rendered BTSnoop Connection Events table`);
+                    }
+
 
                     console.log(`[Perf Phase2]Stats init took ${(performance.now() - statsStart).toFixed(1)}ms`);
                     break;
@@ -702,12 +715,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log(`[Perf] Restored ${loadedBtsnoop.value.length} BTSnoop packets`);
                 }
 
+
                 const loadedBtsnoopEvents = await loadData('btsnoopConnectionEvents');
                 if (loadedBtsnoopEvents?.value) {
                     BtsnoopTab.setBtsnoopConnectionEvents(loadedBtsnoopEvents.value);
-                    BtsnoopTab.renderBtsnoopConnectionEvents(loadedBtsnoopEvents.value);
-                    console.log(`[Perf] Restored ${loadedBtsnoopEvents.value.length} BTSnoop connection events`);
+                    // DON'T render here - will be rendered when Stats tab is activated to avoid DOM timing issues
+                    console.log(`[Perf] Restored ${loadedBtsnoopEvents.value.length} BTSnoop connection events (render deferred to Stats tab)`);
                 }
+
 
                 // BUGFIX: Restore connection map for BLE address resolution
                 const loadedConnectionMap = await loadData('btsnoopConnectionMap');
@@ -730,30 +745,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const loadedBleKeys = await loadData('bleKeys');
                 if (loadedBleKeys?.value) {
                     window.finalBleKeys = new Map(loadedBleKeys.value);
-                }
-
-                // BUGFIX: Always render BLE Keys using loaded connection events (keys are embedded in events)
-                const bleKeysTableBody = document.querySelector('#bleKeysTable tbody');
-                console.log(`[BLE Keys Debug] Table body element:`, bleKeysTableBody);
-                if (bleKeysTableBody) {
-                    const connectionEvents = BtsnoopTab.getBtsnoopConnectionEvents();
-                    const connectionMap = BtsnoopTab.getBtsnoopConnectionMap();
-                    console.log(`[BLE Keys Debug] Connection events:`, connectionEvents.length, `Connection map size:`, connectionMap.size);
-                    renderBleKeys(
-                        connectionEvents,
-                        connectionMap,
-                        bleKeysTableBody,
-                        window.finalBleKeys
-                    );
-                    const keyCount = connectionEvents.filter(e => e.keyType).length;
-                    console.log(`[Perf] Rendered ${keyCount} BLE Keys from ${connectionEvents.length} connection events`);
-                    console.log(`[BLE Keys Debug] Table innerHTML length afterrender:`, bleKeysTableBody.innerHTML.length);
-
-                    // CRITICAL: Setup sorting/resizing AFTER rendering to preserve content
-                    setupBleKeysTab('bleKeysTable');
-                    console.log(`[BLE Keys Debug] setupBleKeysTab called after render`);
-                } else {
-                    console.error(`[BLE Keys Debug] Table body not found!`);
+                    console.log(`[Perf] Restored BLE Keys to window.finalBleKeys (render deferred to Stats tab)`);
                 }
 
                 const loadedAppVersions = await loadData('appVersions');
@@ -2024,6 +2016,13 @@ self.onmessage = async (event) => {
                     );
                 }
 
+                // FIX: Also render BTSnoop Connection Events table
+                const btsnoopConnectionEventsTable = document.getElementById('btsnoopConnectionEventsTable');
+                if (btsnoopConnectionEventsTable) {
+                    BtsnoopTab.renderBtsnoopConnectionEvents(); // Call without args to use module-local events
+                    console.log(`[RefreshActiveTab] Rendered BTSnoop Connection Events table`);
+                }
+
                 // FIX: Re-render highlights (device events, accounts) when stats tab is activated
                 if (storedHighlights) {
                     renderHighlights(storedHighlights);
@@ -2850,9 +2849,11 @@ self.onmessage = async (event) => {
         }
 
         // FIX: Correctly render BLE Security Keys (IRK/LTK)
-        // FIX: Correctly render BLE Security Keys (IRK/LTK)
+        // Use BtsnoopTab getters to ensure we have the latest data
         if (bleKeysTbody) {
-            renderBleKeys(btsnoopConnectionEvents, btsnoopConnectionMap, bleKeysTbody);
+            const connectionEvents = BtsnoopTab.getBtsnoopConnectionEvents();
+            const connectionMap = BtsnoopTab.getBtsnoopConnectionMap();
+            renderBleKeys(connectionEvents, connectionMap, bleKeysTbody, window.finalBleKeys || new Map());
         }
 
         // Render Device Events
@@ -3099,8 +3100,18 @@ self.onmessage = async (event) => {
         // 1. Handle Copy Actions (Button or Ctrl+Click)
         const isCopyBtn = target.classList.contains('copy-log-btn');
         const isCtrlClick = (event.ctrlKey || event.metaKey);
+
+        // Add specific debug logging for copy actions
+        if (isCopyBtn) {
+            console.log('[Copy Debug] Copy button clicked, data length:', target.dataset.logText?.length);
+        }
+
         // Identify potential copy targets: specific class or generic table cell
         const copyTarget = target.closest('.copy-cell') || target.closest('.btsnoop-copy-cell') || target.closest('td');
+
+        if (copyTarget && isCtrlClick) {
+            console.log('[Copy Debug] Ctrl+Click on cell:', copyTarget.tagName, 'data length:', copyTarget.dataset.logText?.length);
+        }
 
         if (isCopyBtn || (isCtrlClick && copyTarget)) {
             let logText = '';

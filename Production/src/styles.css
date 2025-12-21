@@ -358,10 +358,16 @@ input[type="file"]:hover {
     font-size: 0.8rem;
 }
 
-.log-line:hover .copy-log-btn {
+.log-line:hover .copy-log-btn,
+tr:hover .copy-log-btn {
     opacity: 1;
     /* Show on hover */
     visibility: visible;
+}
+
+/* Ensure copy button parent td has position: relative */
+td:has(.copy-log-btn) {
+    position: relative;
 }
 
 /* Keyword filter chips */
@@ -907,10 +913,21 @@ input[type="file"]:hover {
     padding: 1rem;
 }
 
+/* Ensure highlight sections and their table containers use full width */
+.highlight-section {
+    width: 100%;
+    margin-bottom: 2rem;
+}
+
 .highlight-section h3 {
     border-bottom: 1px solid #e0e0e0;
     padding-bottom: 0.5rem;
     margin-bottom: 1rem;
+}
+
+/* Ensure table overflow wrappers use full width */
+.highlight-section>div {
+    width: 100%;
 }
 
 .highlight-list {
@@ -1037,6 +1054,7 @@ input[type="file"]:hover {
     cursor: pointer;
     min-height: 20px;
     box-sizing: border-box;
+    position: relative;
 }
 
 .log-line:hover {
@@ -1386,16 +1404,17 @@ input[type="file"]:hover {
     width: 100%;
     border-collapse: collapse;
     background: #2c2c2c;
-    display: block;
-    /* Make table a block element */
+    display: table;
+    /* Use proper table display by default */
     overflow-x: auto;
-    /* Allow horizontal scrolling on the table itself */
+}
+
+/* Apply scrollable block behavior ONLY to CCC tab tables */
+#cccTab .ccc-table {
+    display: block;
     max-height: calc(100vh - 300px);
-    /* Responsive height based on viewport - adjusts to screen resolution */
     min-height: 400px;
-    /* Minimum height for usability on smaller screens */
     overflow-y: auto;
-    /* Enable vertical scrolling */
 }
 
 .ccc-table thead,
@@ -1407,6 +1426,11 @@ input[type="file"]:hover {
     /* Solid dark background */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     /* Shadow for visual separation */
+}
+
+/* Table rows need position relative for copy buttons */
+tbody tr {
+    position: relative;
 }
 
 /* Ensure thead rows also have background */
@@ -2079,6 +2103,16 @@ input[type="file"]::file-selector-button:hover {
     text-overflow: clip;
 }
 
+/* FIX: Ensure params-cell specifically overrides nowrap in all table contexts */
+.ccc-table td.params-cell,
+.highlight-table td.params-cell,
+td.params-cell {
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-all !important;
+}
+
+
 /* ============================================================================= */
 /* NEW FEATURE: Scrollable Search Suggestions Dropdown */
 /* ============================================================================= */
@@ -2145,6 +2179,10 @@ input[type="file"]::file-selector-button:hover {
 .params-cell {
     font-size: 0.85em;
     line-height: 1.6;
+    /* FIX: Override generic table cell white-space to allow wrapping */
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-all !important;
 }
 
 .params-cell .param-label {

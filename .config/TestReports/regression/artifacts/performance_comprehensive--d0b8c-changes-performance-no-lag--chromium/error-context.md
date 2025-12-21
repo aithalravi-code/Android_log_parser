@@ -1,0 +1,71 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - heading "Android Log Viewer" [level=1] [ref=e4]
+    - generic [ref=e5]: "File: perf_medium.log"
+  - main [ref=e6]:
+    - generic [ref=e7]:
+      - button "»" [ref=e8] [cursor=pointer]
+      - group [ref=e9]:
+        - generic "File Selection" [ref=e10] [cursor=pointer]
+        - generic [ref=e11]:
+          - generic [ref=e12]:
+            - radio "ZIP or Log Files" [checked] [ref=e13]
+            - generic [ref=e14]: ZIP or Log Files
+            - radio "Folder" [ref=e15]
+            - generic [ref=e16]: Folder
+          - generic [ref=e17]:
+            - generic [ref=e18]: "Choose ZIP or individual log files:"
+            - button "Choose ZIP or individual log files:" [ref=e19]
+        - button "Clear & Reset" [ref=e21] [cursor=pointer]
+      - generic [ref=e22]:
+        - generic [ref=e24]:
+          - generic [ref=e25]: "Filter by Level:"
+          - button "Verbose" [ref=e26] [cursor=pointer]
+          - button "Debug" [ref=e27] [cursor=pointer]
+          - button "Info" [ref=e28] [cursor=pointer]
+          - button "Warn" [ref=e29] [cursor=pointer]
+          - button "Error" [ref=e30] [cursor=pointer]
+          - button "Fatal" [ref=e31] [cursor=pointer]
+          - button "None" [ref=e32] [cursor=pointer]
+        - generic [ref=e33]:
+          - generic [ref=e34]: "Keyword Search:"
+          - generic [ref=e35]:
+            - button "OR" [ref=e36] [cursor=pointer]
+            - button "AND" [ref=e37] [cursor=pointer]
+          - textbox "Keyword Search:" [active] [ref=e39]:
+            - /placeholder: Live search or type & Enter... (#123 to jump to line)
+          - generic [ref=e40]:
+            - generic [ref=e41] [cursor=pointer]: test0x
+            - generic [ref=e42] [cursor=pointer]: test1x
+            - generic [ref=e43] [cursor=pointer]: test2x
+            - generic [ref=e44] [cursor=pointer]: test3x
+            - generic [ref=e45] [cursor=pointer]: test4x
+            - generic [ref=e46] [cursor=pointer]: test5x
+            - generic [ref=e47] [cursor=pointer]: test6x
+            - generic [ref=e48] [cursor=pointer]: test7x
+            - generic [ref=e49] [cursor=pointer]: test8x
+            - generic [ref=e50] [cursor=pointer]: test9x
+        - generic [ref=e51]:
+          - generic [ref=e52]: "Time Range:"
+          - generic [ref=e53]:
+            - textbox "Time Range:" [ref=e54]: 2025-09-23T12:00
+            - textbox [ref=e55]: 2025-09-23T12:59:59
+          - generic [ref=e58]:
+            - slider [ref=e61]
+            - slider [ref=e63]
+    - generic [ref=e66]:
+      - navigation [ref=e67]:
+        - button "Logs" [ref=e68] [cursor=pointer]
+        - button "CCC_Focus" [ref=e69] [cursor=pointer]
+        - button "CCC BLE Decoded packets" [ref=e70] [cursor=pointer]
+        - button "BTSnoop" [ref=e71] [cursor=pointer]
+        - button "Stats" [ref=e72] [cursor=pointer]
+      - generic [ref=e75]:
+        - button "⊟" [ref=e76] [cursor=pointer]
+        - button "📊" [ref=e77] [cursor=pointer]
+        - button "📥" [ref=e78] [cursor=pointer]
+      - text: ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅
+```

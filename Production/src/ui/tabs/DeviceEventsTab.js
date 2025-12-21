@@ -42,13 +42,15 @@ export function renderDeviceEvents(events, tableElement) {
             // Generate unique row ID
             const rowId = `dev-evt-${event.timestamp ? event.timestamp.replace(/[^a-zA-Z0-9]/g, '') : 'na'}-${event.event.replace(/[^a-zA-Z0-9]/g, '')}`;
 
-            tableHtml += `<tr data-row-id="${rowId}">
+            const rowData = [event.date || 'N/A', event.time || 'N/A', event.event, event.detail, previousValue, event.originalText].join('  ');
+            tableHtml += `<tr data-row-id="${rowId}" style="position: relative;">
                     <td class="copy-cell" data-log-text="${event.date || ''}">${event.date || 'N/A'}</td>
                     <td class="copy-cell" data-log-text="${event.time || ''}">${event.time || 'N/A'}</td>
                     <td class="copy-cell" data-log-text="${escapeHtml(event.event)}">${escapeHtml(event.event)}</td>
                     <td class="copy-cell" data-log-text="${escapeHtml(event.detail)}">${escapeHtml(event.detail)}</td>
                     <td class="copy-cell" data-log-text="${escapeHtml(previousValue)}">${escapeHtml(previousValue)}</td>
                     <td class="copy-cell log-line-cell" data-log-text="${escapeHtml(event.originalText)}">${escapeHtml(event.originalText)}</td>
+                    <td style="width: 40px; text-align: center;"><button class="copy-log-btn" data-log-text="${rowData.replace(/"/g, '&quot;')}">📋</button></td>
                 </tr>`;
             lastState.set(event.event, { value: event.detail });
         }

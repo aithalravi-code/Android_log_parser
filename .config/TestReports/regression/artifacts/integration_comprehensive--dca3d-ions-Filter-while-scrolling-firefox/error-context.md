@@ -1,0 +1,978 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - heading "Android Log Viewer" [level=1] [ref=e4]
+    - generic [ref=e5]: "File: integration_main.log"
+  - main [ref=e6]:
+    - generic [ref=e7]:
+      - button "»" [ref=e8] [cursor=pointer]
+      - group [ref=e9]:
+        - generic "File Selection" [ref=e10] [cursor=pointer]
+        - generic [ref=e11]:
+          - generic [ref=e12]:
+            - radio "ZIP or Log Files" [checked] [ref=e13]
+            - generic [ref=e14]: ZIP or Log Files
+            - radio "Folder" [ref=e15]
+            - generic [ref=e16]: Folder
+          - generic [ref=e17]:
+            - generic [ref=e18]: "Choose ZIP or individual log files:"
+            - button "Choose ZIP or individual log files:" [ref=e19]
+        - button "Clear & Reset" [ref=e21] [cursor=pointer]
+      - generic [ref=e22]:
+        - generic [ref=e24]:
+          - generic [ref=e25]: "Filter by Level:"
+          - button "Verbose" [ref=e26] [cursor=pointer]
+          - button "Debug" [ref=e27] [cursor=pointer]
+          - button "Info" [ref=e28] [cursor=pointer]
+          - button "Warn" [ref=e29] [cursor=pointer]
+          - button "Error" [ref=e30] [cursor=pointer]
+          - button "Fatal" [ref=e31] [cursor=pointer]
+          - button "None" [ref=e32] [cursor=pointer]
+        - generic [ref=e33]:
+          - generic [ref=e34]: "Keyword Search:"
+          - generic [ref=e35]:
+            - button "OR" [ref=e36] [cursor=pointer]
+            - button "AND" [ref=e37] [cursor=pointer]
+          - generic [ref=e38]:
+            - textbox "Keyword Search:" [active] [ref=e39]:
+              - /placeholder: Live search or type & Enter... (#123 to jump to line)
+            - generic [ref=e41] [cursor=pointer]: TestTag
+          - generic [ref=e43] [cursor=pointer]: TestTagx
+        - generic [ref=e44]:
+          - generic [ref=e45]: "Time Range:"
+          - generic [ref=e46]:
+            - textbox "Time Range:" [ref=e47]: 2025-09-23T12:00
+            - textbox [ref=e48]: 2025-09-23T12:30:49
+          - generic [ref=e51]:
+            - slider [ref=e54]
+            - slider [ref=e56]
+    - generic [ref=e59]:
+      - navigation [ref=e60]:
+        - button "Logs" [ref=e61] [cursor=pointer]
+        - button "CCC_Focus" [ref=e62] [cursor=pointer]
+        - button "CCC BLE Decoded packets" [ref=e63] [cursor=pointer]
+        - button "BTSnoop" [ref=e64] [cursor=pointer]
+        - button "Stats" [ref=e65] [cursor=pointer]
+      - generic [ref=e66]:
+        - generic [ref=e68]:
+          - button "⊟" [ref=e69] [cursor=pointer]
+          - button "📊" [ref=e70] [cursor=pointer]
+          - button "📥" [ref=e71] [cursor=pointer]
+        - generic [ref=e74]:
+          - generic [ref=e75] [cursor=pointer]:
+            - generic [ref=e76]: "642"
+            - generic [ref=e77]:
+              - generic [ref=e78]: 09-23 12:10:40.000
+              - generic [ref=e79]: 2822 -10665 1894
+              - generic [ref=e80]: I
+              - generic "TestTag" [ref=e81]:
+                - mark [ref=e82]: TestTag
+              - generic "Log message 640 - TestTag activity" [ref=e83]:
+                - text: Log message 640 -
+                - mark [ref=e84]: TestTag
+                - text: activity
+          - generic [ref=e85] [cursor=pointer]:
+            - generic [ref=e86]: "647"
+            - generic [ref=e87]:
+              - generic [ref=e88]: 09-23 12:10:45.000
+              - generic [ref=e89]: 2899 -10075 1078
+              - generic [ref=e90]: I
+              - generic "TestTag" [ref=e91]:
+                - mark [ref=e92]: TestTag
+              - generic "Log message 645 - TestTag activity" [ref=e93]:
+                - text: Log message 645 -
+                - mark [ref=e94]: TestTag
+                - text: activity
+          - generic [ref=e95] [cursor=pointer]:
+            - generic [ref=e96]: "648"
+            - generic [ref=e97]:
+              - generic [ref=e98]: 09-23 12:10:46.000
+              - generic [ref=e99]: 2445 -10403 1452
+              - generic [ref=e100]: D
+              - generic "TestTag" [ref=e101]:
+                - mark [ref=e102]: TestTag
+              - generic "Log message 646 - TestTag activity" [ref=e103]:
+                - text: Log message 646 -
+                - mark [ref=e104]: TestTag
+                - text: activity
+          - generic [ref=e105] [cursor=pointer]:
+            - generic [ref=e106]: "652"
+            - generic [ref=e107]:
+              - generic [ref=e108]: 09-23 12:10:50.000
+              - generic [ref=e109]: 2197 -10639 1555
+              - generic [ref=e110]: V
+              - generic "TestTag" [ref=e111]:
+                - mark [ref=e112]: TestTag
+              - generic "Log message 650 - TestTag activity" [ref=e113]:
+                - text: Log message 650 -
+                - mark [ref=e114]: TestTag
+                - text: activity
+          - generic [ref=e115] [cursor=pointer]:
+            - generic [ref=e116]: "654"
+            - generic [ref=e117]:
+              - generic [ref=e118]: 09-23 12:10:52.000
+              - generic [ref=e119]: 2135 -10785 1066
+              - generic [ref=e120]: D
+              - generic "TestTag" [ref=e121]:
+                - mark [ref=e122]: TestTag
+              - generic "Log message 652 - TestTag activity" [ref=e123]:
+                - text: Log message 652 -
+                - mark [ref=e124]: TestTag
+                - text: activity
+          - generic [ref=e125] [cursor=pointer]:
+            - generic [ref=e126]: "656"
+            - generic [ref=e127]:
+              - generic [ref=e128]: 09-23 12:10:54.000
+              - generic [ref=e129]: 2058 -10631 1380
+              - generic [ref=e130]: W
+              - generic "TestTag" [ref=e131]:
+                - mark [ref=e132]: TestTag
+              - generic "Log message 654 - TestTag activity" [ref=e133]:
+                - text: Log message 654 -
+                - mark [ref=e134]: TestTag
+                - text: activity
+          - generic [ref=e135] [cursor=pointer]:
+            - generic [ref=e136]: "657"
+            - generic [ref=e137]:
+              - generic [ref=e138]: 09-23 12:10:55.000
+              - generic [ref=e139]: 2770 -10895 1808
+              - generic [ref=e140]: V
+              - generic "TestTag" [ref=e141]:
+                - mark [ref=e142]: TestTag
+              - generic "Log message 655 - TestTag activity" [ref=e143]:
+                - text: Log message 655 -
+                - mark [ref=e144]: TestTag
+                - text: activity
+          - generic [ref=e145] [cursor=pointer]:
+            - generic [ref=e146]: "664"
+            - generic [ref=e147]:
+              - generic [ref=e148]: 09-23 12:11:02.000
+              - generic [ref=e149]: 2197 -10536 1826
+              - generic [ref=e150]: W
+              - generic "TestTag" [ref=e151]:
+                - mark [ref=e152]: TestTag
+              - generic "Log message 662 - TestTag activity" [ref=e153]:
+                - text: Log message 662 -
+                - mark [ref=e154]: TestTag
+                - text: activity
+          - generic [ref=e155] [cursor=pointer]:
+            - generic [ref=e156]: "665"
+            - generic [ref=e157]:
+              - generic [ref=e158]: 09-23 12:11:03.000
+              - generic [ref=e159]: 2217 -10963 1280
+              - generic [ref=e160]: D
+              - generic "TestTag" [ref=e161]:
+                - mark [ref=e162]: TestTag
+              - generic "Log message 663 - TestTag activity" [ref=e163]:
+                - text: Log message 663 -
+                - mark [ref=e164]: TestTag
+                - text: activity
+          - generic [ref=e165] [cursor=pointer]:
+            - generic [ref=e166]: "666"
+            - generic [ref=e167]:
+              - generic [ref=e168]: 09-23 12:11:04.000
+              - generic [ref=e169]: 2879 -10884 1712
+              - generic [ref=e170]: I
+              - generic "TestTag" [ref=e171]:
+                - mark [ref=e172]: TestTag
+              - generic "Log message 664 - TestTag activity" [ref=e173]:
+                - text: Log message 664 -
+                - mark [ref=e174]: TestTag
+                - text: activity
+          - generic [ref=e175] [cursor=pointer]:
+            - generic [ref=e176]: "673"
+            - generic [ref=e177]:
+              - generic [ref=e178]: 09-23 12:11:11.000
+              - generic [ref=e179]: 2795 -10635 1013
+              - generic [ref=e180]: I
+              - generic "TestTag" [ref=e181]:
+                - mark [ref=e182]: TestTag
+              - generic "Log message 671 - TestTag activity" [ref=e183]:
+                - text: Log message 671 -
+                - mark [ref=e184]: TestTag
+                - text: activity
+          - generic [ref=e185] [cursor=pointer]:
+            - generic [ref=e186]: "674"
+            - generic [ref=e187]:
+              - generic [ref=e188]: 09-23 12:11:12.000
+              - generic [ref=e189]: 2665 -10190 1252
+              - generic [ref=e190]: I
+              - generic "TestTag" [ref=e191]:
+                - mark [ref=e192]: TestTag
+              - generic "Log message 672 - TestTag activity" [ref=e193]:
+                - text: Log message 672 -
+                - mark [ref=e194]: TestTag
+                - text: activity
+          - generic [ref=e195] [cursor=pointer]:
+            - generic [ref=e196]: "692"
+            - generic [ref=e197]:
+              - generic [ref=e198]: 09-23 12:11:30.000
+              - generic [ref=e199]: 2815 -10213 1950
+              - generic [ref=e200]: I
+              - generic "TestTag" [ref=e201]:
+                - mark [ref=e202]: TestTag
+              - generic "Log message 690 - TestTag activity" [ref=e203]:
+                - text: Log message 690 -
+                - mark [ref=e204]: TestTag
+                - text: activity
+          - generic [ref=e205] [cursor=pointer]:
+            - generic [ref=e206]: "693"
+            - generic [ref=e207]:
+              - generic [ref=e208]: 09-23 12:11:31.000
+              - generic [ref=e209]: 2844 -10932 1113
+              - generic [ref=e210]: W
+              - generic "TestTag" [ref=e211]:
+                - mark [ref=e212]: TestTag
+              - generic "Log message 691 - TestTag activity" [ref=e213]:
+                - text: Log message 691 -
+                - mark [ref=e214]: TestTag
+                - text: activity
+          - generic [ref=e215] [cursor=pointer]:
+            - generic [ref=e216]: "695"
+            - generic [ref=e217]:
+              - generic [ref=e218]: 09-23 12:11:33.000
+              - generic [ref=e219]: 2117 -10950 1520
+              - generic [ref=e220]: V
+              - generic "TestTag" [ref=e221]:
+                - mark [ref=e222]: TestTag
+              - generic "Log message 693 - TestTag activity" [ref=e223]:
+                - text: Log message 693 -
+                - mark [ref=e224]: TestTag
+                - text: activity
+          - generic [ref=e225] [cursor=pointer]:
+            - generic [ref=e226]: "703"
+            - generic [ref=e227]:
+              - generic [ref=e228]: 09-23 12:11:41.000
+              - generic [ref=e229]: 2951 -10345 1279
+              - generic [ref=e230]: W
+              - generic "TestTag" [ref=e231]:
+                - mark [ref=e232]: TestTag
+              - generic "Log message 701 - TestTag activity" [ref=e233]:
+                - text: Log message 701 -
+                - mark [ref=e234]: TestTag
+                - text: activity
+          - generic [ref=e235] [cursor=pointer]:
+            - generic [ref=e236]: "707"
+            - generic [ref=e237]:
+              - generic [ref=e238]: 09-23 12:11:45.000
+              - generic [ref=e239]: 2804 -10899 1093
+              - generic [ref=e240]: E
+              - generic "TestTag" [ref=e241]:
+                - mark [ref=e242]: TestTag
+              - generic "Log message 705 - TestTag activity" [ref=e243]:
+                - text: Log message 705 -
+                - mark [ref=e244]: TestTag
+                - text: activity
+          - generic [ref=e245] [cursor=pointer]:
+            - generic [ref=e246]: "708"
+            - generic [ref=e247]:
+              - generic [ref=e248]: 09-23 12:11:46.000
+              - generic [ref=e249]: 2252 -10703 1667
+              - generic [ref=e250]: V
+              - generic "TestTag" [ref=e251]:
+                - mark [ref=e252]: TestTag
+              - generic "Log message 706 - TestTag activity" [ref=e253]:
+                - text: Log message 706 -
+                - mark [ref=e254]: TestTag
+                - text: activity
+          - generic [ref=e255] [cursor=pointer]:
+            - generic [ref=e256]: "710"
+            - generic [ref=e257]:
+              - generic [ref=e258]: 09-23 12:11:48.000
+              - generic [ref=e259]: 2573 -10335 1006
+              - generic [ref=e260]: V
+              - generic "TestTag" [ref=e261]:
+                - mark [ref=e262]: TestTag
+              - generic "Log message 708 - TestTag activity" [ref=e263]:
+                - text: Log message 708 -
+                - mark [ref=e264]: TestTag
+                - text: activity
+          - generic [ref=e265] [cursor=pointer]:
+            - generic [ref=e266]: "715"
+            - generic [ref=e267]:
+              - generic [ref=e268]: 09-23 12:11:53.000
+              - generic [ref=e269]: 2989 -10466 1005
+              - generic [ref=e270]: I
+              - generic "TestTag" [ref=e271]:
+                - mark [ref=e272]: TestTag
+              - generic "Log message 713 - TestTag activity" [ref=e273]:
+                - text: Log message 713 -
+                - mark [ref=e274]: TestTag
+                - text: activity
+          - generic [ref=e275] [cursor=pointer]:
+            - generic [ref=e276]: "717"
+            - generic [ref=e277]:
+              - generic [ref=e278]: 09-23 12:11:55.000
+              - generic [ref=e279]: 2029 -10129 1250
+              - generic [ref=e280]: D
+              - generic "TestTag" [ref=e281]:
+                - mark [ref=e282]: TestTag
+              - generic "Log message 715 - TestTag activity" [ref=e283]:
+                - text: Log message 715 -
+                - mark [ref=e284]: TestTag
+                - text: activity
+          - generic [ref=e285] [cursor=pointer]:
+            - generic [ref=e286]: "732"
+            - generic [ref=e287]:
+              - generic [ref=e288]: 09-23 12:12:10.000
+              - generic [ref=e289]: 2620 -10488 1776
+              - generic [ref=e290]: E
+              - generic "TestTag" [ref=e291]:
+                - mark [ref=e292]: TestTag
+              - generic "Log message 730 - TestTag activity" [ref=e293]:
+                - text: Log message 730 -
+                - mark [ref=e294]: TestTag
+                - text: activity
+          - generic [ref=e295] [cursor=pointer]:
+            - generic [ref=e296]: "747"
+            - generic [ref=e297]:
+              - generic [ref=e298]: 09-23 12:12:25.000
+              - generic [ref=e299]: 2171 -10609 1661
+              - generic [ref=e300]: D
+              - generic "TestTag" [ref=e301]:
+                - mark [ref=e302]: TestTag
+              - generic "Log message 745 - TestTag activity" [ref=e303]:
+                - text: Log message 745 -
+                - mark [ref=e304]: TestTag
+                - text: activity
+          - generic [ref=e305] [cursor=pointer]:
+            - generic [ref=e306]: "751"
+            - generic [ref=e307]:
+              - generic [ref=e308]: 09-23 12:12:29.000
+              - generic [ref=e309]: 2344 -10020 1540
+              - generic [ref=e310]: V
+              - generic "TestTag" [ref=e311]:
+                - mark [ref=e312]: TestTag
+              - generic "Log message 749 - TestTag activity" [ref=e313]:
+                - text: Log message 749 -
+                - mark [ref=e314]: TestTag
+                - text: activity
+          - generic [ref=e315] [cursor=pointer]:
+            - generic [ref=e316]: "756"
+            - generic [ref=e317]:
+              - generic [ref=e318]: 09-23 12:12:34.000
+              - generic [ref=e319]: 2113 -10710 1339
+              - generic [ref=e320]: D
+              - generic "TestTag" [ref=e321]:
+                - mark [ref=e322]: TestTag
+              - generic "Log message 754 - TestTag activity" [ref=e323]:
+                - text: Log message 754 -
+                - mark [ref=e324]: TestTag
+                - text: activity
+          - generic [ref=e325] [cursor=pointer]:
+            - generic [ref=e326]: "758"
+            - generic [ref=e327]:
+              - generic [ref=e328]: 09-23 12:12:36.000
+              - generic [ref=e329]: 2238 -10295 1803
+              - generic [ref=e330]: W
+              - generic "TestTag" [ref=e331]:
+                - mark [ref=e332]: TestTag
+              - generic "Log message 756 - TestTag activity" [ref=e333]:
+                - text: Log message 756 -
+                - mark [ref=e334]: TestTag
+                - text: activity
+          - generic [ref=e335] [cursor=pointer]:
+            - generic [ref=e336]: "760"
+            - generic [ref=e337]:
+              - generic [ref=e338]: 09-23 12:12:38.000
+              - generic [ref=e339]: 2168 -10622 1420
+              - generic [ref=e340]: D
+              - generic "TestTag" [ref=e341]:
+                - mark [ref=e342]: TestTag
+              - generic "Log message 758 - TestTag activity" [ref=e343]:
+                - text: Log message 758 -
+                - mark [ref=e344]: TestTag
+                - text: activity
+          - generic [ref=e345] [cursor=pointer]:
+            - generic [ref=e346]: "761"
+            - generic [ref=e347]:
+              - generic [ref=e348]: 09-23 12:12:39.000
+              - generic [ref=e349]: 2917 -10190 1570
+              - generic [ref=e350]: D
+              - generic "TestTag" [ref=e351]:
+                - mark [ref=e352]: TestTag
+              - generic "Log message 759 - TestTag activity" [ref=e353]:
+                - text: Log message 759 -
+                - mark [ref=e354]: TestTag
+                - text: activity
+          - generic [ref=e355] [cursor=pointer]:
+            - generic [ref=e356]: "767"
+            - generic [ref=e357]:
+              - generic [ref=e358]: 09-23 12:12:45.000
+              - generic [ref=e359]: 2479 -10764 1771
+              - generic [ref=e360]: E
+              - generic "TestTag" [ref=e361]:
+                - mark [ref=e362]: TestTag
+              - generic "Log message 765 - TestTag activity" [ref=e363]:
+                - text: Log message 765 -
+                - mark [ref=e364]: TestTag
+                - text: activity
+          - generic [ref=e365] [cursor=pointer]:
+            - generic [ref=e366]: "768"
+            - generic [ref=e367]:
+              - generic [ref=e368]: 09-23 12:12:46.000
+              - generic [ref=e369]: 2679 -10855 1475
+              - generic [ref=e370]: W
+              - generic "TestTag" [ref=e371]:
+                - mark [ref=e372]: TestTag
+              - generic "Log message 766 - TestTag activity" [ref=e373]:
+                - text: Log message 766 -
+                - mark [ref=e374]: TestTag
+                - text: activity
+          - generic [ref=e375] [cursor=pointer]:
+            - generic [ref=e376]: "769"
+            - generic [ref=e377]:
+              - generic [ref=e378]: 09-23 12:12:47.000
+              - generic [ref=e379]: 2782 -10710 1815
+              - generic [ref=e380]: W
+              - generic "TestTag" [ref=e381]:
+                - mark [ref=e382]: TestTag
+              - generic "Log message 767 - TestTag activity" [ref=e383]:
+                - text: Log message 767 -
+                - mark [ref=e384]: TestTag
+                - text: activity
+          - generic [ref=e385] [cursor=pointer]:
+            - generic [ref=e386]: "774"
+            - generic [ref=e387]:
+              - generic [ref=e388]: 09-23 12:12:52.000
+              - generic [ref=e389]: 2484 -10397 1257
+              - generic [ref=e390]: E
+              - generic "TestTag" [ref=e391]:
+                - mark [ref=e392]: TestTag
+              - generic "Log message 772 - TestTag activity" [ref=e393]:
+                - text: Log message 772 -
+                - mark [ref=e394]: TestTag
+                - text: activity
+          - generic [ref=e395] [cursor=pointer]:
+            - generic [ref=e396]: "776"
+            - generic [ref=e397]:
+              - generic [ref=e398]: 09-23 12:12:54.000
+              - generic [ref=e399]: 2886 -10917 1849
+              - generic [ref=e400]: W
+              - generic "TestTag" [ref=e401]:
+                - mark [ref=e402]: TestTag
+              - generic "Log message 774 - TestTag activity" [ref=e403]:
+                - text: Log message 774 -
+                - mark [ref=e404]: TestTag
+                - text: activity
+          - generic [ref=e405] [cursor=pointer]:
+            - generic [ref=e406]: "777"
+            - generic [ref=e407]:
+              - generic [ref=e408]: 09-23 12:12:55.000
+              - generic [ref=e409]: 2358 -10251 1512
+              - generic [ref=e410]: D
+              - generic "TestTag" [ref=e411]:
+                - mark [ref=e412]: TestTag
+              - generic "Log message 775 - TestTag activity" [ref=e413]:
+                - text: Log message 775 -
+                - mark [ref=e414]: TestTag
+                - text: activity
+          - generic [ref=e415] [cursor=pointer]:
+            - generic [ref=e416]: "780"
+            - generic [ref=e417]:
+              - generic [ref=e418]: 09-23 12:12:58.000
+              - generic [ref=e419]: 2859 -10311 1388
+              - generic [ref=e420]: W
+              - generic "TestTag" [ref=e421]:
+                - mark [ref=e422]: TestTag
+              - generic "Log message 778 - TestTag activity" [ref=e423]:
+                - text: Log message 778 -
+                - mark [ref=e424]: TestTag
+                - text: activity
+          - generic [ref=e425] [cursor=pointer]:
+            - generic [ref=e426]: "781"
+            - generic [ref=e427]:
+              - generic [ref=e428]: 09-23 12:12:59.000
+              - generic [ref=e429]: 2804 -10174 1856
+              - generic [ref=e430]: V
+              - generic "TestTag" [ref=e431]:
+                - mark [ref=e432]: TestTag
+              - generic "Log message 779 - TestTag activity" [ref=e433]:
+                - text: Log message 779 -
+                - mark [ref=e434]: TestTag
+                - text: activity
+          - generic [ref=e435] [cursor=pointer]:
+            - generic [ref=e436]: "790"
+            - generic [ref=e437]:
+              - generic [ref=e438]: 09-23 12:13:08.000
+              - generic [ref=e439]: 2881 -10715 1576
+              - generic [ref=e440]: E
+              - generic "TestTag" [ref=e441]:
+                - mark [ref=e442]: TestTag
+              - generic "Log message 788 - TestTag activity" [ref=e443]:
+                - text: Log message 788 -
+                - mark [ref=e444]: TestTag
+                - text: activity
+          - generic [ref=e445] [cursor=pointer]:
+            - generic [ref=e446]: "798"
+            - generic [ref=e447]:
+              - generic [ref=e448]: 09-23 12:13:16.000
+              - generic [ref=e449]: 2902 -10793 1528
+              - generic [ref=e450]: I
+              - generic "TestTag" [ref=e451]:
+                - mark [ref=e452]: TestTag
+              - generic "Log message 796 - TestTag activity" [ref=e453]:
+                - text: Log message 796 -
+                - mark [ref=e454]: TestTag
+                - text: activity
+          - generic [ref=e455] [cursor=pointer]:
+            - generic [ref=e456]: "799"
+            - generic [ref=e457]:
+              - generic [ref=e458]: 09-23 12:13:17.000
+              - generic [ref=e459]: 2643 -10317 1068
+              - generic [ref=e460]: I
+              - generic "TestTag" [ref=e461]:
+                - mark [ref=e462]: TestTag
+              - generic "Log message 797 - TestTag activity" [ref=e463]:
+                - text: Log message 797 -
+                - mark [ref=e464]: TestTag
+                - text: activity
+          - generic [ref=e465] [cursor=pointer]:
+            - generic [ref=e466]: "811"
+            - generic [ref=e467]:
+              - generic [ref=e468]: 09-23 12:13:29.000
+              - generic [ref=e469]: 2886 -10709 1092
+              - generic [ref=e470]: W
+              - generic "TestTag" [ref=e471]:
+                - mark [ref=e472]: TestTag
+              - generic "Log message 809 - TestTag activity" [ref=e473]:
+                - text: Log message 809 -
+                - mark [ref=e474]: TestTag
+                - text: activity
+          - generic [ref=e475] [cursor=pointer]:
+            - generic [ref=e476]: "821"
+            - generic [ref=e477]:
+              - generic [ref=e478]: 09-23 12:13:39.000
+              - generic [ref=e479]: 2936 -10515 1198
+              - generic [ref=e480]: V
+              - generic "TestTag" [ref=e481]:
+                - mark [ref=e482]: TestTag
+              - generic "Log message 819 - TestTag activity" [ref=e483]:
+                - text: Log message 819 -
+                - mark [ref=e484]: TestTag
+                - text: activity
+          - generic [ref=e485] [cursor=pointer]:
+            - generic [ref=e486]: "823"
+            - generic [ref=e487]:
+              - generic [ref=e488]: 09-23 12:13:41.000
+              - generic [ref=e489]: 2090 -10913 1645
+              - generic [ref=e490]: E
+              - generic "TestTag" [ref=e491]:
+                - mark [ref=e492]: TestTag
+              - generic "Log message 821 - TestTag activity" [ref=e493]:
+                - text: Log message 821 -
+                - mark [ref=e494]: TestTag
+                - text: activity
+          - generic [ref=e495] [cursor=pointer]:
+            - generic [ref=e496]: "826"
+            - generic [ref=e497]:
+              - generic [ref=e498]: 09-23 12:13:44.000
+              - generic [ref=e499]: 2777 -10847 1129
+              - generic [ref=e500]: V
+              - generic "TestTag" [ref=e501]:
+                - mark [ref=e502]: TestTag
+              - generic "Log message 824 - TestTag activity" [ref=e503]:
+                - text: Log message 824 -
+                - mark [ref=e504]: TestTag
+                - text: activity
+          - generic [ref=e505] [cursor=pointer]:
+            - generic [ref=e506]: "832"
+            - generic [ref=e507]:
+              - generic [ref=e508]: 09-23 12:13:50.000
+              - generic [ref=e509]: 2712 -10604 1482
+              - generic [ref=e510]: W
+              - generic "TestTag" [ref=e511]:
+                - mark [ref=e512]: TestTag
+              - generic "Log message 830 - TestTag activity" [ref=e513]:
+                - text: Log message 830 -
+                - mark [ref=e514]: TestTag
+                - text: activity
+          - generic [ref=e515] [cursor=pointer]:
+            - generic [ref=e516]: "856"
+            - generic [ref=e517]:
+              - generic [ref=e518]: 09-23 12:14:14.000
+              - generic [ref=e519]: 2174 -10854 1120
+              - generic [ref=e520]: V
+              - generic "TestTag" [ref=e521]:
+                - mark [ref=e522]: TestTag
+              - generic "Log message 854 - TestTag activity" [ref=e523]:
+                - text: Log message 854 -
+                - mark [ref=e524]: TestTag
+                - text: activity
+          - generic [ref=e525] [cursor=pointer]:
+            - generic [ref=e526]: "865"
+            - generic [ref=e527]:
+              - generic [ref=e528]: 09-23 12:14:23.000
+              - generic [ref=e529]: 2811 -10649 1974
+              - generic [ref=e530]: D
+              - generic "TestTag" [ref=e531]:
+                - mark [ref=e532]: TestTag
+              - generic "Log message 863 - TestTag activity" [ref=e533]:
+                - text: Log message 863 -
+                - mark [ref=e534]: TestTag
+                - text: activity
+          - generic [ref=e535] [cursor=pointer]:
+            - generic [ref=e536]: "866"
+            - generic [ref=e537]:
+              - generic [ref=e538]: 09-23 12:14:24.000
+              - generic [ref=e539]: 2271 -10722 1450
+              - generic [ref=e540]: D
+              - generic "TestTag" [ref=e541]:
+                - mark [ref=e542]: TestTag
+              - generic "Log message 864 - TestTag activity" [ref=e543]:
+                - text: Log message 864 -
+                - mark [ref=e544]: TestTag
+                - text: activity
+          - generic [ref=e545] [cursor=pointer]:
+            - generic [ref=e546]: "869"
+            - generic [ref=e547]:
+              - generic [ref=e548]: 09-23 12:14:27.000
+              - generic [ref=e549]: 2434 -10483 1373
+              - generic [ref=e550]: D
+              - generic "TestTag" [ref=e551]:
+                - mark [ref=e552]: TestTag
+              - generic "Log message 867 - TestTag activity" [ref=e553]:
+                - text: Log message 867 -
+                - mark [ref=e554]: TestTag
+                - text: activity
+          - generic [ref=e555] [cursor=pointer]:
+            - generic [ref=e556]: "870"
+            - generic [ref=e557]:
+              - generic [ref=e558]: 09-23 12:14:28.000
+              - generic [ref=e559]: 2616 -10668 1224
+              - generic [ref=e560]: I
+              - generic "TestTag" [ref=e561]:
+                - mark [ref=e562]: TestTag
+              - generic "Log message 868 - TestTag activity" [ref=e563]:
+                - text: Log message 868 -
+                - mark [ref=e564]: TestTag
+                - text: activity
+          - generic [ref=e565] [cursor=pointer]:
+            - generic [ref=e566]: "875"
+            - generic [ref=e567]:
+              - generic [ref=e568]: 09-23 12:14:33.000
+              - generic [ref=e569]: 2844 -10460 1779
+              - generic [ref=e570]: W
+              - generic "TestTag" [ref=e571]:
+                - mark [ref=e572]: TestTag
+              - generic "Log message 873 - TestTag activity" [ref=e573]:
+                - text: Log message 873 -
+                - mark [ref=e574]: TestTag
+                - text: activity
+          - generic [ref=e575] [cursor=pointer]:
+            - generic [ref=e576]: "876"
+            - generic [ref=e577]:
+              - generic [ref=e578]: 09-23 12:14:34.000
+              - generic [ref=e579]: 2902 -10733 1550
+              - generic [ref=e580]: D
+              - generic "TestTag" [ref=e581]:
+                - mark [ref=e582]: TestTag
+              - generic "Log message 874 - TestTag activity" [ref=e583]:
+                - text: Log message 874 -
+                - mark [ref=e584]: TestTag
+                - text: activity
+          - generic [ref=e585] [cursor=pointer]:
+            - generic [ref=e586]: "880"
+            - generic [ref=e587]:
+              - generic [ref=e588]: 09-23 12:14:38.000
+              - generic [ref=e589]: 2727 -10606 1846
+              - generic [ref=e590]: E
+              - generic "TestTag" [ref=e591]:
+                - mark [ref=e592]: TestTag
+              - generic "Log message 878 - TestTag activity" [ref=e593]:
+                - text: Log message 878 -
+                - mark [ref=e594]: TestTag
+                - text: activity
+          - generic [ref=e595] [cursor=pointer]:
+            - generic [ref=e596]: "883"
+            - generic [ref=e597]:
+              - generic [ref=e598]: 09-23 12:14:41.000
+              - generic [ref=e599]: 2536 -10563 1303
+              - generic [ref=e600]: D
+              - generic "TestTag" [ref=e601]:
+                - mark [ref=e602]: TestTag
+              - generic "Log message 881 - TestTag activity" [ref=e603]:
+                - text: Log message 881 -
+                - mark [ref=e604]: TestTag
+                - text: activity
+          - generic [ref=e605] [cursor=pointer]:
+            - generic [ref=e606]: "885"
+            - generic [ref=e607]:
+              - generic [ref=e608]: 09-23 12:14:43.000
+              - generic [ref=e609]: 2761 -10462 1416
+              - generic [ref=e610]: V
+              - generic "TestTag" [ref=e611]:
+                - mark [ref=e612]: TestTag
+              - generic "Log message 883 - TestTag activity" [ref=e613]:
+                - text: Log message 883 -
+                - mark [ref=e614]: TestTag
+                - text: activity
+          - generic [ref=e615] [cursor=pointer]:
+            - generic [ref=e616]: "898"
+            - generic [ref=e617]:
+              - generic [ref=e618]: 09-23 12:14:56.000
+              - generic [ref=e619]: 2088 -10914 1257
+              - generic [ref=e620]: I
+              - generic "TestTag" [ref=e621]:
+                - mark [ref=e622]: TestTag
+              - generic "Log message 896 - TestTag activity" [ref=e623]:
+                - text: Log message 896 -
+                - mark [ref=e624]: TestTag
+                - text: activity
+          - generic [ref=e625] [cursor=pointer]:
+            - generic [ref=e626]: "905"
+            - generic [ref=e627]:
+              - generic [ref=e628]: 09-23 12:15:03.000
+              - generic [ref=e629]: 2135 -10106 1213
+              - generic [ref=e630]: D
+              - generic "TestTag" [ref=e631]:
+                - mark [ref=e632]: TestTag
+              - generic "Log message 903 - TestTag activity" [ref=e633]:
+                - text: Log message 903 -
+                - mark [ref=e634]: TestTag
+                - text: activity
+          - generic [ref=e635] [cursor=pointer]:
+            - generic [ref=e636]: "913"
+            - generic [ref=e637]:
+              - generic [ref=e638]: 09-23 12:15:11.000
+              - generic [ref=e639]: 2231 -10705 1125
+              - generic [ref=e640]: V
+              - generic "TestTag" [ref=e641]:
+                - mark [ref=e642]: TestTag
+              - generic "Log message 911 - TestTag activity" [ref=e643]:
+                - text: Log message 911 -
+                - mark [ref=e644]: TestTag
+                - text: activity
+          - generic [ref=e645] [cursor=pointer]:
+            - generic [ref=e646]: "918"
+            - generic [ref=e647]:
+              - generic [ref=e648]: 09-23 12:15:16.000
+              - generic [ref=e649]: 2324 -10996 1882
+              - generic [ref=e650]: I
+              - generic "TestTag" [ref=e651]:
+                - mark [ref=e652]: TestTag
+              - generic "Log message 916 - TestTag activity" [ref=e653]:
+                - text: Log message 916 -
+                - mark [ref=e654]: TestTag
+                - text: activity
+          - generic [ref=e655] [cursor=pointer]:
+            - generic [ref=e656]: "927"
+            - generic [ref=e657]:
+              - generic [ref=e658]: 09-23 12:15:25.000
+              - generic [ref=e659]: 2430 -10376 1180
+              - generic [ref=e660]: I
+              - generic "TestTag" [ref=e661]:
+                - mark [ref=e662]: TestTag
+              - generic "Log message 925 - TestTag activity" [ref=e663]:
+                - text: Log message 925 -
+                - mark [ref=e664]: TestTag
+                - text: activity
+            - button "📋" [ref=e665]
+          - generic [ref=e666] [cursor=pointer]:
+            - generic [ref=e667]: "933"
+            - generic [ref=e668]:
+              - generic [ref=e669]: 09-23 12:15:31.000
+              - generic [ref=e670]: 2656 -10816 1096
+              - generic [ref=e671]: W
+              - generic "TestTag" [ref=e672]:
+                - mark [ref=e673]: TestTag
+              - generic "Log message 931 - TestTag activity" [ref=e674]:
+                - text: Log message 931 -
+                - mark [ref=e675]: TestTag
+                - text: activity
+          - generic [ref=e676] [cursor=pointer]:
+            - generic [ref=e677]: "938"
+            - generic [ref=e678]:
+              - generic [ref=e679]: 09-23 12:15:36.000
+              - generic [ref=e680]: 2030 -10377 1654
+              - generic [ref=e681]: I
+              - generic "TestTag" [ref=e682]:
+                - mark [ref=e683]: TestTag
+              - generic "Log message 936 - TestTag activity" [ref=e684]:
+                - text: Log message 936 -
+                - mark [ref=e685]: TestTag
+                - text: activity
+          - generic [ref=e686] [cursor=pointer]:
+            - generic [ref=e687]: "948"
+            - generic [ref=e688]:
+              - generic [ref=e689]: 09-23 12:15:46.000
+              - generic [ref=e690]: 2062 -10912 1948
+              - generic [ref=e691]: V
+              - generic "TestTag" [ref=e692]:
+                - mark [ref=e693]: TestTag
+              - generic "Log message 946 - TestTag activity" [ref=e694]:
+                - text: Log message 946 -
+                - mark [ref=e695]: TestTag
+                - text: activity
+          - generic [ref=e696] [cursor=pointer]:
+            - generic [ref=e697]: "953"
+            - generic [ref=e698]:
+              - generic [ref=e699]: 09-23 12:15:51.000
+              - generic [ref=e700]: 2027 -10189 1064
+              - generic [ref=e701]: W
+              - generic "TestTag" [ref=e702]:
+                - mark [ref=e703]: TestTag
+              - generic "Log message 951 - TestTag activity" [ref=e704]:
+                - text: Log message 951 -
+                - mark [ref=e705]: TestTag
+                - text: activity
+          - generic [ref=e706] [cursor=pointer]:
+            - generic [ref=e707]: "954"
+            - generic [ref=e708]:
+              - generic [ref=e709]: 09-23 12:15:52.000
+              - generic [ref=e710]: 2820 -10932 1691
+              - generic [ref=e711]: V
+              - generic "TestTag" [ref=e712]:
+                - mark [ref=e713]: TestTag
+              - generic "Log message 952 - TestTag activity" [ref=e714]:
+                - text: Log message 952 -
+                - mark [ref=e715]: TestTag
+                - text: activity
+          - generic [ref=e716] [cursor=pointer]:
+            - generic [ref=e717]: "956"
+            - generic [ref=e718]:
+              - generic [ref=e719]: 09-23 12:15:54.000
+              - generic [ref=e720]: 2880 -10565 1195
+              - generic [ref=e721]: W
+              - generic "TestTag" [ref=e722]:
+                - mark [ref=e723]: TestTag
+              - generic "Log message 954 - TestTag activity" [ref=e724]:
+                - text: Log message 954 -
+                - mark [ref=e725]: TestTag
+                - text: activity
+          - generic [ref=e726] [cursor=pointer]:
+            - generic [ref=e727]: "961"
+            - generic [ref=e728]:
+              - generic [ref=e729]: 09-23 12:15:59.000
+              - generic [ref=e730]: 2483 -10037 1226
+              - generic [ref=e731]: D
+              - generic "TestTag" [ref=e732]:
+                - mark [ref=e733]: TestTag
+              - generic "Log message 959 - TestTag activity" [ref=e734]:
+                - text: Log message 959 -
+                - mark [ref=e735]: TestTag
+                - text: activity
+          - generic [ref=e736] [cursor=pointer]:
+            - generic [ref=e737]: "968"
+            - generic [ref=e738]:
+              - generic [ref=e739]: 09-23 12:16:06.000
+              - generic [ref=e740]: 2755 -10846 1188
+              - generic [ref=e741]: I
+              - generic "TestTag" [ref=e742]:
+                - mark [ref=e743]: TestTag
+              - generic "Log message 966 - TestTag activity" [ref=e744]:
+                - text: Log message 966 -
+                - mark [ref=e745]: TestTag
+                - text: activity
+          - generic [ref=e746] [cursor=pointer]:
+            - generic [ref=e747]: "969"
+            - generic [ref=e748]:
+              - generic [ref=e749]: 09-23 12:16:07.000
+              - generic [ref=e750]: 2701 -10781 1332
+              - generic [ref=e751]: V
+              - generic "TestTag" [ref=e752]:
+                - mark [ref=e753]: TestTag
+              - generic "Log message 967 - TestTag activity" [ref=e754]:
+                - text: Log message 967 -
+                - mark [ref=e755]: TestTag
+                - text: activity
+          - generic [ref=e756] [cursor=pointer]:
+            - generic [ref=e757]: "974"
+            - generic [ref=e758]:
+              - generic [ref=e759]: 09-23 12:16:12.000
+              - generic [ref=e760]: 2050 -10010 1507
+              - generic [ref=e761]: W
+              - generic "TestTag" [ref=e762]:
+                - mark [ref=e763]: TestTag
+              - generic "Log message 972 - TestTag activity" [ref=e764]:
+                - text: Log message 972 -
+                - mark [ref=e765]: TestTag
+                - text: activity
+          - generic [ref=e766] [cursor=pointer]:
+            - generic [ref=e767]: "975"
+            - generic [ref=e768]:
+              - generic [ref=e769]: 09-23 12:16:13.000
+              - generic [ref=e770]: 2210 -10761 1544
+              - generic [ref=e771]: W
+              - generic "TestTag" [ref=e772]:
+                - mark [ref=e773]: TestTag
+              - generic "Log message 973 - TestTag activity" [ref=e774]:
+                - text: Log message 973 -
+                - mark [ref=e775]: TestTag
+                - text: activity
+          - generic [ref=e776] [cursor=pointer]:
+            - generic [ref=e777]: "977"
+            - generic [ref=e778]:
+              - generic [ref=e779]: 09-23 12:16:15.000
+              - generic [ref=e780]: 2451 -10381 1247
+              - generic [ref=e781]: V
+              - generic "TestTag" [ref=e782]:
+                - mark [ref=e783]: TestTag
+              - generic "Log message 975 - TestTag activity" [ref=e784]:
+                - text: Log message 975 -
+                - mark [ref=e785]: TestTag
+                - text: activity
+          - generic [ref=e786] [cursor=pointer]:
+            - generic [ref=e787]: "991"
+            - generic [ref=e788]:
+              - generic [ref=e789]: 09-23 12:16:29.000
+              - generic [ref=e790]: 2546 -10806 1217
+              - generic [ref=e791]: V
+              - generic "TestTag" [ref=e792]:
+                - mark [ref=e793]: TestTag
+              - generic "Log message 989 - TestTag activity" [ref=e794]:
+                - text: Log message 989 -
+                - mark [ref=e795]: TestTag
+                - text: activity
+          - generic [ref=e796] [cursor=pointer]:
+            - generic [ref=e797]: "993"
+            - generic [ref=e798]:
+              - generic [ref=e799]: 09-23 12:16:31.000
+              - generic [ref=e800]: 2514 -10734 1059
+              - generic [ref=e801]: E
+              - generic "TestTag" [ref=e802]:
+                - mark [ref=e803]: TestTag
+              - generic "Log message 991 - TestTag activity" [ref=e804]:
+                - text: Log message 991 -
+                - mark [ref=e805]: TestTag
+                - text: activity
+          - generic [ref=e806] [cursor=pointer]:
+            - generic [ref=e807]: "994"
+            - generic [ref=e808]:
+              - generic [ref=e809]: 09-23 12:16:32.000
+              - generic [ref=e810]: 2941 -10722 1912
+              - generic [ref=e811]: V
+              - generic "TestTag" [ref=e812]:
+                - mark [ref=e813]: TestTag
+              - generic "Log message 992 - TestTag activity" [ref=e814]:
+                - text: Log message 992 -
+                - mark [ref=e815]: TestTag
+                - text: activity
+          - generic [ref=e816] [cursor=pointer]:
+            - generic [ref=e817]: "996"
+            - generic [ref=e818]:
+              - generic [ref=e819]: 09-23 12:16:34.000
+              - generic [ref=e820]: 2413 -10943 1125
+              - generic [ref=e821]: V
+              - generic "TestTag" [ref=e822]:
+                - mark [ref=e823]: TestTag
+              - generic "Log message 994 - TestTag activity" [ref=e824]:
+                - text: Log message 994 -
+                - mark [ref=e825]: TestTag
+                - text: activity
+          - generic [ref=e826] [cursor=pointer]:
+            - generic [ref=e827]: "1000"
+            - generic [ref=e828]:
+              - generic [ref=e829]: 09-23 12:16:38.000
+              - generic [ref=e830]: 2473 -10645 1143
+              - generic [ref=e831]: D
+              - generic "TestTag" [ref=e832]:
+                - mark [ref=e833]: TestTag
+              - generic "Log message 998 - TestTag activity" [ref=e834]:
+                - text: Log message 998 -
+                - mark [ref=e835]: TestTag
+                - text: activity
+      - text: ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅ ⇅
+```
