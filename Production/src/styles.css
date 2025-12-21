@@ -124,8 +124,6 @@ main {
     min-width: 0;
     /* Important for flexbox children */
     position: relative;
-    transition: width 0.35s ease-in-out;
-    /* Smooth expansion when sidebar collapses */
 }
 
 .panel-toggle-btn {
@@ -934,7 +932,8 @@ input[type="file"]:hover {
     background: #1e1e1e;
     border: 1px solid #3c4043;
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 1rem;
+    /* Reduced from 1.5rem for better space utilization */
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
@@ -945,6 +944,10 @@ input[type="file"]:hover {
 
 .dashboard-card.full-width-card {
     grid-column: 1 / -1;
+    width: 100%;
+    /* Ensure full width */
+    max-width: none;
+    /* Remove any max-width constraints */
 }
 
 @media (max-width: 900px) {
