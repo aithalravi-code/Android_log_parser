@@ -318,7 +318,7 @@
                     </div>
                 </section>
 
-                <section id="statsTab" class="tab-content" style="overflow-y: auto; padding: 0.5rem;">
+                <section id="statsTab" class="tab-content" style="overflow-y: auto; padding: 1rem;">
                     <div class="tab-header-row" style="margin-bottom: 1rem;">
                         <h2 style="margin: 0; font-size: 1.5rem; color: #e8eaed;">System Statistics</h2>
                         <button id="exportStatsBtn" class="header-export-btn" title="Export to Excel">📥</button>
@@ -333,153 +333,155 @@
                         </div>
                         <div class="highlight-section">
                             <h4>BLE Security Keys</h4>
-                            <table id="bleKeysTable" class="ccc-table">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 80px;">Packet #</th>
-                                        <th style="width: 150px;">Timestamp</th>
-                                        <th style="width: 200px;">Peer Address</th>
-                                        <th style="width: 150px;">Key Type</th>
-                                        <th>Key Value</th>
-                                        <th>Raw Data</th>
-                                    </tr>
-                                    <tr class="filter-row">
-                                        <th style="width: 80px;"><input type="text" placeholder="Filter..." data-col="0"
-                                                name="bleKeysFilter0"></th>
-                                        <th style="width: 150px;"><input type="text" placeholder="Filter..."
-                                                data-col="1" name="bleKeysFilter1"></th>
-                                        <th style="width: 200px;"><input type="text" placeholder="Filter..."
-                                                data-col="2" name="bleKeysFilter2"></th>
-                                        <th style="width: 150px;"><input type="text" placeholder="Filter..."
-                                                data-col="3" name="bleKeysFilter3"></th>
-                                        <th><input type="text" placeholder="Filter..." data-col="4"
-                                                name="bleKeysFilter4"></th>
-                                        <th><input type="text" placeholder="Filter..." data-col="5"
-                                                name="bleKeysFilter5"></th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
+                            <div style="overflow-x: auto;">
+                                <table id="bleKeysTable" class="ccc-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 80px;">Packet #</th>
+                                            <th style="width: 150px;">Timestamp</th>
+                                            <th style="width: 200px;">Peer Address</th>
+                                            <th style="width: 150px;">Key Type</th>
+                                            <th>Key Value</th>
+                                            <th>Raw Data</th>
+                                        </tr>
+                                        <tr class="filter-row">
+                                            <th style="width: 80px;"><input type="text" placeholder="Filter..."
+                                                    data-col="0" name="bleKeysFilter0"></th>
+                                            <th style="width: 150px;"><input type="text" placeholder="Filter..."
+                                                    data-col="1" name="bleKeysFilter1"></th>
+                                            <th style="width: 200px;"><input type="text" placeholder="Filter..."
+                                                    data-col="2" name="bleKeysFilter2"></th>
+                                            <th style="width: 150px;"><input type="text" placeholder="Filter..."
+                                                    data-col="3" name="bleKeysFilter3"></th>
+                                            <th><input type="text" placeholder="Filter..." data-col="4"
+                                                    name="bleKeysFilter4"></th>
+                                            <th><input type="text" placeholder="Filter..." data-col="5"
+                                                    name="bleKeysFilter5"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
                         </div>
                         <div class="highlight-section">
                             <h4>BTSnoop Connection Events</h4>
-                            <table id="btsnoopConnectionEventsTable" class="ccc-table">
+                            <div style="overflow-x: auto;">
+                                <table id="btsnoopConnectionEventsTable" class="ccc-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 100px;">Packet No.</th>
+                                            <th style="width: 140px;">Timestamp</th>
+                                            <th style="width: 120px;">Event Type</th>
+                                            <th style="width: 140px;">Connection Handle</th>
+                                            <th style="width: 150px;">Peer Address</th>
+                                            <th style="width: 300px;">Parameters</th>
+                                            <th>Raw Data</th>
+                                        </tr>
+                                        <tr class="filter-row">
+                                            <th style="width: 100px;"><input type="text" placeholder="Filter..."
+                                                    data-col="0" name="btsnoopConnFilter0"></th>
+                                            <th style="width: 140px;"><input type="text" placeholder="Filter..."
+                                                    data-col="1" name="btsnoopConnFilter1"></th>
+                                            <th style="width: 120px;"><input type="text" placeholder="Filter..."
+                                                    data-col="2" name="btsnoopConnFilter2"></th>
+                                            <th style="width: 140px;"><input type="text" placeholder="Filter..."
+                                                    data-col="3" name="btsnoopConnFilter3"></th>
+                                            <th style="width: 150px;"><input type="text" placeholder="Filter..."
+                                                    data-col="4" name="btsnoopConnFilter4"></th>
+                                            <th style="width: 200px;"><input type="text" placeholder="Filter..."
+                                                    data-col="5" name="btsnoopConnFilter5"></th>
+                                            <th><input type="text" placeholder="Filter..." data-col="6"
+                                                    name="btsnoopConnFilter6"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2.5: Device & Setting Events (Separate Section) -->
+                    <div class="dashboard-card full-width-card" id="deviceEventsCard" style="margin-bottom: 1.5rem;">
+                        <h3>Device & Setting Events</h3>
+                        <div style="overflow-x: auto;">
+                            <table id="deviceEventsTable" class="ccc-table">
                                 <thead>
                                     <tr>
-                                        <th style="width: 100px;">Packet No.</th>
-                                        <th style="width: 140px;">Timestamp</th>
-                                        <th style="width: 120px;">Event Type</th>
-                                        <th style="width: 140px;">Connection Handle</th>
-                                        <th style="width: 150px;">Peer Address</th>
-                                        <th style="width: 300px;">Parameters</th>
-                                        <th>Raw Data</th>
+                                        <th style="width: 90px;">Date</th>
+                                        <th style="width: 90px;">Time</th>
+                                        <th style="width: 200px;">Event</th>
+                                        <th style="width: 150px;">Current Value</th>
+                                        <th style="width: 150px;">Previous Value</th>
+                                        <th style="min-width: 400px;">Original Log Line</th>
                                     </tr>
                                     <tr class="filter-row">
-                                        <th style="width: 100px;"><input type="text" placeholder="Filter..."
-                                                data-col="0" name="btsnoopConnFilter0"></th>
-                                        <th style="width: 140px;"><input type="text" placeholder="Filter..."
-                                                data-col="1" name="btsnoopConnFilter1"></th>
-                                        <th style="width: 120px;"><input type="text" placeholder="Filter..."
-                                                data-col="2" name="btsnoopConnFilter2"></th>
-                                        <th style="width: 140px;"><input type="text" placeholder="Filter..."
-                                                data-col="3" name="btsnoopConnFilter3"></th>
-                                        <th style="width: 150px;"><input type="text" placeholder="Filter..."
-                                                data-col="4" name="btsnoopConnFilter4"></th>
+                                        <th style="width: 90px;"><input type="text" placeholder="Filter..." data-col="0"
+                                                name="deviceEventsFilter0"></th>
+                                        <th style="width: 90px;"><input type="text" placeholder="Filter..." data-col="1"
+                                                name="deviceEventsFilter1"></th>
                                         <th style="width: 200px;"><input type="text" placeholder="Filter..."
-                                                data-col="5" name="btsnoopConnFilter5"></th>
-                                        <th><input type="text" placeholder="Filter..." data-col="6"
-                                                name="btsnoopConnFilter6"></th>
+                                                data-col="2" name="deviceEventsFilter2"></th>
+                                        <th style="width: 150px;"><input type="text" placeholder="Filter..."
+                                                data-col="3" name="deviceEventsFilter3"></th>
+                                        <th style="width: 150px;"><input type="text" placeholder="Filter..."
+                                                data-col="4" name="deviceEventsFilter4"></th>
+                                        <th style="min-width: 400px;"><input type="text" placeholder="Filter..."
+                                                data-col="5" name="deviceEventsFilter5"></th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
                             </table>
                         </div>
                     </div>
-            </div>
-    </div>
 
-    <!-- Section 2.5: Device & Setting Events (Separate Section) -->
-    <div class="dashboard-card full-width-card" id="deviceEventsCard" style="margin-bottom: 1.5rem;">
-        <h3>Device & Setting Events</h3>
-        <div style="overflow-x: auto;">
-            <table id="deviceEventsTable" class="ccc-table">
-                <thead>
-                    <tr>
-                        <th style="width: 90px;">Date</th>
-                        <th style="width: 90px;">Time</th>
-                        <th style="width: 200px;">Event</th>
-                        <th style="width: 150px;">Current Value</th>
-                        <th style="width: 150px;">Previous Value</th>
-                        <th style="min-width: 400px;">Original Log Line</th>
-                    </tr>
-                    <tr class="filter-row">
-                        <th style="width: 90px;"><input type="text" placeholder="Filter..." data-col="0"
-                                name="deviceEventsFilter0"></th>
-                        <th style="width: 90px;"><input type="text" placeholder="Filter..." data-col="1"
-                                name="deviceEventsFilter1"></th>
-                        <th style="width: 200px;"><input type="text" placeholder="Filter..." data-col="2"
-                                name="deviceEventsFilter2"></th>
-                        <th style="width: 150px;"><input type="text" placeholder="Filter..." data-col="3"
-                                name="deviceEventsFilter3"></th>
-                        <th style="width: 150px;"><input type="text" placeholder="Filter..." data-col="4"
-                                name="deviceEventsFilter4"></th>
-                        <th style="min-width: 400px;"><input type="text" placeholder="Filter..." data-col="5"
-                                name="deviceEventsFilter5"></th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Section 3: Other Statistics -->
-    <div class="dashboard-grid">
-        <div class="dashboard-card" id="logSummaryCard">
-            <h3>Log Summary</h3>
-            <div id="logCounts"></div>
-            <div id="errorDistribution"></div>
-        </div>
-        <div class="dashboard-card" id="cpuLoadCard">
-            <h3>CPU Load</h3>
-            <div id="cpuLoadPlotContainer" class="plot-container"></div>
-            <div id="cpuLoadStats"></div>
-        </div>
-        <div class="dashboard-card" id="temperatureCard">
-            <h3>Device Temperature</h3>
-            <div id="temperaturePlotContainer" class="plot-container"></div>
-            <div id="temperatureStats"></div>
-        </div>
-        <div class="dashboard-card" id="batteryCard">
-            <h3>Battery Level</h3>
-            <div id="batteryPlotContainer" class="plot-container"></div>
-            <div id="batteryStats"></div>
-        </div>
-        <div class="dashboard-card large-card" id="appVersionsCard">
-            <div class="card-header"
-                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h3 style="margin: 0;">App Package Versions</h3>
-                <div class="search-section" style="padding: 0;">
-                    <label for="appSearchInput" style="display: none;">Search:</label>
-                    <input type="text" id="appSearchInput" name="appSearchInput" class="search-input"
-                        placeholder="Search packages..." autocomplete="off">
-                </div>
+                    <!-- Section 3: Other Statistics -->
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card" id="logSummaryCard">
+                            <h3>Log Summary</h3>
+                            <div id="logCounts"></div>
+                            <div id="errorDistribution"></div>
+                        </div>
+                        <div class="dashboard-card" id="cpuLoadCard">
+                            <h3>CPU Load</h3>
+                            <div id="cpuLoadPlotContainer" class="plot-container"></div>
+                            <div id="cpuLoadStats"></div>
+                        </div>
+                        <div class="dashboard-card" id="temperatureCard">
+                            <h3>Device Temperature</h3>
+                            <div id="temperaturePlotContainer" class="plot-container"></div>
+                            <div id="temperatureStats"></div>
+                        </div>
+                        <div class="dashboard-card" id="batteryCard">
+                            <h3>Battery Level</h3>
+                            <div id="batteryPlotContainer" class="plot-container"></div>
+                            <div id="batteryStats"></div>
+                        </div>
+                        <div class="dashboard-card large-card" id="appVersionsCard">
+                            <div class="card-header"
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h3 style="margin: 0;">App Package Versions</h3>
+                                <div class="search-section" style="padding: 0;">
+                                    <label for="appSearchInput" style="display: none;">Search:</label>
+                                    <input type="text" id="appSearchInput" name="appSearchInput" class="search-input"
+                                        placeholder="Search packages..." autocomplete="off">
+                                </div>
+                            </div>
+                            <div style="overflow-x: auto;">
+                                <table id="appVersionsTable" class="ccc-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 400px;">Package</th>
+                                            <th style="width: 150px;">Version</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
-            <div style="overflow-x: auto;">
-                <table id="appVersionsTable" class="ccc-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 400px;">Package</th>
-                            <th style="width: 150px;">Version</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    </section>
-    </div>
-    </main>
+        </main>
     </div>
 
     <!-- Modal for selecting files from a ZIP -->
