@@ -2428,8 +2428,8 @@ table thead tr:nth-child(2) th {
 /* --- BTSnoop Table Grid Layout --- */
 .btsnoop-header-grid {
     display: grid;
-    /* Match JS default: '60px 120px 160px 160px 80px 400px 420px' */
-    grid-template-columns: 60px 120px 160px 160px 80px 400px 420px;
+    /* Flexible columns that expand to fill available space while maintaining proportions */
+    grid-template-columns: 60px 120px 160px 160px 80px 2fr 2fr;
     background-color: #1e1e1e;
     position: sticky;
     top: 0;
@@ -2439,7 +2439,7 @@ table thead tr:nth-child(2) th {
     color: #e8eaed;
     /* Properties consolidated from line 1256 */
     width: 100%;
-    min-width: 1200px;
+    /* Allow grid to expand to full container width */
     box-sizing: border-box !important;
     /* Ensure padding from scrollbar sync doesn't break layout */
     overflow-x: hidden;

@@ -1058,7 +1058,7 @@ function renderBtsnoopVirtualLogs() {
             row.style.height = `${rowHeight}px`; // Enforce strict height matching calculation
             row.style.overflow = 'hidden'; // Clip content to prevent overlap
             row.style.display = 'grid';
-            row.style.gridTemplateColumns = currentBtsnoopGridTemplate || '60px 120px 160px 160px 80px 400px 420px';
+            row.style.gridTemplateColumns = currentBtsnoopGridTemplate || '60px 120px 160px 160px 80px 2fr 2fr';
         }
         visibleRows.push(row);
     }
@@ -1084,7 +1084,7 @@ function createBtsnoopFilterHeader() {
 
     const headerGrid = document.createElement('div');
     headerGrid.className = 'btsnoop-header-grid';
-    headerGrid.style.gridTemplateColumns = '60px 120px 160px 160px 80px 400px 420px';
+    headerGrid.style.gridTemplateColumns = '60px 120px 160px 160px 80px 2fr 2fr';
 
     const columns = ['No.', 'Timestamp', 'Source', 'Destination', 'Type', 'Summary', 'Data'];
 
