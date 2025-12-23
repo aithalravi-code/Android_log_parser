@@ -31,6 +31,7 @@ export async function waitForLogProcessing(page, timeout = 30000) {
  */
 export async function clearAppState(page) {
     // Click clear state button if available
+    await ensureSidebarExpanded(page);
     const clearBtn = page.locator('#clearStateBtn');
     if (await clearBtn.isVisible()) {
         await clearBtn.click();
@@ -102,6 +103,9 @@ export async function getFilteredLogCount(page) {
  */
 export async function applyFilters(page, filters = {}) {
     const { levels, search, tag, logic, timeRange } = filters;
+
+    // Ensure sidebar is visible before interacting with filters
+    await ensureSidebarExpanded(page);
 
     // Apply log level filters
     if (levels) {
