@@ -227,25 +227,33 @@ test.describe('Performance', () => {
 });
 
 test.describe('Data Persistence', () => {
-    test.skip('should persist filter keywords across reload', async ({ page, context }) => {
+    test('should persist filter keywords across reload', async ({ page, context }) => {
         await page.goto('/log_parser.html');
 
-        // Add a keyword
+        // Add a keyword - ensure we wait for init
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('#keywordInput', { state: 'visible' });
         const keywordInput = page.locator('#keywordInput');
         await keywordInput.fill('TestKeyword');
         await keywordInput.press('Enter');
 
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(1000); // Wait for debounce save
 
         // Reload page
         await page.reload();
         await page.waitForLoadState('domcontentloaded');
+        await page.waitForSelector('#keywordInput', { state: 'visible' });
 
-        // Check if keyword was persisted (if load filters button exists)
-        const loadFiltersBtn = page.locator('#loadFiltersBtn');
-        if (await loadFiltersBtn.isVisible()) {
-            // Filters were saved
-            expect(await loadFiltersBtn.isVisible()).toBe(true);
-        }
+        // Check if keyword was persisted
+        // Ideally it should be in the chip list or input behavior
+        // Assuming implementation restores it to the activeKeywords list valid for display
+
+        // Check for chip existence if 'TestKeyword' is likely converted to chip
+        // OR check if internal state has it.
+        // For 'keywordInput', usually it clears on Enter and becomes a chip.
+        // So we check chip.
+        const chip = page.locator('.keyword-chip', { hasText: 'TestKeyword' });
+        // Use assertion with timeout
+        await expect(chip).toBeVisible({ timeout: 5000 });
     });
 });

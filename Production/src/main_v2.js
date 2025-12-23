@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check for persisted state MUST BE CALLED AFTER UI VARIABLES ARE INITIALIZED
     // Moved to initializeApp to avoid race condition with clearData
     // checkForPersistedLogs();
-    checkForPersistedFilters();
+    // checkForPersistedFilters(); // Moved to initializeApp
 
     let consolidatedBatteryDataPoints = []; // Battery data points from all workers
     let consolidatedThermalDataPoints = []; // Thermal data points from all workers
@@ -849,10 +849,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function checkForPersistedFilters() {
-        const persistedFilters = await loadData('filterConfig');
-        if (persistedFilters && persistedFilters.value) {
-            loadFiltersBtn.style.display = 'inline-block';
-        }
+        // Auto-load filters silently on startup
+        await loadFilterState(true);
     }
 
     function initializeDynamicElements() {
@@ -2261,6 +2259,9 @@ self.onmessage = async (event) => {
         // Final render call
         handleMainLogScroll(); // Use the throttled function for the final render
 
+        // Auto-save filter state (silently) whenever filters are applied
+        saveFilterState(true).catch(err => console.error('[AutoSave] Failed to save filter state:', err));
+
         TimeTracker.stop('Async Filtering');
 
     }
@@ -2408,18 +2409,18 @@ self.onmessage = async (event) => {
             container.scrollTop = newScrollTop;
         }
     }
-    async function saveFilterState() {
+    async function saveFilterState(silent = false) {
         const filterConfig = {
             keywords: filterKeywords,
             isAndLogic: isAndLogic,
             logLevels: Array.from(activeLogLevels)
         };
         await saveData('filterConfig', filterConfig);
-        alert('Filter configuration saved!');
+        if (!silent) alert('Filter configuration saved!');
         loadFiltersBtn.style.display = 'inline-block'; // Show the load button
     }
 
-    async function loadFilterState() {
+    async function loadFilterState(silent = false) {
         const persistedFilters = await loadData('filterConfig');
         if (persistedFilters && persistedFilters.value) {
             const config = persistedFilters.value;
@@ -2435,8 +2436,9 @@ self.onmessage = async (event) => {
             });
 
             await renderUI(); // Re-render chips and apply filters
+            if (!silent) alert('Filter configuration loaded!');
         } else {
-            alert('No saved filter configuration found.');
+            if (!silent) alert('No saved filter configuration found.');
         }
     }
     // wildcardToRegex removed (imported from utils)
@@ -3418,6 +3420,11 @@ self.onmessage = async (event) => {
             // No persistence check - we processed it above
             if (skeletonLoader) skeletonLoader.style.display = 'none';
 
+            try {
+                await checkForPersistedFilters(); // FIX: Load filters before applying them
+            } catch (err) {
+                console.error('[Init] Failed to load persisted filters:', err);
+            }
             await applyFilters();
 
             // FIX: Ensure the active tab is properly rendered (fixes persistence issues for Stats tab)

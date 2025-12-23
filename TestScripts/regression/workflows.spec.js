@@ -10,7 +10,7 @@ async function ensureSidebarExpanded(page) {
 }
 
 test.describe('Real-World Usage Scenarios', () => {
-    test.skip('complete workflow: load, filter, export', async ({ page }) => {
+    test('complete workflow: load, filter, export', async ({ page }) => {
         await page.goto('/log_parser.html');
 
         // Step 1: Load a log file
@@ -26,7 +26,7 @@ test.describe('Real-World Usage Scenarios', () => {
 
         await page.waitForSelector('.log-line', { timeout: 10000 });
 
-        // Step 2: Apply filter
+        // Step 2: Apply filter (Side panel must be open)
         await ensureSidebarExpanded(page);
         await page.locator('#searchInput').fill('Message', { force: true });
         await page.locator('#searchInput').press('Enter');
@@ -44,6 +44,43 @@ test.describe('Real-World Usage Scenarios', () => {
         // Step 5: Verify stats tab loaded
         const statsTab = page.locator('#statsContent');
         await expect(statsTab).toBeVisible();
+
+        // Step 6: Export Logs (Switch back to Logs tab first)
+        await page.click('button[data-tab="logs"]');
+        await page.waitForTimeout(500);
+
+        // Export button is usually in the logs tab header.
+        // Assuming #exportLogsBtn is in logs tab header.
+
+        // Setup download listener
+        await ensureSidebarExpanded(page);
+
+        // Verify export button visibility
+        const exportLogsBtnLink = page.locator('#exportLogsBtn');
+        await expect(exportLogsBtnLink).toBeVisible();
+
+        // Handle potential alert dialog
+        page.on('dialog', async dialog => {
+            console.log(`[Dialog] ${dialog.type()}: ${dialog.message()}`);
+            await dialog.accept();
+        });
+
+        // Setup download listener
+        const downloadPromise = page.waitForEvent('download');
+
+        const exportBtn = page.locator('#exportLogsBtn');
+        if (await exportBtn.isVisible()) {
+            await exportBtn.click();
+            const download = await downloadPromise;
+            // Verify download
+            expect(download.suggestedFilename()).toContain('.xlsx'); // or .txt depending on impl
+            // Optional: Save to temp if needed, but existence is enough
+        } else {
+            console.log('Export button not found - feature may not be on this tab');
+            // If missing, fail or log?
+            // If we really want to enable it, we should ensure we are on a tab that has it.
+            // #exportLogsBtn handles "filteredLogLines" (Logs Tab).
+        }
     });
 
     test('multi-file workflow: ZIP with multiple logs', async ({ page }) => {
@@ -169,7 +206,7 @@ test.describe('Data Integrity', () => {
         expect(hasContent).toBe(true);
     });
 
-    test.skip('should maintain selections through tab switches', async ({ page }) => {
+    test('should maintain search filter through tab switches', async ({ page }) => {
         await page.goto('/log_parser.html');
 
         await page.locator('#logFilesInput').setInputFiles({
@@ -196,9 +233,9 @@ test.describe('Data Integrity', () => {
 
         // Filter should still be there
         await ensureSidebarExpanded(page);
-        const keywordInput = page.locator('#searchInput');
-        const value = await keywordInput.inputValue();
-        expect(value).toBe('Test');
+        // Input is cleared after Enter, so we check for the chip
+        const chip = page.locator('.keyword-chip', { hasText: 'Test' });
+        await expect(chip).toBeVisible();
     });
 });
 
