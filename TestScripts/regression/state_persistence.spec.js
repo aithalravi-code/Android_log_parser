@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 import { generateMockLogFile } from '../helpers/test-data-generator.js';
-import { uploadFile, clearAppState, applyFilters, switchTab, getLogCount } from '../helpers/test-utils.js';
+import { uploadFile, clearAppState, applyFilters, switchTab, getLogCount, ensureSidebarExpanded } from '../helpers/test-utils.js';
 
 test.describe('State Persistence', () => {
     let mockLogPath;
@@ -161,6 +161,7 @@ test.describe('State Persistence', () => {
 
         // Click clear state button
         const clearBtn = page.locator('#clearStateBtn');
+        await ensureSidebarExpanded(page);
         await clearBtn.click();
         await page.waitForTimeout(1000);
 

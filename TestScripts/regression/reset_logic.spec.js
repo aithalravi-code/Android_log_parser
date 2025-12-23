@@ -1,6 +1,6 @@
 
 import { test, expect } from '@playwright/test';
-import { uploadFile, waitForLogProcessing, clearAppState } from '../helpers/test-utils.js';
+import { uploadFile, waitForLogProcessing, clearAppState, ensureSidebarExpanded } from '../helpers/test-utils.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -43,6 +43,7 @@ test.describe('Clear and Reset Logic', () => {
         // Click Clear & Reset (handle dialog)
         page.on('dialog', dialog => dialog.accept());
         const clearBtn = page.locator('#clearStateBtn');
+        await ensureSidebarExpanded(page);
         await clearBtn.click();
 
         // Wait for clear

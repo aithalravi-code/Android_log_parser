@@ -4,7 +4,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { uploadFile, waitForLogProcessing, clearAppState, switchTab } from '../helpers/test-utils.js';
+import { uploadFile, waitForLogProcessing, clearAppState, switchTab, ensureSidebarExpanded } from '../helpers/test-utils.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -71,6 +71,7 @@ Account {name=user@example.com, type=com.google}
 
         // Click Clear & Reset button
         page.on('dialog', dialog => dialog.accept());
+        await ensureSidebarExpanded(page);
         await page.click('#clearStateBtn');
         await page.waitForTimeout(1000);
 
@@ -110,6 +111,7 @@ Account {name=user@example.com, type=com.google}
 
         // Click Clear & Reset button
         page.on('dialog', dialog => dialog.accept());
+        await ensureSidebarExpanded(page);
         await page.click('#clearStateBtn');
         await page.waitForTimeout(1000);
 
@@ -141,6 +143,7 @@ Account {name=user@example.com, type=com.google}
 
         // Click Clear & Reset button
         page.on('dialog', dialog => dialog.accept());
+        await ensureSidebarExpanded(page);
         await page.click('#clearStateBtn');
         await page.waitForTimeout(1000);
 
