@@ -57,6 +57,16 @@ var filteredLogLines = []; // The currently filtered set of lines
 var selectedTableRows = new Map();
 window.selectedTableRows = selectedTableRows; // Expose for CccTab scroll restoration
 
+var activeWorkers = []; // Track active workers for global termination
+
+function terminateAllWorkers() {
+    if (activeWorkers.length > 0) {
+        console.log(`[Main] Terminating ${activeWorkers.length} active workers.`);
+        activeWorkers.forEach(w => w.terminate());
+        activeWorkers = [];
+    }
+}
+
 // OPTIMIZATION Phase 3: Cache BTSnoop row positions
 var btsnoopRowPositions = [];
 var btsnoopTotalHeight = 0;
@@ -1188,6 +1198,10 @@ document.addEventListener('DOMContentLoaded', () => {
         filteredBleLogLines = [];
         filteredNfcLogLines = [];
         filteredDckLogLines = [];
+
+        // Terminate any active workers that might be holding DB locks
+        terminateAllWorkers();
+
         btsnoopPackets = [];
         filteredBtsnoopPackets = [];
         btsnoopConnectionEvents = [];
@@ -1529,7 +1543,7 @@ self.onmessage = async (event) => {
                         event.target.postMessage(task);
                     } else if (tasksCompleted === totalTasks) {
                         resolve(results);
-                        workers.forEach(w => w.terminate());
+                        terminateAllWorkers();
                     }
                 }
             };
@@ -1544,6 +1558,7 @@ self.onmessage = async (event) => {
                         resolve(results);
                     }
                 };
+                activeWorkers.push(worker); // Track globally
                 workers.push(worker);
             }
 
@@ -2110,11 +2125,18 @@ self.onmessage = async (event) => {
             filterConfig
         );
     }
+
+
+
     // --- Clear & Reset Logic ---
     if (clearStateBtn) {
         console.log('[Init] Attaching event listener to Clear & Reset button');
         clearStateBtn.addEventListener('click', async () => {
             console.log('[Clear & Reset] Button clicked');
+
+            // FIX: Terminate workers FIRST to release any DB locks
+            terminateAllWorkers();
+
             // FIX: explicit close before delete to prevent blocking
             const currentDb = getDb();
             if (currentDb) {
