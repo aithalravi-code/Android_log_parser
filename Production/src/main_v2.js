@@ -556,72 +556,74 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
 
                 case 'stats': {
-                    console.log(`[Perf Phase2]Processing stats...`);
+                    try {
+                        console.log(`[Perf Phase2]Processing stats...`);
 
-                    // Calculate log level statistics
-                    const logStats = { total: 0, E: 0, W: 0, I: 0, D: 0, V: 0 };
-                    for (const line of originalLogLines) {
-                        if (line.isMeta) continue;
-                        if (line.level && logStats[line.level] !== undefined) {
-                            logStats[line.level]++;
+                        // Calculate log level statistics
+                        const logStats = { total: 0, E: 0, W: 0, I: 0, D: 0, V: 0 };
+                        for (const line of originalLogLines) {
+                            if (line.isMeta) continue;
+                            if (line.level && logStats[line.level] !== undefined) {
+                                logStats[line.level]++;
+                            }
+                            logStats.total++;
                         }
-                        logStats.total++;
+
+                        // Render log level statistics and distribution chart
+                        StatsTab.renderStats(logStats);
+
+                        // Calculate and render dashboard stats (CPU, temp, battery)
+                        const dashboardStats = StatsTab.processForDashboardStats(originalLogLines, consolidatedBatteryDataPoints);
+                        console.log('[Perf Phase2] Lazy loading stats tab...');
+                        const statsStart = performance.now();
+
+                        // Process BTSnoop if needed (Stats tab shows BTSnoop Connection Events)
+                        console.log('[Stats Debug] isBtsnoopProcessed:', isBtsnoopProcessed);
+                        console.log('[Stats Debug] fileTasks.length:', fileTasks.length);
+                        const btsnoopTasks = fileTasks.filter(task => task.path && task.path.includes('btsnoop_hci.log'));
+                        console.log('[Stats Debug] BTSnoop tasks found:', btsnoopTasks.length);
+
+                        if (!isBtsnoopProcessed && btsnoopTasks.length > 0) {
+                            console.log('[Stats] Processing BTSnoop data for Connection Events table...');
+                            await processForBtsnoop();
+                        } else {
+                            console.log('[Stats] Skipping BTSnoop processing. Processed:', isBtsnoopProcessed, 'Tasks:', btsnoopTasks.length);
+                        }
+
+
+
+                        await StatsTab.setupStatsTab(originalLogLines, getDashboardElements(), consolidatedBatteryDataPoints);
+
+                        // FIX: Render BLE Keys when stats tab is first loaded
+                        // This ensures keys display even when filter state hasn't changed
+                        const bleKeysTableBody = document.querySelector('#bleKeysTable tbody');
+                        if (bleKeysTableBody) {
+                            const connectionEvents = BtsnoopTab.getBtsnoopConnectionEvents();
+                            const connectionMap = BtsnoopTab.getBtsnoopConnectionMap();
+                            console.log(`[LazyLoad Stats] Rendering BLE Keys - Events: ${connectionEvents.length}, Map size: ${connectionMap.size}, finalBleKeys: ${window.finalBleKeys?.size || 0}`);
+                            renderBleKeys(
+                                connectionEvents,
+                                connectionMap,
+                                bleKeysTableBody,
+                                window.finalBleKeys || new Map()
+                            );
+
+                            // CRITICAL: Setup sorting/resizing AFTER rendering to preserve content
+                            setupBleKeysTab('bleKeysTable');
+                            console.log(`[LazyLoad Stats] Setup BLE Keys table (sorting/resizing)`);
+                        }
+
+
+                        // FIX: Also render BTSnoop Connection Events table
+                        const btsnoopConnectionEventsTable = document.getElementById('btsnoopConnectionEventsTable');
+                        if (btsnoopConnectionEventsTable) {
+                            BtsnoopTab.renderBtsnoopConnectionEvents(); // Call without args to use module-local events
+                            console.log(`[LazyLoad Stats] Rendered BTSnoop Connection Events table`);
+                        }
+                        console.log(`[Perf Phase2]Stats init took ${(performance.now() - statsStart).toFixed(1)}ms`);
+                    } catch (e) {
+                        console.error('[Stats] Error initializing stats tab:', e);
                     }
-
-                    // Render log level statistics and distribution chart
-                    StatsTab.renderStats(logStats);
-
-                    // Calculate and render dashboard stats (CPU, temp, battery)
-                    const dashboardStats = StatsTab.processForDashboardStats(originalLogLines, consolidatedBatteryDataPoints);
-                    console.log('[Perf Phase2] Lazy loading stats tab...');
-                    const statsStart = performance.now();
-
-                    // Process BTSnoop if needed (Stats tab shows BTSnoop Connection Events)
-                    console.log('[Stats Debug] isBtsnoopProcessed:', isBtsnoopProcessed);
-                    console.log('[Stats Debug] fileTasks.length:', fileTasks.length);
-                    const btsnoopTasks = fileTasks.filter(task => task.path && task.path.includes('btsnoop_hci.log'));
-                    console.log('[Stats Debug] BTSnoop tasks found:', btsnoopTasks.length);
-
-                    if (!isBtsnoopProcessed && btsnoopTasks.length > 0) {
-                        console.log('[Stats] Processing BTSnoop data for Connection Events table...');
-                        await processForBtsnoop();
-                    } else {
-                        console.log('[Stats] Skipping BTSnoop processing. Processed:', isBtsnoopProcessed, 'Tasks:', btsnoopTasks.length);
-                    }
-
-
-
-                    await StatsTab.setupStatsTab(originalLogLines, getDashboardElements(), consolidatedBatteryDataPoints);
-
-                    // FIX: Render BLE Keys when stats tab is first loaded
-                    // This ensures keys display even when filter state hasn't changed
-                    const bleKeysTableBody = document.querySelector('#bleKeysTable tbody');
-                    if (bleKeysTableBody) {
-                        const connectionEvents = BtsnoopTab.getBtsnoopConnectionEvents();
-                        const connectionMap = BtsnoopTab.getBtsnoopConnectionMap();
-                        console.log(`[LazyLoad Stats] Rendering BLE Keys - Events: ${connectionEvents.length}, Map size: ${connectionMap.size}, finalBleKeys: ${window.finalBleKeys?.size || 0}`);
-                        renderBleKeys(
-                            connectionEvents,
-                            connectionMap,
-                            bleKeysTableBody,
-                            window.finalBleKeys || new Map()
-                        );
-
-                        // CRITICAL: Setup sorting/resizing AFTER rendering to preserve content
-                        setupBleKeysTab('bleKeysTable');
-                        console.log(`[LazyLoad Stats] Setup BLE Keys table (sorting/resizing)`);
-                    }
-
-
-                    // FIX: Also render BTSnoop Connection Events table
-                    const btsnoopConnectionEventsTable = document.getElementById('btsnoopConnectionEventsTable');
-                    if (btsnoopConnectionEventsTable) {
-                        BtsnoopTab.renderBtsnoopConnectionEvents(); // Call without args to use module-local events
-                        console.log(`[LazyLoad Stats] Rendered BTSnoop Connection Events table`);
-                    }
-
-
-                    console.log(`[Perf Phase2]Stats init took ${(performance.now() - statsStart).toFixed(1)}ms`);
                     break;
                 }
             }
@@ -2417,7 +2419,7 @@ self.onmessage = async (event) => {
         };
         await saveData('filterConfig', filterConfig);
         if (!silent) alert('Filter configuration saved!');
-        loadFiltersBtn.style.display = 'inline-block'; // Show the load button
+        if (loadFiltersBtn) loadFiltersBtn.style.display = 'inline-block'; // Show the load button
     }
 
     async function loadFilterState(silent = false) {
