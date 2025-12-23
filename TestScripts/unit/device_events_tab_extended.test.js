@@ -307,7 +307,8 @@ describe('DeviceEventsTab - Extended Coverage', () => {
             renderDeviceEvents(events, mockTableElement);
             const row = mockTableElement.children[0];
 
-            for (let i = 0; i < row.cells.length; i++) {
+            // Check only data cells (0-5), excluding the button cell (6)
+            for (let i = 0; i < 6; i++) {
                 expect(row.cells[i].classList.contains('copy-cell')).toBe(true);
             }
         });
