@@ -2115,6 +2115,13 @@ self.onmessage = async (event) => {
         console.log('[Init] Attaching event listener to Clear & Reset button');
         clearStateBtn.addEventListener('click', async () => {
             console.log('[Clear & Reset] Button clicked');
+            // FIX: explicit close before delete to prevent blocking
+            const currentDb = getDb();
+            if (currentDb) {
+                currentDb.close();
+                console.log('[Clear & Reset] Closed active database connection');
+            }
+
             // Use deleteDatabase for complete cleanup instead of just clearData
             console.log('[Clear & Reset] Starting complete database deletion...');
             try {
