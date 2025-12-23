@@ -1227,6 +1227,16 @@ document.addEventListener('DOMContentLoaded', () => {
         btsnoopConnectionMap = new Map();
         // activeBtsnoopFilters = new Set(['cmd', 'evt', 'acl', 'l2cap', 'smp', 'att']);
 
+        // Reset Module States
+        if (typeof BtsnoopTab !== 'undefined' && BtsnoopTab.reset) {
+            console.log('[Clear] Resetting BtsnoopTab state');
+            BtsnoopTab.reset();
+        }
+        if (typeof StatsTab !== 'undefined' && StatsTab.reset) StatsTab.reset();
+        if (typeof CccTab !== 'undefined' && CccTab.reset) CccTab.reset();
+        if (typeof ConnectivityTab !== 'undefined' && ConnectivityTab.reset) ConnectivityTab.reset();
+
+
         // Reset Filter Hashing & Caching
         filterStateHash = null;
         cachedFilteredResults = {
