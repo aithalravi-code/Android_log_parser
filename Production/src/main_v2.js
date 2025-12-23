@@ -57,6 +57,16 @@ var filteredLogLines = []; // The currently filtered set of lines
 var selectedTableRows = new Map();
 window.selectedTableRows = selectedTableRows; // Expose for CccTab scroll restoration
 
+var activeWorkers = []; // Track active workers for global termination
+
+function terminateAllWorkers() {
+    if (activeWorkers.length > 0) {
+        console.log(`[Main] Terminating ${activeWorkers.length} active workers.`);
+        activeWorkers.forEach(w => w.terminate());
+        activeWorkers = [];
+    }
+}
+
 // OPTIMIZATION Phase 3: Cache BTSnoop row positions
 var btsnoopRowPositions = [];
 var btsnoopTotalHeight = 0;
@@ -239,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check for persisted state MUST BE CALLED AFTER UI VARIABLES ARE INITIALIZED
     // Moved to initializeApp to avoid race condition with clearData
     // checkForPersistedLogs();
-    checkForPersistedFilters();
+    // checkForPersistedFilters(); // Moved to initializeApp
 
     let consolidatedBatteryDataPoints = []; // Battery data points from all workers
     let consolidatedThermalDataPoints = []; // Thermal data points from all workers
@@ -546,59 +556,74 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
 
                 case 'stats': {
-                    console.log(`[Perf Phase2]Processing stats...`);
+                    try {
+                        console.log(`[Perf Phase2]Processing stats...`);
 
-                    // Calculate log level statistics
-                    const logStats = { total: 0, E: 0, W: 0, I: 0, D: 0, V: 0 };
-                    for (const line of originalLogLines) {
-                        if (line.isMeta) continue;
-                        if (line.level && logStats[line.level] !== undefined) {
-                            logStats[line.level]++;
+                        // Calculate log level statistics
+                        const logStats = { total: 0, E: 0, W: 0, I: 0, D: 0, V: 0 };
+                        for (const line of originalLogLines) {
+                            if (line.isMeta) continue;
+                            if (line.level && logStats[line.level] !== undefined) {
+                                logStats[line.level]++;
+                            }
+                            logStats.total++;
                         }
-                        logStats.total++;
+
+                        // Render log level statistics and distribution chart
+                        StatsTab.renderStats(logStats);
+
+                        // Calculate and render dashboard stats (CPU, temp, battery)
+                        const dashboardStats = StatsTab.processForDashboardStats(originalLogLines, consolidatedBatteryDataPoints);
+                        console.log('[Perf Phase2] Lazy loading stats tab...');
+                        const statsStart = performance.now();
+
+                        // Process BTSnoop if needed (Stats tab shows BTSnoop Connection Events)
+                        console.log('[Stats Debug] isBtsnoopProcessed:', isBtsnoopProcessed);
+                        console.log('[Stats Debug] fileTasks.length:', fileTasks.length);
+                        const btsnoopTasks = fileTasks.filter(task => task.path && task.path.includes('btsnoop_hci.log'));
+                        console.log('[Stats Debug] BTSnoop tasks found:', btsnoopTasks.length);
+
+                        if (!isBtsnoopProcessed && btsnoopTasks.length > 0) {
+                            console.log('[Stats] Processing BTSnoop data for Connection Events table...');
+                            await processForBtsnoop();
+                        } else {
+                            console.log('[Stats] Skipping BTSnoop processing. Processed:', isBtsnoopProcessed, 'Tasks:', btsnoopTasks.length);
+                        }
+
+
+
+                        await StatsTab.setupStatsTab(originalLogLines, getDashboardElements(), consolidatedBatteryDataPoints);
+
+                        // FIX: Render BLE Keys when stats tab is first loaded
+                        // This ensures keys display even when filter state hasn't changed
+                        const bleKeysTableBody = document.querySelector('#bleKeysTable tbody');
+                        if (bleKeysTableBody) {
+                            const connectionEvents = BtsnoopTab.getBtsnoopConnectionEvents();
+                            const connectionMap = BtsnoopTab.getBtsnoopConnectionMap();
+                            console.log(`[LazyLoad Stats] Rendering BLE Keys - Events: ${connectionEvents.length}, Map size: ${connectionMap.size}, finalBleKeys: ${window.finalBleKeys?.size || 0}`);
+                            renderBleKeys(
+                                connectionEvents,
+                                connectionMap,
+                                bleKeysTableBody,
+                                window.finalBleKeys || new Map()
+                            );
+
+                            // CRITICAL: Setup sorting/resizing AFTER rendering to preserve content
+                            setupBleKeysTab('bleKeysTable');
+                            console.log(`[LazyLoad Stats] Setup BLE Keys table (sorting/resizing)`);
+                        }
+
+
+                        // FIX: Also render BTSnoop Connection Events table
+                        const btsnoopConnectionEventsTable = document.getElementById('btsnoopConnectionEventsTable');
+                        if (btsnoopConnectionEventsTable) {
+                            BtsnoopTab.renderBtsnoopConnectionEvents(); // Call without args to use module-local events
+                            console.log(`[LazyLoad Stats] Rendered BTSnoop Connection Events table`);
+                        }
+                        console.log(`[Perf Phase2]Stats init took ${(performance.now() - statsStart).toFixed(1)}ms`);
+                    } catch (e) {
+                        console.error('[Stats] Error initializing stats tab:', e);
                     }
-
-                    // Render log level statistics and distribution chart
-                    StatsTab.renderStats(logStats);
-
-                    // Calculate and render dashboard stats (CPU, temp, battery)
-                    const dashboardStats = StatsTab.processForDashboardStats(originalLogLines, consolidatedBatteryDataPoints);
-                    console.log('[Perf Phase2] Lazy loading stats tab...');
-                    const statsStart = performance.now();
-
-                    // Process BTSnoop if needed (Stats tab shows BTSnoop Connection Events)
-                    console.log('[Stats Debug] isBtsnoopProcessed:', isBtsnoopProcessed);
-                    console.log('[Stats Debug] fileTasks.length:', fileTasks.length);
-                    const btsnoopTasks = fileTasks.filter(task => task.path && task.path.includes('btsnoop_hci.log'));
-                    console.log('[Stats Debug] BTSnoop tasks found:', btsnoopTasks.length);
-
-                    if (!isBtsnoopProcessed && btsnoopTasks.length > 0) {
-                        console.log('[Stats] Processing BTSnoop data for Connection Events table...');
-                        await processForBtsnoop();
-                    } else {
-                        console.log('[Stats] Skipping BTSnoop processing. Processed:', isBtsnoopProcessed, 'Tasks:', btsnoopTasks.length);
-                    }
-
-
-
-                    await StatsTab.setupStatsTab(originalLogLines, getDashboardElements(), consolidatedBatteryDataPoints);
-
-                    // FIX: Render BLE Keys when stats tab is first loaded
-                    // This ensures keys display even when filter state hasn't changed
-                    const bleKeysTableBody = document.querySelector('#bleKeysTable tbody');
-                    if (bleKeysTableBody) {
-                        const connectionEvents = BtsnoopTab.getBtsnoopConnectionEvents();
-                        const connectionMap = BtsnoopTab.getBtsnoopConnectionMap();
-                        console.log(`[LazyLoad Stats] Rendering BLE Keys - Events: ${connectionEvents.length}, Map size: ${connectionMap.size}, finalBleKeys: ${window.finalBleKeys?.size || 0}`);
-                        renderBleKeys(
-                            connectionEvents,
-                            connectionMap,
-                            bleKeysTableBody,
-                            window.finalBleKeys || new Map()
-                        );
-                    }
-
-                    console.log(`[Perf Phase2]Stats init took ${(performance.now() - statsStart).toFixed(1)}ms`);
                     break;
                 }
             }
@@ -702,12 +727,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log(`[Perf] Restored ${loadedBtsnoop.value.length} BTSnoop packets`);
                 }
 
+
                 const loadedBtsnoopEvents = await loadData('btsnoopConnectionEvents');
                 if (loadedBtsnoopEvents?.value) {
                     BtsnoopTab.setBtsnoopConnectionEvents(loadedBtsnoopEvents.value);
-                    BtsnoopTab.renderBtsnoopConnectionEvents(loadedBtsnoopEvents.value);
-                    console.log(`[Perf] Restored ${loadedBtsnoopEvents.value.length} BTSnoop connection events`);
+                    // DON'T render here - will be rendered when Stats tab is activated to avoid DOM timing issues
+                    console.log(`[Perf] Restored ${loadedBtsnoopEvents.value.length} BTSnoop connection events (render deferred to Stats tab)`);
                 }
+
 
                 // BUGFIX: Restore connection map for BLE address resolution
                 const loadedConnectionMap = await loadData('btsnoopConnectionMap');
@@ -730,30 +757,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const loadedBleKeys = await loadData('bleKeys');
                 if (loadedBleKeys?.value) {
                     window.finalBleKeys = new Map(loadedBleKeys.value);
-                }
-
-                // BUGFIX: Always render BLE Keys using loaded connection events (keys are embedded in events)
-                const bleKeysTableBody = document.querySelector('#bleKeysTable tbody');
-                console.log(`[BLE Keys Debug] Table body element:`, bleKeysTableBody);
-                if (bleKeysTableBody) {
-                    const connectionEvents = BtsnoopTab.getBtsnoopConnectionEvents();
-                    const connectionMap = BtsnoopTab.getBtsnoopConnectionMap();
-                    console.log(`[BLE Keys Debug] Connection events:`, connectionEvents.length, `Connection map size:`, connectionMap.size);
-                    renderBleKeys(
-                        connectionEvents,
-                        connectionMap,
-                        bleKeysTableBody,
-                        window.finalBleKeys
-                    );
-                    const keyCount = connectionEvents.filter(e => e.keyType).length;
-                    console.log(`[Perf] Rendered ${keyCount} BLE Keys from ${connectionEvents.length} connection events`);
-                    console.log(`[BLE Keys Debug] Table innerHTML length afterrender:`, bleKeysTableBody.innerHTML.length);
-
-                    // CRITICAL: Setup sorting/resizing AFTER rendering to preserve content
-                    setupBleKeysTab('bleKeysTable');
-                    console.log(`[BLE Keys Debug] setupBleKeysTab called after render`);
-                } else {
-                    console.error(`[BLE Keys Debug] Table body not found!`);
+                    console.log(`[Perf] Restored BLE Keys to window.finalBleKeys (render deferred to Stats tab)`);
                 }
 
                 const loadedAppVersions = await loadData('appVersions');
@@ -832,11 +836,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 await renderUI(true); // Use fast initial render and wait for it to complete
 
                 // Auto-collapse left panel to maximize log viewing space
-                // if (leftPanel && panelToggleBtn && !leftPanel.classList.contains('collapsed')) {
-                //     leftPanel.classList.add('collapsed');
-                //     panelToggleBtn.innerHTML = '&raquo;';
-                //     console.log('[UI] Auto-collapsed left panel after restoring logs');
-                // }
+                if (leftPanel && panelToggleBtn && !leftPanel.classList.contains('collapsed')) {
+                    leftPanel.classList.add('collapsed');
+                    panelToggleBtn.innerHTML = '&raquo;';
+                    console.log('[UI] Auto-collapsed left panel after restoring logs');
+                }
 
                 return true; // Explicitly return true on success
             }
@@ -847,10 +851,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function checkForPersistedFilters() {
-        const persistedFilters = await loadData('filterConfig');
-        if (persistedFilters && persistedFilters.value) {
-            loadFiltersBtn.style.display = 'inline-block';
-        }
+        // Auto-load filters silently on startup
+        await loadFilterState(true);
     }
 
     function initializeDynamicElements() {
@@ -1196,6 +1198,10 @@ document.addEventListener('DOMContentLoaded', () => {
         filteredBleLogLines = [];
         filteredNfcLogLines = [];
         filteredDckLogLines = [];
+
+        // Terminate any active workers that might be holding DB locks
+        terminateAllWorkers();
+
         btsnoopPackets = [];
         filteredBtsnoopPackets = [];
         btsnoopConnectionEvents = [];
@@ -1234,6 +1240,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         btsnoopConnectionMap = new Map();
         // activeBtsnoopFilters = new Set(['cmd', 'evt', 'acl', 'l2cap', 'smp', 'att']);
+
+        // Reset Module States
+        if (typeof BtsnoopTab !== 'undefined' && BtsnoopTab.reset) {
+            console.log('[Clear] Resetting BtsnoopTab state');
+            BtsnoopTab.reset();
+        }
+        if (typeof StatsTab !== 'undefined' && StatsTab.reset) StatsTab.reset();
+        if (typeof CccTab !== 'undefined' && CccTab.reset) CccTab.reset();
+        if (typeof ConnectivityTab !== 'undefined' && ConnectivityTab.reset) ConnectivityTab.reset();
+
 
         // Reset Filter Hashing & Caching
         filterStateHash = null;
@@ -1527,7 +1543,7 @@ self.onmessage = async (event) => {
                         event.target.postMessage(task);
                     } else if (tasksCompleted === totalTasks) {
                         resolve(results);
-                        workers.forEach(w => w.terminate());
+                        terminateAllWorkers();
                     }
                 }
             };
@@ -1542,6 +1558,7 @@ self.onmessage = async (event) => {
                         resolve(results);
                     }
                 };
+                activeWorkers.push(worker); // Track globally
                 workers.push(worker);
             }
 
@@ -1825,11 +1842,11 @@ self.onmessage = async (event) => {
 
 
         // Auto-collapse left panel to maximize log viewing space
-        // if (leftPanel && panelToggleBtn && !leftPanel.classList.contains('collapsed')) {
-        //     leftPanel.classList.add('collapsed');
-        //     panelToggleBtn.innerHTML = '&raquo;';
-        //     console.log('[UI] Auto-collapsed left panel after file loading');
-        // }
+        if (leftPanel && panelToggleBtn && !leftPanel.classList.contains('collapsed')) {
+            leftPanel.classList.add('collapsed');
+            panelToggleBtn.innerHTML = '&raquo;';
+            console.log('[UI] Auto-collapsed left panel after file loading');
+        }
 
         progressText.textContent = 'Complete!';
 
@@ -2024,13 +2041,20 @@ self.onmessage = async (event) => {
                     );
                 }
 
+                // FIX: Also render BTSnoop Connection Events table
+                const btsnoopConnectionEventsTable = document.getElementById('btsnoopConnectionEventsTable');
+                if (btsnoopConnectionEventsTable) {
+                    BtsnoopTab.renderBtsnoopConnectionEvents(); // Call without args to use module-local events
+                    console.log(`[RefreshActiveTab] Rendered BTSnoop Connection Events table`);
+                }
+
                 // FIX: Re-render highlights (device events, accounts) when stats tab is activated
                 if (storedHighlights) {
                     renderHighlights(storedHighlights);
                     // Also render battery chart if data exists
                     if (consolidatedBatteryDataPoints && consolidatedBatteryDataPoints.length > 0) {
                         try {
-                            StatsTab.renderBatteryChart(consolidatedBatteryDataPoints);
+                            StatsTab.renderBatteryPlot(consolidatedBatteryDataPoints, batteryPlotContainer);
                         } catch (e) {
                             console.error("Error rendering battery chart:", e);
                         }
@@ -2101,11 +2125,25 @@ self.onmessage = async (event) => {
             filterConfig
         );
     }
+
+
+
     // --- Clear & Reset Logic ---
     if (clearStateBtn) {
         console.log('[Init] Attaching event listener to Clear & Reset button');
         clearStateBtn.addEventListener('click', async () => {
             console.log('[Clear & Reset] Button clicked');
+
+            // FIX: Terminate workers FIRST to release any DB locks
+            terminateAllWorkers();
+
+            // FIX: explicit close before delete to prevent blocking
+            const currentDb = getDb();
+            if (currentDb) {
+                currentDb.close();
+                console.log('[Clear & Reset] Closed active database connection');
+            }
+
             // Use deleteDatabase for complete cleanup instead of just clearData
             console.log('[Clear & Reset] Starting complete database deletion...');
             try {
@@ -2222,6 +2260,9 @@ self.onmessage = async (event) => {
 
         // Final render call
         handleMainLogScroll(); // Use the throttled function for the final render
+
+        // Auto-save filter state (silently) whenever filters are applied
+        saveFilterState(true).catch(err => console.error('[AutoSave] Failed to save filter state:', err));
 
         TimeTracker.stop('Async Filtering');
 
@@ -2370,18 +2411,18 @@ self.onmessage = async (event) => {
             container.scrollTop = newScrollTop;
         }
     }
-    async function saveFilterState() {
+    async function saveFilterState(silent = false) {
         const filterConfig = {
             keywords: filterKeywords,
             isAndLogic: isAndLogic,
             logLevels: Array.from(activeLogLevels)
         };
         await saveData('filterConfig', filterConfig);
-        alert('Filter configuration saved!');
-        loadFiltersBtn.style.display = 'inline-block'; // Show the load button
+        if (!silent) alert('Filter configuration saved!');
+        if (loadFiltersBtn) loadFiltersBtn.style.display = 'inline-block'; // Show the load button
     }
 
-    async function loadFilterState() {
+    async function loadFilterState(silent = false) {
         const persistedFilters = await loadData('filterConfig');
         if (persistedFilters && persistedFilters.value) {
             const config = persistedFilters.value;
@@ -2397,8 +2438,9 @@ self.onmessage = async (event) => {
             });
 
             await renderUI(); // Re-render chips and apply filters
+            if (!silent) alert('Filter configuration loaded!');
         } else {
-            alert('No saved filter configuration found.');
+            if (!silent) alert('No saved filter configuration found.');
         }
     }
     // wildcardToRegex removed (imported from utils)
@@ -2850,9 +2892,11 @@ self.onmessage = async (event) => {
         }
 
         // FIX: Correctly render BLE Security Keys (IRK/LTK)
-        // FIX: Correctly render BLE Security Keys (IRK/LTK)
+        // Use BtsnoopTab getters to ensure we have the latest data
         if (bleKeysTbody) {
-            renderBleKeys(btsnoopConnectionEvents, btsnoopConnectionMap, bleKeysTbody);
+            const connectionEvents = BtsnoopTab.getBtsnoopConnectionEvents();
+            const connectionMap = BtsnoopTab.getBtsnoopConnectionMap();
+            renderBleKeys(connectionEvents, connectionMap, bleKeysTbody, window.finalBleKeys || new Map());
         }
 
         // Render Device Events
@@ -3099,8 +3143,18 @@ self.onmessage = async (event) => {
         // 1. Handle Copy Actions (Button or Ctrl+Click)
         const isCopyBtn = target.classList.contains('copy-log-btn');
         const isCtrlClick = (event.ctrlKey || event.metaKey);
+
+        // Add specific debug logging for copy actions
+        if (isCopyBtn) {
+            console.log('[Copy Debug] Copy button clicked, data length:', target.dataset.logText?.length);
+        }
+
         // Identify potential copy targets: specific class or generic table cell
         const copyTarget = target.closest('.copy-cell') || target.closest('.btsnoop-copy-cell') || target.closest('td');
+
+        if (copyTarget && isCtrlClick) {
+            console.log('[Copy Debug] Ctrl+Click on cell:', copyTarget.tagName, 'data length:', copyTarget.dataset.logText?.length);
+        }
 
         if (isCopyBtn || (isCtrlClick && copyTarget)) {
             let logText = '';
@@ -3113,7 +3167,10 @@ self.onmessage = async (event) => {
 
                 if (trRow) {
                     // Standard Table Row: Aggregate all cells
-                    const cells = Array.from(trRow.querySelectorAll('td'));
+                    // FIX: Exclude cells containing copy button for cleaner clipboard content
+                    const cells = Array.from(trRow.querySelectorAll('td'))
+                        .filter(td => !td.querySelector('.copy-log-btn'));
+
                     // Use double space separator for tabular data
                     logText = cells.map(c => c.dataset.logText || c.textContent.trim()).join('  ');
                     console.log(`[Copy] Aggregated Table Row(${cells.length} cols): `, logText.length, 'chars');
@@ -3365,7 +3422,15 @@ self.onmessage = async (event) => {
             // No persistence check - we processed it above
             if (skeletonLoader) skeletonLoader.style.display = 'none';
 
+            try {
+                await checkForPersistedFilters(); // FIX: Load filters before applying them
+            } catch (err) {
+                console.error('[Init] Failed to load persisted filters:', err);
+            }
             await applyFilters();
+
+            // FIX: Ensure the active tab is properly rendered (fixes persistence issues for Stats tab)
+            await refreshActiveTab();
 
             // Hide skeleton with fade out
             if (skeletonLoader && skeletonLoader.style.display !== 'none') {

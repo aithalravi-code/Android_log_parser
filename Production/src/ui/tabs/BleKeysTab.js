@@ -84,13 +84,15 @@ export function renderBleKeys(connectionEvents, connectionMap, tableElement, tex
         // Generate unique row ID for scroll restoration
         const rowId = `ble-key-${event.keyValue}`;
 
-        keyTableHtml += `<tr data-row-id="${rowId}">
+        const rowData = [event.packetNum || '-', event.timestamp || '-', peerAddress, event.keyType, event.keyValue, event.data || '-'].join('  ');
+        keyTableHtml += `<tr data-row-id="${rowId}" style="position: relative;">
             <td>${event.packetNum || '-'}</td>
             <td>${event.timestamp || '-'}</td>
             <td class="copy-cell" data-log-text="${peerAddress}">${peerAddress}</td>
             <td>${event.keyType}</td>
             <td class="copy-cell" data-log-text="${event.keyValue}"><span style="font-family: monospace; font-size: 0.9em;">${event.keyValue}</span></td>
-            <td class="copy-cell" data-log-text="${event.data || '-'}"><span style="font-family: monospace; font-size: 0.85em; display: block; word-break: break-all; white-space: normal;">${event.data || '-'}</span></td> 
+            <td class="copy-cell" data-log-text="${event.data || '-'}"><span style="font-family: monospace; font-size: 0.85em; display: block; word-break: break-all; white-space: normal;">${event.data || '-'}</span></td>
+            <td style="width: 40px; text-align: center;"><button class="copy-log-btn" data-log-text="${rowData.replace(/"/g, '&quot;')}">📋</button></td>
         </tr>`;
     }
     tableElement.innerHTML = keyTableHtml;

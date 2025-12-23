@@ -1169,7 +1169,8 @@ function updateCccTableBody(container) {
                 const safeTimestamp = msg.timestamp || '';
                 const rowId = `ccc-${safeTimestamp.replace(/[^a-zA-Z0-9]/g, '')}-${msg.type}-${msg.subtype}`;
 
-                chunkHtmlParts.push(`<tr data-row-id="${rowId}">
+                const rowData = [safeTimestamp, peerAddress, msg.direction, categoryName, displayType.replace(/<[^>]*>/g, ''), innerMessage, paramsText, msg.fullHex].join('  ');
+                chunkHtmlParts.push(`<tr data-row-id="${rowId}" style="position: relative;">
                     <td class="copy-cell" data-log-text="${safeTimestamp}">${safeTimestamp}</td>
                     <td class="copy-cell" data-log-text="${peerAddress}">${peerAddress}</td>
                     <td><span class="badge ${msg.direction === 'Sending' ? 'badge-out' : 'badge-in'}">${msg.direction}</span></td>
@@ -1178,6 +1179,7 @@ function updateCccTableBody(container) {
                     <td class="copy-cell" data-log-text="${innerMessage}">${innerMessage}</td>
                     <td class="copy-cell params-cell" data-log-text="${paramsText}" style="overflow-wrap: anywhere; word-break: break-all;">${params}</td>
                     <td class="copy-cell" data-log-text="${msg.fullHex}" style="color: #999;">${msg.fullHex}</td>
+                    <td style="width: 40px; text-align: center;"><button class="copy-log-btn" data-log-text="${rowData.replace(/"/g, '&quot;')}">📋</button></td>
                 </tr>`);
             }
 
