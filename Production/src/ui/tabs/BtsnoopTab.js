@@ -1397,6 +1397,9 @@ function handleBtsnoopClick(e) {
                     console.log(`[Copy] Aggregated BTSnoop Row: ${text.length} chars`);
                 }
 
+                e.stopImmediatePropagation();
+                e.preventDefault();
+
                 navigator.clipboard.writeText(text).then(() => {
                     console.log(`[Copy] Copied: ${text.length} chars`);
                     const originalTitle = copyCell.title;
@@ -1408,8 +1411,6 @@ function handleBtsnoopClick(e) {
                         copyCell.title = originalTitle;
                         copyCell.classList.remove('copied-feedback');
                     }, 1000);
-                    // Prevent event from propagating to other listeners that might copy single cell
-                    e.stopImmediatePropagation();
                 });
             }
         }

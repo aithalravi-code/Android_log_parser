@@ -709,6 +709,7 @@ td:has(.copy-log-btn) {
 
 /* Progress Bar */
 .progress-bar-container.fixed-bottom-right {
+    display: none;
     position: fixed;
     bottom: 20px;
     right: 20px;

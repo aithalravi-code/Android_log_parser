@@ -3124,7 +3124,10 @@ self.onmessage = async (event) => {
 
                 if (trRow) {
                     // Standard Table Row: Aggregate all cells
-                    const cells = Array.from(trRow.querySelectorAll('td'));
+                    // FIX: Exclude cells containing copy button for cleaner clipboard content
+                    const cells = Array.from(trRow.querySelectorAll('td'))
+                        .filter(td => !td.querySelector('.copy-log-btn'));
+
                     // Use double space separator for tabular data
                     logText = cells.map(c => c.dataset.logText || c.textContent.trim()).join('  ');
                     console.log(`[Copy] Aggregated Table Row(${cells.length} cols): `, logText.length, 'chars');
@@ -3377,6 +3380,9 @@ self.onmessage = async (event) => {
             if (skeletonLoader) skeletonLoader.style.display = 'none';
 
             await applyFilters();
+
+            // FIX: Ensure the active tab is properly rendered (fixes persistence issues for Stats tab)
+            await refreshActiveTab();
 
             // Hide skeleton with fade out
             if (skeletonLoader && skeletonLoader.style.display !== 'none') {
