@@ -111,6 +111,8 @@ main {
     transition: margin-left 0.35s ease-in-out, margin-right 0.35s ease-in-out;
     box-sizing: border-box;
     /* Ensure padding is included in width */
+    overflow-y: auto;
+    /* Single scrollable panel for all content */
 }
 
 .left-panel.collapsed {
@@ -198,16 +200,9 @@ summary {
 }
 
 .filter-column {
-    flex: 1 1 auto;
-    /* Allow this column to grow and shrink */
+    flex: 0 0 auto;
+    /* Don't allow this to shrink, no separate scroll */
     min-height: 0;
-    /* Important for scrolling within a flex item */
-    overflow-y: auto;
-    /* Only this part will scroll if needed */
-    margin-right: -1rem;
-    /* Hide scrollbar visually by pushing it out */
-    padding-right: 1rem;
-    /* Add padding back to keep content aligned */
 }
 
 .upload-section {
@@ -2822,4 +2817,161 @@ table thead tr:nth-child(2) th {
 .btsnoop-row:nth-child(even) {
     background-color: #343434;
     /* Slightly lighter for even rows */
+}
+
+/* ===================================================================
+   Live Logcat Streaming Styles
+   =================================================================== */
+
+.live-logcat-section {
+    padding: 0.5rem 0;
+}
+
+.webusb-warning {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    color: #856404;
+}
+
+.webusb-warning p {
+    margin: 0.25rem 0;
+}
+
+.device-info {
+    background: #2a2a2a;
+    border: 1px solid #4285F4;
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.device-status {
+    margin-bottom: 0.5rem;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: #34a853;
+    color: white;
+}
+
+.device-details {
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.device-details div {
+    margin: 0.25rem 0;
+}
+
+.logcat-controls {
+    margin-top: 1rem;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.logcat-btn {
+    width: 100%;
+    padding: 0.6rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.logcat-btn.primary {
+    background: #4285F4;
+    color: white;
+}
+
+.logcat-btn.primary:hover {
+    background: #3367D6;
+}
+
+.logcat-btn.secondary {
+    background: #5f6368;
+    color: white;
+}
+
+.logcat-btn.secondary:hover {
+    background: #4a4d51;
+}
+
+.logcat-btn.success {
+    background: #34a853;
+    color: white;
+}
+
+.logcat-btn.success:hover {
+    background: #2d8e47;
+}
+
+.logcat-btn.danger {
+    background: #ea4335;
+    color: white;
+}
+
+.logcat-btn.danger:hover {
+    background: #d33426;
+}
+
+.logcat-btn.warning {
+    background: #fbbc04;
+    color: #202124;
+}
+
+.logcat-btn.warning:hover {
+    background: #f9ab00;
+}
+
+.logcat-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.logcat-stats {
+    background: #1e1e1e;
+    border: 1px solid #3c4043;
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0.25rem 0;
+}
+
+.stat-label {
+    font-weight: 500;
+    color: #9aa0a6;
+    font-size: 0.9rem;
+}
+
+.stat-value {
+    font-weight: 600;
+    color: #4285F4;
+    font-size: 1rem;
+    font-family: 'Courier New', monospace;
 }

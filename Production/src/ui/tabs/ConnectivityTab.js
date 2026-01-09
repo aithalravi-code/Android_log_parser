@@ -44,9 +44,12 @@ export function filterConnectivityLogs(data, activeTechs, activeLayers) {
     const usedIds = new Set();
     const addLine = (line) => {
         // Use line index as unique identifier to prevent duplicates
+        // console.log('[Debug Connectivity] Processing line:', line.index, typeof line.index);
         if (!usedIds.has(line.index)) {
             candidates.push(line);
             usedIds.add(line.index);
+        } else {
+            console.log('[Debug Connectivity] Duplicate index dropped:', line.index);
         }
     };
 

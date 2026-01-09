@@ -105,6 +105,7 @@
         <main>
             <div class="left-panel">
                 <button id="panel-toggle-btn" class="panel-toggle-btn" title="Toggle Filters Panel">&laquo;</button>
+
                 <details id="file-selection-details" open>
                     <summary>File Selection</summary>
                     <div class="upload-column" id="upload-column">
@@ -119,7 +120,8 @@
                             <input type="file" id="zipInput" name="zipInput" webkitdirectory directory />
                         </div>
                         <div id="fileInputContainer" class="upload-section">
-                            <label for="logFilesInput" class="upload-label">Choose ZIP or individual log files:</label>
+                            <label for="logFilesInput" class="upload-label">Choose ZIP or individual log
+                                files:</label>
                             <input type="file" id="logFilesInput" name="logFilesInput" accept=".zip,.txt,.log"
                                 multiple />
                         </div>
@@ -129,6 +131,76 @@
                             Reset</button>
                     </div>
                 </details>
+
+                <!-- NEW: Live Logcat Device Connection -->
+                <details id="live-logcat-details">
+                    <summary>📱 Live Logcat (USB)</summary>
+                    <div class="live-logcat-section">
+                        <!-- Browser compatibility warning -->
+                        <div id="webusbWarning" class="webusb-warning" style="display: none;">
+                            <p>⚠️ <strong>WebUSB not supported</strong></p>
+                            <p style="font-size: 0.85em;">This feature requires Chrome, Edge, or Opera browser.</p>
+                        </div>
+
+                        <!-- Device connection controls -->
+                        <div id="deviceConnectionPanel">
+                            <button id="connectDeviceBtn" class="logcat-btn primary">
+                                🔌 Connect Device
+                            </button>
+                            <div id="deviceInfo" class="device-info" style="display: none;">
+                                <div class="device-status">
+                                    <span class="status-badge" id="deviceStatusBadge">Connected</span>
+                                </div>
+                                <div class="device-details">
+                                    <div><strong>Model:</strong> <span id="deviceModel">-</span></div>
+                                    <div><strong>Android:</strong> <span id="deviceAndroid">-</span></div>
+                                </div>
+                                <button id="disconnectDeviceBtn" class="logcat-btn secondary">
+                                    Disconnect
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Logcat streaming controls -->
+                        <div id="logcatControls" class="logcat-controls" style="display: none;">
+                            <div class="control-group">
+                                <button id="startLogcatBtn" class="logcat-btn success">
+                                    ▶️ Start Logcat
+                                </button>
+                                <button id="stopLogcatBtn" class="logcat-btn danger" style="display: none;">
+                                    ⏹️ Stop
+                                </button>
+                                <button id="pauseLogcatBtn" class="logcat-btn warning" style="display: none;">
+                                    ⏸️ Pause
+                                </button>
+                                <button id="resumeLogcatBtn" class="logcat-btn success" style="display: none;">
+                                    ▶️ Resume
+                                </button>
+                            </div>
+
+                            <div class="logcat-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Duration:</span>
+                                    <span id="logcatDuration" class="stat-value">00:00</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Lines:</span>
+                                    <span id="logcatLineCount" class="stat-value">0</span>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <button id="saveLogcatBtn" class="logcat-btn secondary">
+                                    💾 Save to File
+                                </button>
+                                <button id="clearLogcatBtn" class="logcat-btn secondary">
+                                    🗑️ Clear Buffer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
                 <div class="filter-column">
                     <section class="filter-section" id="filterSection">
                         <div class="log-level-filters">
@@ -355,9 +427,11 @@
                                             <th style="width: 150px;"><input type="text" placeholder="Filter..."
                                                     data-col="3" name="bleKeysFilter3"></th>
                                             <th><input type="text" placeholder="Filter..." data-col="4"
-                                                    name="bleKeysFilter4"></th>
+                                                    name="bleKeysFilter4">
+                                            </th>
                                             <th><input type="text" placeholder="Filter..." data-col="5"
-                                                    name="bleKeysFilter5"></th>
+                                                    name="bleKeysFilter5">
+                                            </th>
                                             <th style="width: 40px;"></th>
                                         </tr>
                                     </thead>
