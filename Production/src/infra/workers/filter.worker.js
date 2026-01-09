@@ -116,6 +116,13 @@ self.onmessage = function (e) {
                 storedLogLines = [];
                 self.postMessage({ command: 'CLEARED', jobId });
                 break;
+            case 'APPEND_DATA':
+                if (payload && Array.isArray(payload)) {
+                    storedLogLines = storedLogLines.concat(payload);
+                    // No response needed usually, or simple ack
+                    // console.log('Worker: Appended', payload.length, 'lines. Total:', storedLogLines.length);
+                }
+                break;
         }
     } catch (error) {
         self.postMessage({ command: 'ERROR', jobId, error: error.message });

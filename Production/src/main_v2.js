@@ -24,6 +24,7 @@ import LogParserWorker from './infra/workers/logParser.worker.js?worker&inline';
 import FilterWorker from './infra/workers/filter.worker.js?worker&inline'; // Inline for file:// support
 import { openDb, saveData, loadData, clearData, getDb, closeDb, deleteDatabase, resetDatabase } from './infra/db.js';
 import { TooltipManager } from './ui/TooltipManager.js';
+import './logcat/LiveLogcatUI.js'; // Live logcat streaming UI
 
 // Register Chart.js components
 Chart.register(...registerables);
@@ -3521,6 +3522,275 @@ self.onmessage = async (event) => {
         },
 
         filterWorker
+    };
+
+    // --- Live Logcat Integration ---
+    /**
+     * Helper function to add live logcat lines to the main log view
+     * Called by LiveLogcatUI when new log lines arrive from the device
+     */
+    window.addLiveLogLine = function (line) {
+        if (!line || typeof line !== 'string') return;
+
+        // Parse logcat threadtime format: MM-DD HH:MM:SS.mmm PID TID LEVEL TAG: message
+        // Example: 12-23 19:45:30.123  1234  5678 I MyTag: This is a message
+        const threadtimeRegex = /^(\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3})\s+(\d+)\s+(\d+)\s+([VDIWEF])\s+(.+?):\s*(.*)$/;
+        const match = line.match(threadtimeRegex);
+
+        let logEntry;
+        if (match) {
+            // Successfully parsed
+            const [, timestamp, pid, tid, level, tag, message] = match;
+            logEntry = {
+                text: line,
+                originalText: line,
+                fileName: '[Live Logcat]',
+                lineNumber: originalLogLines.length + 1,
+                timestamp: timestamp,
+                date: timestamp.split(' ')[0],
+                time: timestamp.split(' ')[1],
+                pid: pid,
+                tid: tid,
+                level: level,
+                tag: tag,
+                message: message,
+                isMeta: false
+            };
+        } else {
+            // Couldn't parse - treat as raw text
+            logEntry = {
+                text: line,
+                originalText: line,
+                fileName: '[Live Logcat]',
+                lineNumber: originalLogLines.length + 1,
+                timestamp: new Date().toISOString(),
+                message: line,
+                level: 'I',
+                tag: 'logcat',
+                isMeta: false
+            };
+        }
+
+        // Extract CCC messages from live logcat
+        // Support formats: "Sending: [01 00]" or "Received value: 0xFD" or "Received ...: 0xFD"
+        const cccRegex = /(?:Sending|Received).*?(?:\[([0-9a-fA-F\s]+)\]|0x([0-9a-fA-F]+))/;
+        const cccMatch = line.match(cccRegex);
+
+        if (cccMatch) {
+            // Group 1 matches [01 00], Group 2 matches 0xFD
+            const hex = (cccMatch[1] || cccMatch[2]).replace(/\s/g, '');
+            const extractedAddress = (line.match(/BleConnection\/([0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){5})/i) || [])[1] || null;
+
+            if (hex.length >= 2) { // Allow single byte 0xFD
+                const type = parseInt(hex.substring(0, 2), 16);
+                const subtype = hex.length >= 4 ? parseInt(hex.substring(2, 4), 16) : 0;
+                const payload = hex.length > 4 ? hex.substring(4) : '';
+
+                const cccMsg = {
+                    timestamp: logEntry.timestamp,
+                    direction: line.includes('Sending') ? 'Host -> Controller' : 'Controller -> Host',
+                    type,
+                    subtype,
+                    payload,
+                    fullHex: hex,
+                    peerAddress: extractedAddress || 'Unknown',
+                    handle: null,
+                    lineNumber: logEntry.lineNumber,
+                    fileName: '[Live Logcat]',
+                    originalLine: line
+                };
+                cccMessages.push(cccMsg);
+                logEntry.cccMessage = cccMsg;
+
+                // Trigger CCC tab update (debounced to every 2 seconds)
+                // Always trigger, don't wait for tab to be loaded
+                if (window.cccUpdateTimer) {
+                    clearTimeout(window.cccUpdateTimer);
+                }
+                window.cccUpdateTimer = setTimeout(() => {
+                    if (CccTab && CccTab.setup) {
+                        CccTab.setup(cccMessages, btsnoopConnectionMap, processForBtsnoop, isBtsnoopProcessed);
+                    }
+                }, 2000);
+            }
+        }
+
+        logEntry.index = originalLogLines.length; // Deduplication fix
+
+        // --- Connectivity Classification ---
+        // Classify log entry for Connectivity Tab (BLE, NFC, DCK, UWB, Wallet)
+        const bleStrictKeywords = ['BLE', 'GATT', 'SMP', 'L2CAP', 'HCI', 'ATT', 'SDP', 'RFCOMM'];
+        const bleLooseKeywords = ['BluetoothAdapter', 'BluetoothManager', 'Bluetooth', 'BtGatt', 'GattService', 'HciHal', 'bt_'];
+        const bleTagRegex = new RegExp(`\\b(${bleStrictKeywords.join('|')})\\b|(${bleLooseKeywords.join('|')})`, 'i');
+        const bleMessageRegex = new RegExp('\\b(BLE|GATT|SMP|L2CAP|HCI)\\b|(Bluetooth|NotificationService)', 'i');
+
+        const nfcTagKeywords = ['StNfcHal', 'NfcService', 'NfcManager', 'TagDispatcher', 'NfcTag', 'P2pLinkManager', 'HostEmulationManager', 'ApduServiceInfo', 'NxpNci', 'NxpExtns', 'libnfc', 'libnfc-nci'];
+        const nfcTagRegex = new RegExp(`^(${nfcTagKeywords.join('|')})$`, 'i');
+        const nfcMessageRegex = new RegExp(`\\b(NFC|contactless|APDU)\\b`, 'i');
+
+        const dckKeywords = ['DigitalCarKey', 'CarKey', 'UwbTransport', 'Dck', 'UWB', 'nearby'];
+        const dckRegex = new RegExp(`\\b(${dckKeywords.join('|')})\\b`, 'i');
+
+        const walletKeywords = ['Wallet', 'QuickAccessWallet', 'WalletService', 'WalletCard', 'GenericIdCard', 'Barcode', 'MagneticStripe'];
+        const walletRegex = new RegExp(`\\b(${walletKeywords.join('|')})\\b`, 'i');
+
+        // BLE
+        const textToScan = logEntry.tag || '';
+        const isBubblesOrSimilar = textToScan === 'Bubbles' || logEntry.message.includes('Bubbles :');
+        if (!isBubblesOrSimilar && ((logEntry.tag && bleTagRegex.test(logEntry.tag)) || (logEntry.message && bleMessageRegex.test(logEntry.message)) || bleTagRegex.test(logEntry.originalText) || bleMessageRegex.test(logEntry.originalText) || logEntry.originalText.toLowerCase().includes('bluetooth') || textToScan.toLowerCase().startsWith('bt_'))) {
+            logEntry.isBle = true;
+            if (typeof bleLogLines !== 'undefined') bleLogLines.push(logEntry);
+        }
+
+        // NFC
+        if ((logEntry.tag && nfcTagRegex.test(logEntry.tag)) || (logEntry.message && nfcMessageRegex.test(logEntry.message)) || nfcTagRegex.test(logEntry.originalText) || nfcMessageRegex.test(logEntry.originalText)) {
+            logEntry.isNfc = true;
+            if (typeof nfcLogLines !== 'undefined') nfcLogLines.push(logEntry);
+        }
+
+        // DCK
+        if (dckRegex.test(logEntry.originalText)) {
+            logEntry.isDck = true;
+            if (typeof dckLogLines !== 'undefined') dckLogLines.push(logEntry);
+        }
+
+        // UWB
+        if (/UWB/i.test(logEntry.originalText)) {
+            if (typeof uwbLogLines !== 'undefined') uwbLogLines.push(logEntry);
+        }
+
+        // Wallet
+        if (walletRegex.test(logEntry.originalText)) {
+            logEntry.isWallet = true;
+            if (typeof walletLogLines !== 'undefined') walletLogLines.push(logEntry);
+        }
+
+        // Add to originalLogLines (always)
+        originalLogLines.push(logEntry);
+
+        // Add to filteredLogLines ONLY if it passes current filters (ignoring time filter for live logs)
+        let passesFilters = true;
+
+        if (typeof activeLogLevels !== 'undefined') {
+            // Check Level Filter
+            if (activeLogLevels.size > 0 && !activeLogLevels.has(logEntry.level)) {
+                passesFilters = false;
+            }
+            // Check Keyword Filter (if passes level)
+            if (passesFilters && typeof filterKeywords !== 'undefined' && filterKeywords.length > 0) {
+                const msgLower = logEntry.message.toLowerCase();
+                const tagLower = logEntry.tag.toLowerCase();
+                // OR logic for live view keywords
+                const hasMatch = filterKeywords.some(kw =>
+                    typeof kw === 'string' && (msgLower.includes(kw.toLowerCase()) || tagLower.includes(kw.toLowerCase()))
+                );
+                if (!hasMatch) passesFilters = false;
+            }
+        }
+
+        if (passesFilters) {
+            filteredLogLines.push(logEntry);
+
+            // Add to batch for direct DOM update
+            if (!window.liveLogBatch) {
+                window.liveLogBatch = [];
+            }
+            window.liveLogBatch.push(logEntry);
+        }
+
+        // Update every 500 lines or after 500ms
+        const shouldUpdateNow = window.liveLogBatch && window.liveLogBatch.length >= 500;
+
+        if (shouldUpdateNow) {
+            appendLogsToDOM();
+        } else {
+            // Debounce update
+            if (window.liveLogDebounceTimer) {
+                clearTimeout(window.liveLogDebounceTimer);
+            }
+            window.liveLogDebounceTimer = setTimeout(() => {
+                appendLogsToDOM();
+            }, 500);
+        }
+
+        // Direct DOM append function - no full re-render
+        function appendLogsToDOM() {
+            if (!window.liveLogBatch || window.liveLogBatch.length === 0) return;
+
+            // Sync with Filter Worker to ensure subsequent filters include these lines
+            if (typeof filterWorker !== 'undefined') {
+                filterWorker.postMessage({
+                    command: 'APPEND_DATA',
+                    payload: window.liveLogBatch
+                });
+            }
+
+            const activeTab = document.querySelector('.tab-btn.active');
+            const activeTabId = activeTab ? activeTab.dataset.tab : null;
+
+            if (activeTabId === 'logs') {
+                const logContainer = document.getElementById('logContainer');
+                if (logContainer) {
+                    // Append each log line directly to DOM
+                    const fragment = document.createDocumentFragment();
+                    window.liveLogBatch.forEach(log => {
+                        const logDiv = document.createElement('div');
+                        logDiv.className = `log-line level-${log.level ? log.level.toLowerCase() : 'unknown'}`;
+                        // Minimal inline render to match TableRow style but as DIVs for performance
+                        // Using simple structure for live view
+                        logDiv.style.fontFamily = 'monospace';
+                        logDiv.style.whiteSpace = 'pre-wrap';
+                        logDiv.style.borderBottom = '1px solid #333';
+                        logDiv.style.padding = '2px 5px';
+                        logDiv.style.fontSize = '12px';
+
+                        // Color coding based on level
+                        let color = '#ccc';
+                        if (log.level === 'E') color = '#ff6b6b';
+                        else if (log.level === 'W') color = '#ffcc00';
+                        else if (log.level === 'D') color = '#66b3ff';
+                        else if (log.level === 'V') color = '#cccccc';
+
+                        logDiv.style.color = color;
+
+                        logDiv.textContent = `${log.timestamp} ${log.level}/${log.tag}(${log.pid}): ${log.message}`;
+                        fragment.appendChild(logDiv);
+                    });
+
+                    logContainer.appendChild(fragment);
+
+                    // Auto-scroll to bottom
+                    requestAnimationFrame(() => {
+                        logContainer.scrollTop = logContainer.scrollHeight;
+                    });
+                }
+            } else if (activeTabId === 'connectivity') {
+                // For connectivity tab, trigger a refresh to update the view
+                // This ensures live logs appear without switching tabs
+                refreshActiveTab();
+            }
+
+            // Clear batch after appending/processing
+            window.liveLogBatch = [];
+        }
+    };
+
+    /**
+     * Helper function to clear live logcat lines from the display
+     * Called by LiveLogcatUI when user clicks Clear Buffer
+     */
+    window.clearLiveLogLines = function () {
+        // Remove all lines with fileName '[Live Logcat]'
+        originalLogLines = originalLogLines.filter(line => line.fileName !== '[Live Logcat]');
+        filteredLogLines = filteredLogLines.filter(line => line.fileName !== '[Live Logcat]');
+
+        // Also clear CCC messages that came from live logcat
+        cccMessages = cccMessages.filter(msg => msg.fileName !== '[Live Logcat]');
+
+        // Refresh viewport display
+        applyFilters();
+
+        console.log('[Main] Live logcat lines cleared from display');
     };
 
     initializeApp();
