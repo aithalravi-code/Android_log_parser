@@ -184,13 +184,11 @@ export function applyMainFilters(lines, collapseState, activeCollapseSet, filter
                 const maxTime = endTime.getTime();
 
                 if (lineTime < minTime || lineTime > maxTime) {
-                    if (isToken) console.log('[FilterManager] REJECTED TOKEN by Time:', new Date(lineTime).toISOString(), 'Range:', startTime.toISOString(), '-', endTime.toISOString());
                     rejectedByTime++;
                     continue;
                 }
             } else {
-                // No valid time, reject if strict? For now, we reject to be safe as per "missing timestamp" logic
-                if (isToken) console.log('[FilterManager] REJECTED TOKEN by Invalid/Missing Timestamp');
+                // No valid time on this line - skip it when time filtering is active
                 rejectedByTime++;
                 continue;
             }

@@ -224,7 +224,8 @@ describe('FilterManager', () => {
             const config = {
                 activeLogLevels: new Set(['D', 'I', 'E', 'W']),
                 startTime: new Date('2023-01-01T10:00:01Z'),
-                endTime: new Date('2023-01-01T10:00:02Z')
+                endTime: new Date('2023-01-01T10:00:02Z'),
+                isTimeFilterActive: true
             };
 
             const sampleLinesWithDates = sampleLines.map(l => {
