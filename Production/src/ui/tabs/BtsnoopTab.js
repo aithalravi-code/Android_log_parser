@@ -273,6 +273,9 @@ export async function processForBtsnoop(fileTasks, { db, getDb, saveData, loadDa
                 console.log(`[BTSnoop Debug] [BTSNOOPTAB.JS] Connection event added. Total: ${btsnoopConnectionEvents.length}`);
             } else if (type === 'rssiDataPoint') {
                 btsnoopRssiData.push(event.data.data);
+                if (btsnoopRssiData.length <= 3) console.log(`[RSSI Debug] Received rssiDataPoint #${btsnoopRssiData.length}:`, event.data.data);
+            } else if (type === 'debug') {
+                console.log(event.data.msg);
             } else if (type === 'localAddressFound') {
                 localBtAddress = event.data.address;
                 // Note: We might need to expose this boostrap info back or use it locally
@@ -290,6 +293,7 @@ export async function processForBtsnoop(fileTasks, { db, getDb, saveData, loadDa
 
                 if (progressDiv) progressDiv.textContent = 'Saving...';
                 await saveData('btsnoopPackets', btsnoopPackets);
+                await saveData('btsnoopRssiData', btsnoopRssiData);
 
                 // UI Updates
                 const btsnoopToolbar = document.getElementById('btsnoopToolbar');
@@ -334,7 +338,7 @@ function getBtsnoopWorkerScript() {
     return `
     const HCI_COMMANDS = { 0x200C: 'LE Set Scan Enable', 0x200B: 'LE Set Scan Parameters', 0x2006: 'LE Set Advertising Parameters', 0x200A: 'LE Set Advertising Enable', 0x200D: 'LE Create Connection' };
     const HCI_EVENTS = { 0x05: 'Disconnect Complete', 0x0E: 'Command Complete', 0x0F: 'Command Status', 0x3E: 'LE Meta Event' };
-    const LE_META_EVENTS = { 0x01: 'LE Connection Complete', 0x02: 'LE Advertising Report', 0x0A: 'LE Enhanced Connection Complete', 0x0B: 'LE Connection Update Complete' };
+    const LE_META_EVENTS = { 0x01: 'LE Connection Complete', 0x02: 'LE Advertising Report', 0x0A: 'LE Enhanced Connection Complete', 0x0B: 'LE Connection Update Complete', 0x0d: 'LE Extended Advertising Report' };
     const L2CAP_CIDS = { 0x0004: 'ATT', 0x0005: 'LE Signaling', 0x0006: 'SMP' };
     const ATT_OPCODES = { 0x01: 'Error Rsp', 0x02: 'Exchange MTU Req', 0x03: 'Exchange MTU Rsp', 0x04: 'Find Info Req', 0x05: 'Find Info Rsp', 0x08: 'Read By Type Req', 0x09: 'Read By Type Rsp', 0x0A: 'Read Req', 0x0B: 'Read Rsp', 0x0C: 'Read Blob Req', 0x0D: 'Read Blob Rsp', 0x10: 'Read By Group Type Req', 0x11: 'Read By Group Type Rsp', 0x12: 'Write Req', 0x13: 'Write Rsp', 0x52: 'Write Cmd', 0x1B: 'Notification', 0x1D: 'Indication', 0x1E: 'Confirmation' };
     const SMP_CODES = { 0x01: 'Pairing Req', 0x02: 'Pairing Rsp', 0x03: 'Pairing Confirm', 0x04: 'Pairing Random', 0x05: 'Pairing Failed', 0x06: 'Encryption Info (LTK)', 0x07: 'Master Identification', 0x08: 'Identity Info (IRK)' };
@@ -447,7 +451,7 @@ function getBtsnoopWorkerScript() {
                     // For the sake of this tool step, I'm omitting the full interpretHciPacket function body recursion 
                     // to save space, but it essentially matches the one in main.js.
                     
-                     const interpretation = interpretHciPacket(packetData, connectionMap, packetNumber, direction, timestampStr, localBtAddress);
+                     const interpretation = interpretHciPacket(packetData, connectionMap, packetNumber, direction, timestampStr, timestampMs, localBtAddress);
                      if (interpretation.foundLocalAddress) {
                          localBtAddress = interpretation.foundLocalAddress;
                          self.postMessage({ type: 'localAddressFound', address: localBtAddress });
@@ -473,7 +477,7 @@ function getBtsnoopWorkerScript() {
     };
     
     // Helper function duplication for worker scope
-    function interpretHciPacket(data, connectionMap, packetNumber, direction, timestampStr, localBtAddress) {
+    function interpretHciPacket(data, connectionMap, packetNumber, direction, timestampStr, timestampMs, localBtAddress) {
         if (data.length === 0) return { type: 'Empty', summary: 'Empty Packet', tags: [], data: '' };
         const packetType = data[0];
         const tags = [];
@@ -594,6 +598,34 @@ function getBtsnoopWorkerScript() {
                             destination = foundLocalAddress; // Self-correct destination for this packet
                         }
                     }
+                    // Extract RSSI from Read RSSI Complete (0x1405)
+                    else if (cmdOpcode === 0x1405 && data.length >= 10) {
+                        const status = data[6];
+                        if (status === 0x00) {
+                            const handle = (data[8] << 8) | data[7];
+                            const rssi = data[9];
+                            const rssiSigned = rssi > 127 ? rssi - 256 : rssi;
+                            const peerConn = connectionMap.get(handle);
+                            if (peerConn && peerConn.address) {
+                                self.postMessage({
+                                    type: 'rssiDataPoint',
+                                    data: {
+                                        timestamp: timestampStr,
+                                        timestampMs: timestampMs,
+                                        address: peerConn.address,
+                                        rssi: rssiSigned,
+                                        addrType: 0,
+                                        eventType: 0x1405
+                                    }
+                                });
+                                summary += \` [RSSI for \${peerConn.address}: \${rssiSigned}dBm]\`;
+                            } else {
+                                summary += \` [RSSI for Handle 0x\${handle.toString(16)}: \${rssiSigned}dBm]\`;
+                            }
+                        } else {
+                            summary += \` [Failed, status 0x\${status.toString(16)}]\`;
+                        }
+                    }
                 }
                 else if (eventCode === 0x3E && data.length >= 4) {
                     const subEventCode = data[3];
@@ -699,6 +731,7 @@ function getBtsnoopWorkerScript() {
                                             eventType: eventType
                                         }
                                     });
+                                    summary += \` [Adv from \${address}, RSSI: \${rssiSigned}dBm]\`;
                                 }
                                 
                                 offset += 10 + dataLength; // Move to next report
@@ -712,6 +745,8 @@ function getBtsnoopWorkerScript() {
                     if (subEventCode === 0x0d && data.length >= 7) {
                         const numReports = data[4];
                         let offset = 5;
+                        let extendedAdvCount = 0;
+                        self.postMessage({ type: 'debug', msg: \`[RSSI Worker] 0x0d block reached. data.length=\${data.length}, numReports=\${numReports}\` });
                         
                         for (let i = 0; i < numReports && offset < data.length; i++) {
                             try {
@@ -720,6 +755,7 @@ function getBtsnoopWorkerScript() {
                                 // Secondary_PHY (1), Advertising_SID (1), TX_Power (1 signed), 
                                 // RSSI (1 signed), Periodic_Adv_Interval (2), Direct_Addr_Type (1), 
                                 // Direct_Address (6), Data_Length (1), Data (variable)
+                                self.postMessage({ type: 'debug', msg: \`[RSSI Worker] Report \${i}: offset=\${offset}, guard=\${offset + 24} > \${data.length} = \${offset + 24 > data.length}\` });
                                 
                                 if (offset + 24 > data.length) break;
                                 
@@ -749,6 +785,7 @@ function getBtsnoopWorkerScript() {
                                         eventType: eventType
                                     }
                                 });
+                                summary += \` [Ext Adv from \${address}, RSSI: \${rssiSigned}dBm]\`;
                                 extendedAdvCount++;
                                 
                                 offset += 24 + dataLength; // Move to next report

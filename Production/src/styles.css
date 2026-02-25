@@ -75,10 +75,39 @@ body {
 #rssiDeviceTable {
     width: 100%;
     font-size: 12px;
+    border-collapse: collapse;
 }
 
-#rssiDeviceTable tr:hover {
+#rssiDeviceTable thead th {
+    background: #1e2a3a !important;
+    color: #8ab4f8 !important;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 6px 8px;
+    border-bottom: 2px solid #3c4043;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    text-align: left;
+    white-space: nowrap;
+}
+
+#rssiDeviceTable tbody td {
+    padding: 4px 8px;
+    border-bottom: 1px solid #2a2a2a;
+    color: #e8eaed;
+    vertical-align: middle;
+}
+
+#rssiDeviceTable tr:hover td {
     background: #2c2c2c;
+}
+
+#rssiDeviceTable tbody tr.resolved-row td {
+    color: #81c995;
+    font-style: italic;
 }
 
 .color-indicator {
@@ -2512,19 +2541,23 @@ table thead tr:nth-child(2) th {
     cursor: pointer;
 }
 
-/* --- BTSnoop Table Grid Layout --- */
+#btsnoopHeader {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    width: 100%;
+    min-width: 1200px;
+    background-color: #1e1e1e;
+}
+
 .btsnoop-header-grid {
     display: grid;
     /* Flexible columns that expand to fill available space while maintaining proportions */
     grid-template-columns: 60px 120px 160px 160px 80px 2fr 2fr;
     background-color: #1e1e1e;
-    position: sticky;
-    top: 0;
-    z-index: 20;
     border-bottom: 2px solid #555;
     font-weight: bold;
     color: #e8eaed;
-    /* Properties consolidated from line 1256 */
     width: 100%;
     /* Allow grid to expand to full container width */
     box-sizing: border-box !important;

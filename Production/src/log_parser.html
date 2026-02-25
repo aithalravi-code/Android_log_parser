@@ -254,6 +254,7 @@
                             style="display: none;"></span></button>
                     <button class="tab-btn" data-tab="rssi">📶 RSSI</button>
                     <button class="tab-btn" data-tab="stats">Stats</button>
+                    <button class="tab-btn" data-tab="ai">🤖 AI Assistant</button>
                 </nav>
                 <section id="logsTab" class="tab-content active">
                     <div class="tab-header-row" style="justify-content: flex-end;">
@@ -391,12 +392,21 @@
                     </div>
                 </section>
 
-                <section id="rssiTab" class="tab-content" style="display: none;">
-                    <div class="rssi-controls" style="margin-bottom: 10px; display: flex; gap: 10px;">
+                <section id="rssiTab" class="tab-content">
+                    <div class="rssi-controls"
+                        style="margin-bottom: 10px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
                         <button id="rssiSelectAll" class="control-btn">Select All</button>
                         <button id="rssiDeselectAll" class="control-btn">Deselect All</button>
+                        <button id="rssiPlot" class="control-btn"
+                            style="background: var(--accent-color, #36A2EB); color: #fff; font-weight: 600;">▶ Plot
+                            Selected</button>
+                        <button id="rssiResetZoom" class="control-btn">↺ Reset Zoom</button>
+                        <button id="rssiAutoFitY" class="control-btn">↕ Auto Fit Y</button>
+                        <button id="rssiAutoFitX" class="control-btn">↔ Auto Fit X</button>
+                        <button id="rssiExport" class="control-btn" style="background: #34a853; margin-left: auto;">⬇
+                            Export CSV</button>
                         <input id="rssiSearch" type="text" class="search-input" placeholder="Filter by address..."
-                            style="max-width: 300px;">
+                            style="max-width: 240px;">
                     </div>
 
                     <div class="rssi-layout">
@@ -587,6 +597,11 @@
                             </div>
                         </div>
                     </div>
+                </section>
+
+                <!-- NEW: AI Assistant Tab -->
+                <section id="aiTab" class="tab-content" style="padding: 1rem; height: 100%; box-sizing: border-box;">
+                    <!-- Content will be dynamically built by AiTab.js -->
                 </section>
             </div>
         </main>
