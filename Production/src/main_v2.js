@@ -17,6 +17,7 @@ import * as StatsTab from './ui/tabs/StatsTab.js'; // Imports setupStatsTab, etc
 import { setupDeviceEventsTab, renderDeviceEvents } from './ui/tabs/DeviceEventsTab.js';
 import { setupBleKeysTab, renderBleKeys } from './ui/tabs/BleKeysTab.js';
 import { filterConnectivityLogs, setupConnectivityTab as setupConnTabImpl, renderConnectivityLogs } from './ui/tabs/ConnectivityTab.js';
+import { setupAiTab } from './ui/tabs/AiTab.js';
 import { makeSortable } from './table-sort.js';
 import { formatParam } from './utils/html.js';
 import * as FilterManager from './filters/FilterManager.js';
@@ -297,7 +298,8 @@ document.addEventListener('DOMContentLoaded', () => {
         connectivity: false,
         btsnoop: false,  // Load on first visit
         ccc: false,
-        stats: false     // Load on first visit
+        stats: false,    // Load on first visit
+        ai: false        // Load on first visit
     };
 
     // --- Virtual Scroll State ---
@@ -374,10 +376,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const tabId = tab.dataset.tab;
             document.getElementById(tabId + 'Tab').classList.add('active');
 
-            // RSSI Tab: Setup with BTSnoop RSSI data
+            // RSSI Tab: Setup with BTSnoop RSSI data + IRKs for RPA resolution
             if (tabId === 'rssi') {
                 const rssiDataPoints = BtsnoopTab.getBtsnoopRssiData();
-                RssiTab.setup({ rssiDataPoints });
+                const irks = BtsnoopTab.getBtsnoopConnectionEvents()
+                    .filter(e => e.keyType === 'IRK' && e.keyValue && e.peerAddress)
+                    .map(e => ({ irk: e.keyValue, identityAddress: e.peerAddress }));
+                RssiTab.setup({ rssiDataPoints, irks });
             }
 
             // FIX: Use requestAnimationFrame to ensure the tab is visible before rendering.
@@ -632,6 +637,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     break;
                 }
+
+                case 'ai':
+                    await setupAiTab();
+                    console.log(`[Perf Phase2] AI Tab loaded`);
+                    break;
             }
 
             const duration = performance.now() - startTime;
@@ -675,6 +685,20 @@ document.addEventListener('DOMContentLoaded', () => {
     async function checkForPersistedLogs() {
         try {
             console.log('[Perf] Checking for persisted logs...');
+
+            // Check if this is a fresh load (new tab) or a page refresh
+            const navEntries = performance.getEntriesByType('navigation');
+            const isReload = navEntries.length > 0 && navEntries[0].type === 'reload';
+            const isNewSession = !sessionStorage.getItem('logViewerSession');
+
+            if (isReload || isNewSession) {
+                console.log('[Init] Fresh load or reload detected. Clearing stale IndexedDB data.');
+                sessionStorage.setItem('logViewerSession', Date.now().toString());
+                await deleteDatabase();
+                currentFileDisplay.textContent = '';
+                return; // Start with a clean slate, do not load old data
+            }
+
             // Re-order load: Load small meta-data first
             const persistedFileName = await loadData('fileName');
             currentZipFileName = persistedFileName?.value || '';
@@ -739,6 +763,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     BtsnoopTab.setBtsnoopConnectionEvents(loadedBtsnoopEvents.value);
                     // DON'T render here - will be rendered when Stats tab is activated to avoid DOM timing issues
                     console.log(`[Perf] Restored ${loadedBtsnoopEvents.value.length} BTSnoop connection events (render deferred to Stats tab)`);
+                }
+
+                // Bug 3 fix: Restore RSSI data so the RSSI tab works after page reload
+                const loadedRssiData = await loadData('btsnoopRssiData');
+                if (loadedRssiData?.value) {
+                    BtsnoopTab.setBtsnoopRssiData(loadedRssiData.value);
+                    console.log(`[Perf] Restored ${loadedRssiData.value.length} RSSI data points`);
                 }
 
 
@@ -1778,6 +1809,7 @@ self.onmessage = async (event) => {
         debouncedSave('btsnoopPackets', BtsnoopTab.getBtsnoopPackets()); // Persist BTSnoop packets
         debouncedSave('btsnoopConnectionEvents', BtsnoopTab.getBtsnoopConnectionEvents()); // Always save connection events
         debouncedSave('btsnoopConnectionMap', Array.from(BtsnoopTab.getBtsnoopConnectionMap().entries())); // Save connection map for address resolution
+        debouncedSave('btsnoopRssiData', BtsnoopTab.getBtsnoopRssiData()); // Save RSSI data
         // Note: btsnoopPackets is saved by BtsnoopTab logic, but we can ensure consistency
         if (isBtsnoopProcessed) {
             const btsnoopPackets = BtsnoopTab.getBtsnoopPackets();
@@ -2171,6 +2203,31 @@ self.onmessage = async (event) => {
     } else {
         console.error('[Init] ERROR: clearStateBtn element not found!');
     }
+
+    // --- Clear IndexedDB on page close ---
+    // 'pagehide' fires on tab close, browser close, AND tab switching.
+    // event.persisted === true means the page is just going into bfcache (tab switch) — skip clear.
+    // event.persisted === false means the page is truly being unloaded (closed/refreshed) — do clear.
+    window.addEventListener('pagehide', (event) => {
+        if (event.persisted) {
+            // Page is entering bfcache (e.g. switching tabs) — do NOT clear data.
+            console.log('[PageHide] Page entering bfcache (tab switch) - skipping IndexedDB clear');
+            return;
+        }
+        console.log('[PageHide] Page truly unloading - clearing IndexedDB data...');
+        terminateAllWorkers();
+        clearData()
+            .then(() => {
+                console.log('[PageHide] IndexedDB data cleared successfully');
+                return closeDb();
+            })
+            .then(() => {
+                console.log('[PageHide] Database connection closed');
+            })
+            .catch(err => {
+                console.error('[PageHide] Failed to clear IndexedDB data:', err);
+            });
+    });
 
     // =================================================================================
     // --- Filtering and Rendering ---
@@ -3172,6 +3229,15 @@ self.onmessage = async (event) => {
             // Update main.js cache logic
             cacheFilteredResults('btsnoop', btsnoopPackets);
 
+            // Auto-refresh RSSI tab if it's currently active (user may have clicked it before BTSnoop finished)
+            const activeTab = document.querySelector('.tab-btn.active');
+            if (activeTab && activeTab.dataset.tab === 'rssi') {
+                const irks = BtsnoopTab.getBtsnoopConnectionEvents()
+                    .filter(e => e.keyType === 'IRK' && e.keyValue && e.peerAddress)
+                    .map(e => ({ irk: e.keyValue, identityAddress: e.peerAddress }));
+                RssiTab.setup({ rssiDataPoints: BtsnoopTab.getBtsnoopRssiData(), irks });
+            }
+
             return result;
 
         } catch (e) {
@@ -3594,6 +3660,20 @@ self.onmessage = async (event) => {
     };
 
     // --- Live Logcat Integration ---
+
+    // FIX: Hoist classification regexes OUT of the per-line function so they are compiled ONCE,
+    // not rebuilt every time a log line arrives (which can be 1000s/sec during live capture).
+    const _liveBleStrictKeywords = ['BLE', 'GATT', 'SMP', 'L2CAP', 'HCI', 'ATT', 'SDP', 'RFCOMM'];
+    const _liveBleLooseKeywords = ['BluetoothAdapter', 'BluetoothManager', 'Bluetooth', 'BtGatt', 'GattService', 'HciHal', 'bt_'];
+    const _liveBleTagRegex = new RegExp(`\\b(${_liveBleStrictKeywords.join('|')})\\b|(${_liveBleLooseKeywords.join('|')})`, 'i');
+    const _liveBleMessageRegex = /\b(BLE|GATT|SMP|L2CAP|HCI)\b|(Bluetooth|NotificationService)/i;
+    const _liveNfcTagKeywords = ['StNfcHal', 'NfcService', 'NfcManager', 'TagDispatcher', 'NfcTag', 'P2pLinkManager', 'HostEmulationManager', 'ApduServiceInfo', 'NxpNci', 'NxpExtns', 'libnfc', 'libnfc-nci'];
+    const _liveNfcTagRegex = new RegExp(`^(${_liveNfcTagKeywords.join('|')})$`, 'i');
+    const _liveNfcMessageRegex = /\b(NFC|contactless|APDU)\b/i;
+    const _liveDckRegex = /\b(DigitalCarKey|CarKey|UwbTransport|Dck|UWB|nearby)\b/i;
+    const _liveUwbRegex = /UWB/i;
+    const _liveWalletRegex = /\b(Wallet|QuickAccessWallet|WalletService|WalletCard|GenericIdCard|Barcode|MagneticStripe)\b/i;
+
     /**
      * Helper function to add live logcat lines to the main log view
      * Called by LiveLogcatUI when new log lines arrive from the device
@@ -3688,48 +3768,35 @@ self.onmessage = async (event) => {
 
         // --- Connectivity Classification ---
         // Classify log entry for Connectivity Tab (BLE, NFC, DCK, UWB, Wallet)
-        const bleStrictKeywords = ['BLE', 'GATT', 'SMP', 'L2CAP', 'HCI', 'ATT', 'SDP', 'RFCOMM'];
-        const bleLooseKeywords = ['BluetoothAdapter', 'BluetoothManager', 'Bluetooth', 'BtGatt', 'GattService', 'HciHal', 'bt_'];
-        const bleTagRegex = new RegExp(`\\b(${bleStrictKeywords.join('|')})\\b|(${bleLooseKeywords.join('|')})`, 'i');
-        const bleMessageRegex = new RegExp('\\b(BLE|GATT|SMP|L2CAP|HCI)\\b|(Bluetooth|NotificationService)', 'i');
-
-        const nfcTagKeywords = ['StNfcHal', 'NfcService', 'NfcManager', 'TagDispatcher', 'NfcTag', 'P2pLinkManager', 'HostEmulationManager', 'ApduServiceInfo', 'NxpNci', 'NxpExtns', 'libnfc', 'libnfc-nci'];
-        const nfcTagRegex = new RegExp(`^(${nfcTagKeywords.join('|')})$`, 'i');
-        const nfcMessageRegex = new RegExp(`\\b(NFC|contactless|APDU)\\b`, 'i');
-
-        const dckKeywords = ['DigitalCarKey', 'CarKey', 'UwbTransport', 'Dck', 'UWB', 'nearby'];
-        const dckRegex = new RegExp(`\\b(${dckKeywords.join('|')})\\b`, 'i');
-
-        const walletKeywords = ['Wallet', 'QuickAccessWallet', 'WalletService', 'WalletCard', 'GenericIdCard', 'Barcode', 'MagneticStripe'];
-        const walletRegex = new RegExp(`\\b(${walletKeywords.join('|')})\\b`, 'i');
+        // FIX: Use pre-compiled regexes (hoisted above) instead of re-creating them per line.
 
         // BLE
         const textToScan = logEntry.tag || '';
         const isBubblesOrSimilar = textToScan === 'Bubbles' || logEntry.message.includes('Bubbles :');
-        if (!isBubblesOrSimilar && ((logEntry.tag && bleTagRegex.test(logEntry.tag)) || (logEntry.message && bleMessageRegex.test(logEntry.message)) || bleTagRegex.test(logEntry.originalText) || bleMessageRegex.test(logEntry.originalText) || logEntry.originalText.toLowerCase().includes('bluetooth') || textToScan.toLowerCase().startsWith('bt_'))) {
+        if (!isBubblesOrSimilar && ((logEntry.tag && _liveBleTagRegex.test(logEntry.tag)) || (logEntry.message && _liveBleMessageRegex.test(logEntry.message)) || _liveBleTagRegex.test(logEntry.originalText) || _liveBleMessageRegex.test(logEntry.originalText) || logEntry.originalText.toLowerCase().includes('bluetooth') || textToScan.toLowerCase().startsWith('bt_'))) {
             logEntry.isBle = true;
             if (typeof bleLogLines !== 'undefined') bleLogLines.push(logEntry);
         }
 
         // NFC
-        if ((logEntry.tag && nfcTagRegex.test(logEntry.tag)) || (logEntry.message && nfcMessageRegex.test(logEntry.message)) || nfcTagRegex.test(logEntry.originalText) || nfcMessageRegex.test(logEntry.originalText)) {
+        if ((logEntry.tag && _liveNfcTagRegex.test(logEntry.tag)) || (logEntry.message && _liveNfcMessageRegex.test(logEntry.message)) || _liveNfcTagRegex.test(logEntry.originalText) || _liveNfcMessageRegex.test(logEntry.originalText)) {
             logEntry.isNfc = true;
             if (typeof nfcLogLines !== 'undefined') nfcLogLines.push(logEntry);
         }
 
         // DCK
-        if (dckRegex.test(logEntry.originalText)) {
+        if (_liveDckRegex.test(logEntry.originalText)) {
             logEntry.isDck = true;
             if (typeof dckLogLines !== 'undefined') dckLogLines.push(logEntry);
         }
 
         // UWB
-        if (/UWB/i.test(logEntry.originalText)) {
+        if (_liveUwbRegex.test(logEntry.originalText)) {
             if (typeof uwbLogLines !== 'undefined') uwbLogLines.push(logEntry);
         }
 
         // Wallet
-        if (walletRegex.test(logEntry.originalText)) {
+        if (_liveWalletRegex.test(logEntry.originalText)) {
             logEntry.isWallet = true;
             if (typeof walletLogLines !== 'undefined') walletLogLines.push(logEntry);
         }
@@ -3737,30 +3804,23 @@ self.onmessage = async (event) => {
         // Add to originalLogLines (always)
         originalLogLines.push(logEntry);
 
-        // Add to filteredLogLines ONLY if it passes current filters (ignoring time filter for live logs)
-        let passesFilters = true;
-
-        if (typeof activeLogLevels !== 'undefined') {
-            // Check Level Filter
-            if (activeLogLevels.size > 0 && !activeLogLevels.has(logEntry.level)) {
-                passesFilters = false;
-            }
-            // Check Keyword Filter (if passes level)
-            if (passesFilters && typeof filterKeywords !== 'undefined' && filterKeywords.length > 0) {
-                const msgLower = logEntry.message.toLowerCase();
-                const tagLower = logEntry.tag.toLowerCase();
-                // OR logic for live view keywords
-                const hasMatch = filterKeywords.some(kw =>
-                    typeof kw === 'string' && (msgLower.includes(kw.toLowerCase()) || tagLower.includes(kw.toLowerCase()))
-                );
-                if (!hasMatch) passesFilters = false;
-            }
-        }
+        // FIX: Use the canonical applyMainFilters() function so live lines and file-loaded lines
+        // behave identically. The old code had 3 bugs:
+        //   1. Keyword objects have a `.text` property and `.regex` RegExp but the old check did
+        //      `typeof kw === 'string'` which was ALWAYS false, silently ignoring all keyword filters.
+        //   2. liveSearchQuery (the quick search bar) was never checked.
+        //   3. AND/OR keyword logic was not respected.
+        const _liveFilterConfig = getFilterConfig();
+        // Skip time filter for live logs (lines won't have a valid year component anyway)
+        _liveFilterConfig.isTimeFilterActive = false;
+        const _liveCollapseState = { isInside: false };
+        const _passedLines = applyMainFilters([logEntry], _liveCollapseState, logViewCollapseState, _liveFilterConfig);
+        const passesFilters = _passedLines.length > 0;
 
         if (passesFilters) {
             filteredLogLines.push(logEntry);
 
-            // Add to batch for direct DOM update
+            // Add to batch for DOM update
             if (!window.liveLogBatch) {
                 window.liveLogBatch = [];
             }
@@ -3782,11 +3842,12 @@ self.onmessage = async (event) => {
             }, 500);
         }
 
-        // Direct DOM append function - no full re-render
+        // Batch flush function - updates the UI without a full re-filter pass
         function appendLogsToDOM() {
             if (!window.liveLogBatch || window.liveLogBatch.length === 0) return;
 
-            // Sync with Filter Worker to ensure subsequent filters include these lines
+            // Sync newly added lines with the Filter Worker so subsequent filter operations
+            // (e.g. when user changes a keyword) will include these live lines.
             if (typeof filterWorker !== 'undefined') {
                 filterWorker.postMessage({
                     command: 'APPEND_DATA',
@@ -3798,48 +3859,33 @@ self.onmessage = async (event) => {
             const activeTabId = activeTab ? activeTab.dataset.tab : null;
 
             if (activeTabId === 'logs') {
+                // FIX: Instead of appending raw <div>s (which bypassed the virtual scroll system
+                // and caused sizer/tooltip/selection desync), update the sizer and re-render
+                // only the visible rows via handleMainLogScroll(). This is O(viewport) not O(N).
+                if (logSizer) {
+                    logSizer.style.height = `${filteredLogLines.length * LINE_HEIGHT}px`;
+                }
+                // Scroll to bottom only if user was already at the bottom before the new batch
                 const logContainer = document.getElementById('logContainer');
                 if (logContainer) {
-                    // Append each log line directly to DOM
-                    const fragment = document.createDocumentFragment();
-                    window.liveLogBatch.forEach(log => {
-                        const logDiv = document.createElement('div');
-                        logDiv.className = `log-line level-${log.level ? log.level.toLowerCase() : 'unknown'}`;
-                        // Minimal inline render to match TableRow style but as DIVs for performance
-                        // Using simple structure for live view
-                        logDiv.style.fontFamily = 'monospace';
-                        logDiv.style.whiteSpace = 'pre-wrap';
-                        logDiv.style.borderBottom = '1px solid #333';
-                        logDiv.style.padding = '2px 5px';
-                        logDiv.style.fontSize = '12px';
-
-                        // Color coding based on level
-                        let color = '#ccc';
-                        if (log.level === 'E') color = '#ff6b6b';
-                        else if (log.level === 'W') color = '#ffcc00';
-                        else if (log.level === 'D') color = '#66b3ff';
-                        else if (log.level === 'V') color = '#cccccc';
-
-                        logDiv.style.color = color;
-
-                        logDiv.textContent = `${log.timestamp} ${log.level}/${log.tag}(${log.pid}): ${log.message}`;
-                        fragment.appendChild(logDiv);
-                    });
-
-                    logContainer.appendChild(fragment);
-
-                    // Auto-scroll to bottom
-                    requestAnimationFrame(() => {
-                        logContainer.scrollTop = logContainer.scrollHeight;
-                    });
+                    const isAtBottom = logContainer.scrollTop + logContainer.clientHeight >= logContainer.scrollHeight - LINE_HEIGHT * 2;
+                    handleMainLogScroll();
+                    if (isAtBottom) {
+                        requestAnimationFrame(() => {
+                            logContainer.scrollTop = logContainer.scrollHeight;
+                        });
+                    }
+                } else {
+                    handleMainLogScroll();
                 }
-            } else if (activeTabId === 'connectivity') {
-                // For connectivity tab, trigger a refresh to update the view
-                // This ensures live logs appear without switching tabs
+            } else {
+                // FIX: For ALL other tabs (connectivity, ccc, stats, btsnoop, etc.) trigger a
+                // refresh so the active tab stays up-to-date without the user having to switch.
+                // Previously only 'connectivity' was handled; 'ccc', 'stats', etc. were ignored.
                 refreshActiveTab();
             }
 
-            // Clear batch after appending/processing
+            // Clear batch after processing
             window.liveLogBatch = [];
         }
     };
