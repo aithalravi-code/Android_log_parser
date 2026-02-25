@@ -14,7 +14,12 @@
 
 class Logger {
     constructor() {
-        this.isDev = import.meta.env.DEV;
+        // Handle environment detection safely for both Browser (Vite) and Node (Test)
+        try {
+            this.isDev = import.meta.env && import.meta.env.DEV;
+        } catch (e) {
+            this.isDev = false;
+        }
         this.isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
 
         // Performance timing storage

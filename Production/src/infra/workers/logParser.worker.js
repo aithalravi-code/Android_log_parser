@@ -44,13 +44,17 @@ export async function processLogFile(eventData, postMessage) {
         // ALTERNATE FORMAT: PID Level Tag| or Tag: (2 fields)
         '(?<pid3>\\d+)\\s+(?<level3>[A-Z])\\s+(?<tag3>[^\\s|]+?)(?:\\||:)\\s*' + // PID Level Tag| or Tag:
         ')' + // End PID/TID/UID group
-        '(?<message>(?!.*Date: \\d{4}).+)' + // Message
+        '(?<message>(?!.*Date: \\d{4}).*)' + // Message (allow empty)
         '|' +
         'Date:\\s(?<customFullDate>\\d{4}-\\d{2}-\\d{2})\\s(?<customTime>\\d{2}:\\d{2}:\\d{2})' + // Date: YYYY-MM-DD HH:mm:ss
         '(?<customMessage>\\|.*)' + // The rest of the custom log line, must start with a pipe
         '|' +
         '\\[(?<weaverDate>\\d{2}-\\d{2})\\s(?<weaverTime>\\d{2}:\\d{2}:\\d{2}\\.\\d+)\\]' + // Weaver log format [MM-DD HH:mm:ss.SSSSSS]
         '\\[(?<weaverPid>\\d+)\\]\\[(?<weaverTag>[^\\]]+)\\]\\s*(?<weaverMessage>.*)' + // Weaver PID, Tag, and Message
+        '|' +
+        // PIPE SEPARATED FORMAT: Date Time | Tag: Message (User Custom Format)
+        '(?<pipeDate>\\d{2}-\\d{2})\\s(?<pipeTime>\\d{2}:\\d{2}:\\d{2}[:.]\\d{3,})\\s+\\|\\s+' +
+        '(?<pipeTag>[^:]+?):\\s+(?<pipeMessage>.+)' +
         '|' +
         '(?<simpleDate>\\d{2}-\\d{2})\\s(?<simpleTime>\\d{2}:\\d{2}:\\d{2}[:.]\\d{3,})\\s+' + // Simple format: MM-DD HH:mm:ss:SSS (colon or dot)
         '(?<simpleTag>[^:]+?)\\s*:\\s+(?<simpleMessage>.+)' + // Tag : Message (Level implied/missing)
@@ -125,7 +129,7 @@ export async function processLogFile(eventData, postMessage) {
     const nfcMessageKeywords = ['NFC', 'contactless', 'APDU'];
     const nfcMessageRegex = new RegExp(`\\b(${nfcMessageKeywords.join('|')})\\b`, 'i');
 
-    const dckKeywords = ['DigitalCarKey', 'CarKey', 'UwbTransport', 'Dck', 'UWB', 'nearby'];
+    const dckKeywords = ['DigitalCarKey', 'CarKey', 'UwbTransport', 'Dck', 'UWB', 'nearby', 'AuthInteractionProperties'];
     const CHUNK_SIZE = 10000; // Number of lines to send back at a time
     const dckRegex = new RegExp(`\\b(${dckKeywords.join('|')})\\b`, 'i');
     const walletKeywords = ['Wallet', 'QuickAccessWallet', 'WalletService', 'WalletCard', 'GenericIdCard', 'Barcode', 'MagneticStripe'];
@@ -353,26 +357,113 @@ export async function processLogFile(eventData, postMessage) {
                     originalText: lineText
                 };
                 stats.D++;
+            } else if (match.groups.pipeDate) { // NEW: Pipe Separated Format
+                const { pipeDate, pipeTime, pipeTag, pipeMessage } = match.groups;
+                const [month, day] = pipeDate.split('-').map(Number);
+                const [hours, minutes, seconds, milliseconds] = pipeTime.split(/[.:]/).map(Number);
+                lineDateObj = new Date(Date.UTC(fileYear, month - 1, day, hours, minutes, seconds, milliseconds || 0));
+
+                const stdTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds || 0).padStart(3, '0')}`;
+                const fullTimestamp = pipeDate + ' ' + stdTime;
+
+                if (!minTimestamp || fullTimestamp < minTimestamp) minTimestamp = fullTimestamp;
+                if (!maxTimestamp || fullTimestamp > maxTimestamp) maxTimestamp = fullTimestamp;
+
+                lastValidDateObj = lineDateObj;
+                lastValidDate = pipeDate;
+                lastValidTime = stdTime;
+                lastValidTimestamp = fullTimestamp;
+
+                // Strip the leading/trailing pipes if present in tag (regex might capture them depending on greediness)
+                const cleanTag = pipeTag.trim().replace(/^\|+|\|+$/g, '');
+
+                parsedLine = {
+                    isMeta: false,
+                    dateObj: lineDateObj,
+                    date: pipeDate,
+                    time: stdTime,
+                    timestamp: fullTimestamp,
+                    level: 'I', // Default to Info for this custom format? Or D? Let's use I to distinguish.
+                    tag: cleanTag,
+                    message: pipeMessage.trim(),
+                    originalText: lineText
+                };
+                stats.I++;
             }
         } else { // Unmatched line logic
-            const levelMatch = lineText.match(/\s([VDIWE])\s/);
-            const level = levelMatch ? levelMatch[1] : 'V';
+            // Attempt to extract timestamp from the beginning of the line
+            let date = lastValidDate !== 'N/A' ? lastValidDate : 'N/A';
+            let time = lastValidTime !== 'N/A' ? lastValidTime : 'N/A';
+            let timestamp = lastValidTimestamp !== '' ? lastValidTimestamp : '';
+            let dateObj = lastValidDateObj;
 
-            // FIX: If we have a previous valid timestamp, assume this is a continuation line
-            // and inherit the time. This fixes issues with exception stack traces and other
-            // multi-line logs being discarded or sorted incorrectly.
-            const date = lastValidDate !== 'N/A' ? lastValidDate : 'N/A';
-            const time = lastValidTime !== 'N/A' ? lastValidTime : 'N/A';
-            const timestamp = lastValidTimestamp !== '' ? lastValidTimestamp : '';
-            const dateObj = lastValidDateObj;
+            // Try to match standard "MM-DD HH:mm:ss.SSS" or "YYYY-MM-DD HH:mm:ss.SSS" at start
+            // Supports optional Year prefix: 2025-09-23 ...
+            const fallbackTimeMatch = lineText.match(/^\s*(?:(?<year>\d{4})-)?(?<date>\d{2}-\d{2})\s+(?<time>\d{2}:\d{2}:\d{2}\.\d{3,})/);
+            if (fallbackTimeMatch) {
+                const { year: fYear, date: fDate, time: fTime } = fallbackTimeMatch.groups;
+                // Reconstruct date object
+                const [month, day] = fDate.split('-').map(Number);
+                const [hours, minutes, seconds, milliseconds] = fTime.split(/[:.]/).map(Number);
 
-            parsedLine = { isMeta: false, dateObj: dateObj, date: date, time: time, timestamp: timestamp, originalText: lineText, level: level, lineNumber: i + 1 };
+                // Use captured year if available, otherwise fileYear
+                const specificYear = fYear ? parseInt(fYear, 10) : fileYear;
 
-            // FIX: Explicitly check for Verbose level to ensure it is counted
+                dateObj = new Date(Date.UTC(specificYear, month - 1, day, hours, minutes, seconds, milliseconds || 0));
+
+                date = fDate;
+                time = fTime;
+                // If year is present, include it in timestamp string? 
+                // Standard internal format usually omits year for display compactness, but let's keep it consistent with date var.
+                timestamp = fDate + ' ' + fTime;
+
+                // Update "last valid" so subsequent continuation lines pick this up
+                lastValidDate = date;
+                lastValidTime = time;
+                lastValidTimestamp = timestamp;
+                lastValidDateObj = dateObj;
+            }
+
+            // Attempt to extract Level/Tag
+            // Support "I/Tag:" or "I Tag:" or just "I "
+            let level = 'V';
+            let tag = '';
+
+            // Regex to look for Level/Tag pattern: 
+            // 1. Single Uppercase letter involved in log levels [VDIWEF]
+            // 2. Followed by slash or space
+            // 3. Followed by Tag characters until colon or end
+            const levelTagMatch = lineText.match(/(?:^|\s)(?<lvl>[VDIWEF])\s*[/:](?:\s*)(?<tagName>[^:\s]+)/) ||
+                lineText.match(/(?:^|\s)(?<lvl>[VDIWEF])\s+/);
+
+            if (levelTagMatch) {
+                level = levelTagMatch.groups.lvl;
+                if (levelTagMatch.groups.tagName) {
+                    tag = levelTagMatch.groups.tagName.trim();
+                }
+            } else if (lineText.includes('|')) {
+                // Fallback for "Pipe Logs" (common in DCK/Token/Connectivity) which don't have explicit level but use '|' separator
+                // These are typically Info level.
+                level = 'I';
+            }
+
+            parsedLine = {
+                isMeta: false,
+                dateObj: dateObj,
+                date: date,
+                time: time,
+                timestamp: timestamp,
+                originalText: lineText,
+                level: level,
+                tag: tag, // Might be empty if not found
+                message: lineText, // Use full text as message for fallback
+                lineNumber: i + 1
+            };
+
             if (stats[level] !== undefined) {
                 stats[level]++;
             } else {
-                stats.V++; // Default to Verbose count if unknown
+                stats.V++;
             }
         }
 
@@ -464,7 +555,8 @@ export async function processLogFile(eventData, postMessage) {
                     fullHex: hex,
                     peerAddress: extractedAddress || 'Unknown',
                     handle: null,
-                    lineNumber: parsedLine.lineNumber // Add line number for tooltip mapping
+                    lineNumber: parsedLine.lineNumber, // Add line number for tooltip mapping
+                    level: parsedLine.level // Preserve log level for filtering
                 };
                 cccMessages.push(cccMsg);
                 parsedLine.cccMessage = cccMsg;
@@ -487,8 +579,13 @@ export async function processLogFile(eventData, postMessage) {
             if ((parsedLine.tag && nfcTagRegex.test(parsedLine.tag)) || (parsedLine.message && nfcMessageRegex.test(parsedLine.message)) || nfcTagRegex.test(lineText) || nfcMessageRegex.test(lineText)) {
                 parsedLine.isNfc = true;
             }
-            if (dckRegex.test(lineText)) {
+            // ROBUST DCK CHECK: Check regex OR explicit token pipe
+            if (dckRegex.test(lineText) || lineText.indexOf('| token:') !== -1) {
                 parsedLine.isDck = true;
+                // Debug log for specific token lines to verify they are caught
+                if (lineText.indexOf('| token:') !== -1) {
+                    // logger.worker('DCK DETECTED:', lineText.substring(0, 50)); 
+                }
             }
             if (walletRegex.test(lineText)) {
                 parsedLine.isWallet = true;
@@ -500,7 +597,10 @@ export async function processLogFile(eventData, postMessage) {
             parsedLine.isKernel = true;
         }
 
-        // Thermal Parsing
+        // FIX: Explicitly ensure token logs are marked as DCK even if other logic failed
+        if (parsedLine && !parsedLine.isDck && lineText.indexOf('| token:') !== -1) {
+            parsedLine.isDck = true;
+        }
         if (parsedLine && parsedLine.tag === 'Thermal') {
             // SIOP Format
             const siopMatch = lineText.match(thermalSiopRegex);

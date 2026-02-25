@@ -828,18 +828,13 @@ export async function setup(cccMessages, connectionMap, ensureBtsnoopProcessedFn
     // Capture connection map
     btsnoopConnectionMap = connectionMap || new Map();
 
-    // Update cccStatsData with the CCC messages extracted from log lines
-    if ((!cccStatsData || cccStatsData.length === 0) && cccMessages && cccMessages.length > 0) {
+    // FIX: Always update with provided messages (they may be filtered by log level)
+    // When cccMessages is provided (even if empty), use it to update the table
+    if (cccMessages !== undefined && cccMessages !== null) {
         cccStatsData = cccMessages;
-    } else if (cccMessages && cccMessages.length > 0) {
-        // Replace with fresh data if new messages are provided
-        const freshData = cccMessages;
-        if (freshData.length > cccStatsData.length) {
-            cccStatsData = freshData;
-        }
     }
 
-    console.log('[CccTab] setup() called, cccMessages length:', cccMessages?.length || 0);
+    console.log('[CccTab] setup() called, cccMessages length:', cccMessages?.length || 0, 'cccStatsData length:', cccStatsData.length);
     render(cccStatsData);
 }
 

@@ -6,6 +6,7 @@ let btsnoopPackets = [];
 let filteredBtsnoopPackets = [];
 let btsnoopConnectionEvents = [];
 let btsnoopConnectionMap = new Map();
+let btsnoopRssiData = [];
 let localBtAddress = '00:00:00:00:00:00';
 const activeBtsnoopFilters = new Set(['cmd', 'evt', 'acl', 'l2cap', 'smp', 'att']);
 const btsnoopCollapsedFiles = new Set();
@@ -66,6 +67,14 @@ export function getBtsnoopConnectionEvents() {
 
 export function setBtsnoopConnectionEvents(events) {
     btsnoopConnectionEvents = events;
+}
+
+export function getBtsnoopRssiData() {
+    return btsnoopRssiData;
+}
+
+export function setBtsnoopRssiData(data) {
+    btsnoopRssiData = data;
 }
 
 export function getSelectedBtsnoopPacket() {
@@ -262,6 +271,8 @@ export async function processForBtsnoop(fileTasks, { db, getDb, saveData, loadDa
             } else if (type === 'connectionEvent') {
                 btsnoopConnectionEvents.push(event.data.event);
                 console.log(`[BTSnoop Debug] [BTSNOOPTAB.JS] Connection event added. Total: ${btsnoopConnectionEvents.length}`);
+            } else if (type === 'rssiDataPoint') {
+                btsnoopRssiData.push(event.data.data);
             } else if (type === 'localAddressFound') {
                 localBtAddress = event.data.address;
                 // Note: We might need to expose this boostrap info back or use it locally
@@ -594,7 +605,7 @@ function getBtsnoopWorkerScript() {
                         const connectionHandle = (data[6] << 8) | data[5];
                         const role = data[7]; // 0x00 = Master, 0x01 = Slave
                         const peerAddrType = data[8]; // 0x00 = Public, 0x01 = Random
-                        const peerAddressSlice = isEnhanced ? data.slice(10, 16) : data.slice(9, 15);
+                        const peerAddressSlice = data.slice(9, 15); // Legacy and Enhanced both have peer addr at bytes 9-14
                         const peerAddress = Array.from(peerAddressSlice).reverse().map(b => b.toString(16).padStart(2, '0')).join(':').toUpperCase();
                         
                         // Extract RPA addresses for Enhanced events
@@ -629,7 +640,14 @@ function getBtsnoopWorkerScript() {
                         // Build detailed parameter string in CCC format
                         const statusText = status === 0x00 ? 'Success (connection established)' : 'Error 0x' + status.toString(16).padStart(2, '0');
                         const roleText = role === 0x00 ? 'Master (0x00)' : 'Slave/Peripheral (0x01)';
-                        const addrTypeText = peerAddrType === 0x00 ? 'Public Device Address (0x00)' : 'Random Device Address (0x01)';
+                        // BLE Address Types: 0x00=Public, 0x01=Random, 0x02=Public Identity (Resolved), 0x03=Random Identity (Resolved)
+                        const addrTypeMap = {
+                            0x00: 'Public Device Address (0x00)',
+                            0x01: 'Random Device Address (0x01)',
+                            0x02: 'Public Identity Address (0x02 - Resolved)',
+                            0x03: 'Random Identity Address (0x03 - Resolved)'
+                        };
+                        const addrTypeText = addrTypeMap[peerAddrType] || \`Unknown (0x\${peerAddrType.toString(16).padStart(2, '0')})\`;
                         const intervalMs = (connInterval * 1.25).toFixed(2);
                         const timeoutMs = supervisionTimeout * 10;
                         const clockAccText = role === 0x00 ? 'Not applicable for Master' : '0x' + masterClockAccuracy.toString(16).padStart(2, '0');
@@ -648,6 +666,96 @@ function getBtsnoopWorkerScript() {
                         summary += \` (Handle: 0x\${connectionHandle.toString(16)}, Peer: \${peerAddress})\`;
                         // Send connection event with timestamp and detailed parameters
                         self.postMessage({ type: 'connectionEvent', event: { packetNum: packetNumber, timestamp: timestampStr, eventType: 'connect', handle: \`0x\${connectionHandle.toString(16).padStart(4, '0')}\`, address: peerAddress, parameters: parameters, rawData: hexData } });
+                    }
+                    
+                    // LE Advertising Report (Legacy) - Extract RSSI for tracking
+                    if (subEventCode === 0x02 && data.length >= 12) {
+                        const numReports = data[4];
+                        let offset = 5;
+                        
+                        for (let i = 0; i < numReports && offset < data.length; i++) {
+                            try {
+                                const eventType = data[offset];
+                                const addrType = data[offset + 1];
+                                const addressSlice = data.slice(offset + 2, offset + 8);
+                                const address = Array.from(addressSlice).reverse().map(b => b.toString(16).padStart(2, '0')).join(':').toUpperCase();
+                                const dataLength = data[offset + 8];
+                                
+                                // RSSI is 1 byte after the advertising data
+                                const rssiOffset = offset + 9 + dataLength;
+                                if (rssiOffset < data.length) {
+                                    const rssi = data[rssiOffset];
+                                    const rssiSigned = rssi > 127 ? rssi - 256 : rssi; // Convert to signed
+                                    
+                                    // Send RSSI data point for tracking
+                                    self.postMessage({
+                                        type: 'rssiDataPoint',
+                                        data: {
+                                            timestamp: timestampStr,
+                                            timestampMs: timestampMs,
+                                            address: address,
+                                            rssi: rssiSigned,
+                                            addrType: addrType,
+                                            eventType: eventType
+                                        }
+                                    });
+                                }
+                                
+                                offset += 10 + dataLength; // Move to next report
+                            } catch (e) {
+                                break; // Malformed advertising report, skip rest
+                            }
+                        }
+                    }
+                    
+                    // LE Extended Advertising Report (Bluetooth 5.0+) - Extract RSSI
+                    if (subEventCode === 0x0d && data.length >= 7) {
+                        const numReports = data[4];
+                        let offset = 5;
+                        
+                        for (let i = 0; i < numReports && offset < data.length; i++) {
+                            try {
+                                // Extended advertising report structure:
+                                // Event_Type (2 bytes), Addr_Type (1), Address (6), Primary_PHY (1), 
+                                // Secondary_PHY (1), Advertising_SID (1), TX_Power (1 signed), 
+                                // RSSI (1 signed), Periodic_Adv_Interval (2), Direct_Addr_Type (1), 
+                                // Direct_Address (6), Data_Length (1), Data (variable)
+                                
+                                if (offset + 24 > data.length) break;
+                                
+                                const eventType = data[offset] | (data[offset + 1] << 8); // 2 bytes
+                                const addrType = data[offset + 2];
+                                const addressSlice = data.slice(offset + 3, offset + 9);
+                                const address = Array.from(addressSlice).reverse().map(b => b.toString(16).padStart(2, '0')).join(':').toUpperCase();
+                                
+                                // Skip: Primary_PHY(1), Secondary_PHY(1), Advertising_SID(1), TX_Power(1 signed)
+                                const rssiOffset = offset + 13; // RSSI is at offset +13
+                                const rssi = data[rssiOffset];
+                                const rssiSigned = rssi > 127 ? rssi - 256 : rssi; //Convert to signed
+                                
+                                // Skip: Periodic_Adv_Interval(2), Direct_Addr_Type(1), Direct_Address(6)
+                                const dataLengthOffset = offset + 23;
+                                const dataLength = data[dataLengthOffset];
+                                
+                                // Send RSSI data point for tracking
+                                self.postMessage({
+                                    type: 'rssiDataPoint',
+                                    data: {
+                                        timestamp: timestampStr,
+                                        timestampMs: timestampMs,
+                                        address: address,
+                                        rssi: rssiSigned,
+                                        addrType: addrType,
+                                        eventType: eventType
+                                    }
+                                });
+                                extendedAdvCount++;
+                                
+                                offset += 24 + dataLength; // Move to next report
+                            } catch (e) {
+                                break; // Malformed extended advertising report, skip rest
+                            }
+                        }
                     }
                 }
                 return { type: 'HCI Evt', summary, tags, source, destination, data: hexData, foundLocalAddress };
