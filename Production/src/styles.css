@@ -51,6 +51,59 @@ body {
     overflow: hidden;
 }
 
+/* RSSI Tab Styles */
+.rssi-layout {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 15px;
+    height: calc(100vh - 200px);
+    padding: 10px;
+}
+
+.rssi-devices {
+    overflow-y: auto;
+    border-right: 1px solid #3c4043;
+    padding-right: 10px;
+}
+
+.rssi-chart-container {
+    position: relative;
+    min-height: 400px;
+    padding: 10px;
+}
+
+#rssiDeviceTable {
+    width: 100%;
+    font-size: 12px;
+}
+
+#rssiDeviceTable tr:hover {
+    background: #2c2c2c;
+}
+
+.color-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+.rssi-controls {
+    margin-bottom: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.no-data-message {
+    text-align: center;
+    padding: 40px;
+    color: #9aa0a6;
+    font-size: 1.1rem;
+}
+
 .container {
     position: absolute;
     top: 0;

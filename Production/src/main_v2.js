@@ -11,6 +11,7 @@ import JSZip from 'jszip';
 import { Chart, registerables } from 'chart.js';
 import { makeTableResizable } from './table-resize.js';
 import * as BtsnoopTab from './ui/tabs/BtsnoopTab.js';
+import * as RssiTab from './ui/tabs/RssiTab.js';
 import * as CccTab from './ui/tabs/CccTab.js'; // Imports setup, render, reset
 import * as StatsTab from './ui/tabs/StatsTab.js'; // Imports setupStatsTab, etc.
 import { setupDeviceEventsTab, renderDeviceEvents } from './ui/tabs/DeviceEventsTab.js';
@@ -267,6 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let btsnoopSortColumn = 1; // Revert to Timestamp column (Index 1)
     let btsnoopSortOrder = 'desc'; // Default: Descending (newest first)
     let btsnoopCollapsedFiles = new Set(); // Track collapsed files
+    let connectivityCollapsedFiles = new Set(); // Track collapsed files for connectivity tab
     let tableSortState = {}; // Track sort state for all tables
 
     // --- Worker Setup ---
@@ -371,6 +373,12 @@ document.addEventListener('DOMContentLoaded', () => {
             tab.classList.add('active');
             const tabId = tab.dataset.tab;
             document.getElementById(tabId + 'Tab').classList.add('active');
+
+            // RSSI Tab: Setup with BTSnoop RSSI data
+            if (tabId === 'rssi') {
+                const rssiDataPoints = BtsnoopTab.getBtsnoopRssiData();
+                RssiTab.setup({ rssiDataPoints });
+            }
 
             // FIX: Use requestAnimationFrame to ensure the tab is visible before rendering.
             requestAnimationFrame(() => {
@@ -516,6 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // FIX: Rely on the worker's regex (isDck flag) which covers 'Dck', 'DigitalCarKey', etc.
                     dckLogLines = originalLogLines.filter(line => line.isMeta || line.isDck);
 
+
                     // Filter UWB & Nearby
                     uwbLogLines = originalLogLines.filter(line => {
                         if (line.isMeta) return true;
@@ -535,12 +544,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         return text.includes('wallet') || text.includes('quickaccesswallet') || text.includes('walletservice');
                     });
 
-                    // Trigger initial setup for connectivity
-                    if (!connectivityScrollListenerAttached) {
-                        setupConnectivityTab();
-                    } else {
-                        applyConnectivityFilters();
-                    }
+                    // Setup and filtering handled by executeRefreshActiveTab
+
                     break;
 
                 case 'btsnoop':
@@ -1785,8 +1790,15 @@ self.onmessage = async (event) => {
         // --- Finalize UI ---
         console.log('[Time Range Debug] consolidatedMinTimestamp:', consolidatedMinTimestamp);
         console.log('[Time Range Debug] consolidatedMaxTimestamp:', consolidatedMaxTimestamp);
-        minLogDate = consolidatedMinTimestamp ? logcatToDate(consolidatedMinTimestamp) : null;
-        maxLogDate = consolidatedMaxTimestamp ? logcatToDate(consolidatedMaxTimestamp) : null;
+
+        // Extract year from filename to use for time range calculation
+        // Format: bugreport-...-YYYY-MM-DD-HH-mm-ss.zip
+        const yearMatch = currentZipFileName.match(/(\d{4})-\d{2}-\d{2}/);
+        const fileYear = yearMatch ? parseInt(yearMatch[1], 10) : new Date().getFullYear();
+        console.log('[Time Range Debug] Extracted fileYear from filename:', fileYear, '(filename:', currentZipFileName, ')');
+
+        minLogDate = consolidatedMinTimestamp ? logcatToDate(consolidatedMinTimestamp, fileYear) : null;
+        maxLogDate = consolidatedMaxTimestamp ? logcatToDate(consolidatedMaxTimestamp, fileYear) : null;
         console.log('[Time Range Debug] minLogDate:', minLogDate);
         console.log('[Time Range Debug] maxLogDate:', maxLogDate);
         logTags = Array.from(consolidatedTagSet).sort();
@@ -1833,7 +1845,9 @@ self.onmessage = async (event) => {
             // Pre-calculate CCC Stats in background
             if (cccMessages && cccMessages.length > 0 && !tabsLoaded.ccc) {
                 console.log('[Background] Pre-calculating CCC stats...');
-                await CccTab.setup(cccMessages, btsnoopConnectionMap, processForBtsnoop, isBtsnoopProcessed);
+                // FIX: Apply log level filter to background CCC setup too
+                const bgFilteredCccMessages = cccMessages.filter(msg => !msg.level || activeLogLevels.has(msg.level));
+                await CccTab.setup(bgFilteredCccMessages, btsnoopConnectionMap, processForBtsnoop, isBtsnoopProcessed);
                 // Note: we don't set tabsLoaded.ccc = true here to ensure refreshActiveTab still checks if needed,
                 // but CccTab cache will be populated.
             }
@@ -1981,7 +1995,8 @@ self.onmessage = async (event) => {
                 cacheFilteredResults('logs', filteredLogLines);
                 break;
             case 'connectivity':
-                if (!connectivityScrollListenerAttached) await setupConnectivityTab(); else await applyConnectivityFilters();
+                if (!connectivityScrollListenerAttached) await setupConnectivityTab();
+                await applyConnectivityFilters();
                 cacheFilteredResults('connectivity', filteredConnectivityLogLines);
                 break;
             case 'btsnoop': {
@@ -2010,21 +2025,12 @@ self.onmessage = async (event) => {
                 break;
             }
             case 'ccc':
-                // FIX: Pass BtsnoopTab.processForBtsnoop logic wrapper if needed, or better, pass the direct function from global scope if it wraps it.
-                // In main.js, processForBtsnoop is defined at bottom. It wraps BtsnoopTab.processForBtsnoop.
-                // But we must ensure it is hoisted or defined. It is function decl, so it is hoisted.
-                // However, verification failed, possibly due to 'processForBtsnoop' usage issues inside CccTab?
-                // CccTab.setup calls 'processForBtsnoop(fileTasks, ...)'
-                // The main.js processForBtsnoop does NOT take arguments in the same way?
-                // implementation check: main.js processForBtsnoop() (no args) -> calls BtsnoopTab.processForBtsnoop(fileTasks, ...)
-                // CccTab calls ensureBtsnoopProcessedFn(fileTasks).
-                // So passing 'processForBtsnoop' (local) is WRONG because local processForBtsnoop takes NO args and uses closure 'fileTasks'.
-                // WE MUST WRAP IT to accept fileTasks if CccTab expects to pass them.
-                // CccTab line 114: await ensureBtsnoopProcessedFn(fileTasks);
-                // main.js processForBtsnoop line 2990: async function processForBtsnoop() { ... uses global fileTasks ... }
-                // So CccTab passes fileTasks, but main.js ignores it (which is fine if it uses same global).
-                // BUT, let's be explicit and robust.
-                await CccTab.setup(cccMessages, btsnoopConnectionMap, (tasks) => processForBtsnoop(), isBtsnoopProcessed);
+                // FIX: Pass active log levels to CCC tab for filtering
+                // Filter CCC messages by active log levels before passing to setup
+                const filteredCccMessages = cccMessages.filter(msg => {
+                    return !msg.level || activeLogLevels.has(msg.level);
+                });
+                await CccTab.setup(filteredCccMessages, btsnoopConnectionMap, (tasks) => processForBtsnoop(), isBtsnoopProcessed);
                 cacheFilteredResults('ccc', true); // Mark as cached so needsRefiltering works correctly next time
                 break;
             case 'stats': {
@@ -2115,16 +2121,18 @@ self.onmessage = async (event) => {
         // Use FilterManager for filtering
         const filterConfig = getFilterConfig();
 
-        // Time filter is handled within FilterManager
 
 
         // Use FilterManager.applyMainFilters
-        return FilterManager.applyMainFilters(
+        const result = FilterManager.applyMainFilters(
             linesToFilter,
             collapseState || { isInside: false },
             activeCollapseSet,
             filterConfig
         );
+
+        // console.log('[applyMainFilters local] Output:', result.length);
+        return result;
     }
 
 
@@ -2192,6 +2200,12 @@ self.onmessage = async (event) => {
         }
         // --- End Scroll Restoration ---
 
+        // DEBUG: Log filter state
+        console.log('[ApplyFilters DEBUG] Starting filter operation');
+        console.log('[ApplyFilters DEBUG] originalLogLines.length:', originalLogLines.length);
+        console.log('[ApplyFilters DEBUG] activeLogLevels:', Array.from(activeLogLevels));
+        console.log('[ApplyFilters DEBUG] filterKeywords:', filterKeywords);
+
         TimeTracker.start('Async Filtering');
 
         // Clear the current view immediately for responsiveness
@@ -2209,16 +2223,30 @@ self.onmessage = async (event) => {
         // This object is passed by reference to the filter function.
         const collapseState = { isInside: false };
 
+        // Build filter configuration object required by applyMainFilters
+        const filterConfig = {
+            activeLogLevels: activeLogLevels,
+            keywords: filterKeywords,
+            isAndLogic: isAndLogic,
+            liveSearchQuery: '',  // Live search handled separately in renderVirtualList
+            startTime: null,  // Time filter handled by slider
+            endTime: null,
+            isTimeFilterActive: false
+        };
+
         for (let i = 0; i < originalLogLines.length; i += CHUNK_SIZE) {
             // If a new filter operation has started, abort this one.
             if (filterVersion !== currentVersion) {
+                console.log('[ApplyFilters DEBUG] Filter version changed, aborting');
                 TimeTracker.stop('Async Filtering');
                 return;
             }
 
             const chunk = originalLogLines.slice(i, i + CHUNK_SIZE);
+            console.log(`[ApplyFilters DEBUG] Processing chunk ${Math.floor(i / CHUNK_SIZE)}: ${chunk.length} lines`);
             console.log(`[ApplyFilters Debug] logViewCollapseState size: ${logViewCollapseState.size}, contents:`, Array.from(logViewCollapseState));
-            const filteredChunk = applyMainFilters(chunk, collapseState, logViewCollapseState);
+            const filteredChunk = FilterManager.applyMainFilters(chunk, collapseState, logViewCollapseState, filterConfig);
+            console.log(`[ApplyFilters DEBUG] Filtered chunk result: ${filteredChunk.length} lines`);
             tempFiltered.push(...filteredChunk);
 
             // Yield to the main thread to prevent UI freezing
@@ -2278,8 +2306,15 @@ self.onmessage = async (event) => {
      * @param {Function} renderFn - The virtual scroll rendering function for the tab.
      * @param {Function} [preFilterFn=null] - An optional function to apply specialized filters (like BLE layers) first.
      */
-    async function applyFiltersAsync(sourceLines, targetLines, container, renderFn, preFilterFn = null, activeCollapseSet) {
+    async function applyFiltersAsyncLocal(sourceLines, targetLines, container, renderFn, preFilterFn = null, activeCollapseSet) {
         const currentVersion = ++filterVersion; // Invalidate previous filter runs
+
+        // 1. Find the first visible line in the current viewport to use as an anchor.
+        // Prioritize the user-clicked anchor. Fallback to the top visible line from the PREVIOUS render.
+        // DEBUG: Trace arguments
+        if (!sourceLines) console.error('[applyFiltersAsync] sourceLines is undefined!');
+        if (!targetLines) console.error('[applyFiltersAsync] targetLines is undefined!');
+        // -------------------------
 
         // 1. Find the first visible line in the current viewport to use as an anchor.
         // Prioritize the user-clicked anchor. Fallback to the top visible line from the PREVIOUS render.
@@ -2370,7 +2405,9 @@ self.onmessage = async (event) => {
         const collapseState = { isInside: false };
 
         for (let i = 0; i < preFilteredLines.length; i += CHUNK_SIZE) {
-            if (filterVersion !== currentVersion) return; // A new filter operation has started, so abort.
+            if (filterVersion !== currentVersion) {
+                return; // A new filter operation has started, so abort.
+            }
 
             const chunk = preFilteredLines.slice(i, i + CHUNK_SIZE);
             const filteredChunk = applyMainFilters(chunk, collapseState, activeCollapseSet);
@@ -2379,7 +2416,10 @@ self.onmessage = async (event) => {
             await new Promise(resolve => setTimeout(resolve, 0)); // Yield to the main thread
         }
 
-        if (filterVersion !== currentVersion) return;
+        if (filterVersion !== currentVersion) {
+            console.log('[ApplyFilters DEBUG] Aborted due to version mismatch after loop.');
+            return;
+        }
 
         // 5. Update the target array with the final filtered results
         Array.prototype.push.apply(targetLines, tempFiltered);
@@ -2441,7 +2481,18 @@ self.onmessage = async (event) => {
             await renderUI(); // Re-render chips and apply filters
             if (!silent) alert('Filter configuration loaded!');
         } else {
-            if (!silent) alert('No saved filter configuration found.');
+            // No persisted filters - initialize UI to match default state
+            logicOrBtn.classList.add('active');
+            logicAndBtn.classList.remove('active');
+            logLevelButtons.forEach(btn => {
+                // activeLogLevels is already initialized to all levels at line 261
+                btn.classList.toggle('active', activeLogLevels.has(btn.dataset.level));
+            });
+            if (!silent) {
+                // Don't alert on silent init
+            } else {
+                console.log('[Filter] No persisted filters - using defaults (all levels active)');
+            }
         }
     }
     // wildcardToRegex removed (imported from utils)
@@ -2743,7 +2794,7 @@ self.onmessage = async (event) => {
     // --- Connectivity Tab Initialization ---
     bindMasterToggle('masterToggleBle', 'ble', 'bleFiltersPanel');
     bindMasterToggle('masterToggleNfc', 'nfc', 'nfcFiltersPanel');
-    bindMasterToggle('masterToggleDck', 'dck', 'dckFiltersPanel');
+    bindMasterToggle('masterToggleDck', 'dck', null);
     bindMasterToggle('masterToggleUwb', 'uwb', 'uwbFiltersPanel');
     bindMasterToggle('masterToggleWallet', 'wallet', null);
 
@@ -2996,7 +3047,7 @@ self.onmessage = async (event) => {
         } else if (!container) {
             console.warn('Connectivity Container not found during setup!');
         }
-        await applyConnectivityFilters();
+        // Removed implicit filter application. Caller must apply filters.
     }
 
     function renderConnectivityVirtualLogs() {
@@ -3042,20 +3093,24 @@ self.onmessage = async (event) => {
         connectivityLogLines = candidates;
 
         // Apply main filters (Search, Level, Time)
-        return applyFiltersAsync(
+        console.log('[ConnectivityTab] Applying Generic Filters. DCK Active:', activeTechs.dck, 'Candidates:', candidates.length);
+        return applyFiltersAsyncLocal(
             connectivityLogLines,
             filteredConnectivityLogLines,
             document.getElementById('connectivityLogContainer'),
             renderConnectivityVirtualLogs,
             null, // No pre-filter function needed here as it's already done
-            connectivityViewCollapseState
-        );
+            connectivityCollapsedFiles // Pass the Set, not the state object
+        ).then(() => {
+            console.log('[ConnectivityTab] applyFiltersAsyncLocal Promise Resolved. Final Visible Lines:', filteredConnectivityLogLines.length);
+        });
     }
 
     // Master Toggle Handler Helper
     function bindMasterToggle(id, techKey, filterPanelId, activeSet) { // Added activeSet
         const toggle = document.getElementById(id);
         const panel = filterPanelId ? document.getElementById(filterPanelId) : null;
+        console.log(`[Init] Binding Master Toggle: ${id} (Key: ${techKey}). Found: ${!!toggle}`);
 
         if (toggle) {
             // Find parent tech-section for styling. If panel exists use it, else use toggle's parent.
@@ -3075,8 +3130,9 @@ self.onmessage = async (event) => {
 
             updatePanelState();
 
-            toggle.addEventListener('change', () => {
+            toggle.addEventListener('click', () => {
                 activeTechs[techKey] = toggle.checked;
+                console.log(`[MasterToggle] ${techKey} CLICK event. State: ${activeTechs[techKey]}`);
                 updatePanelState();
 
                 // Trigger refresh
@@ -3433,6 +3489,16 @@ self.onmessage = async (event) => {
             // FIX: Ensure the active tab is properly rendered (fixes persistence issues for Stats tab)
             await refreshActiveTab();
 
+            // FIX: Add ResizeObserver to logContainer to handle layout changes (e.g. panel collapse)
+            // This ensures the virtual list re-renders correct height when the container resizes
+            const logContainer = document.getElementById('logContainer');
+            if (logContainer) {
+                const resizeObserver = new ResizeObserver(() => {
+                    handleMainLogScroll();
+                });
+                resizeObserver.observe(logContainer);
+            }
+
             // Hide skeleton with fade out
             if (skeletonLoader && skeletonLoader.style.display !== 'none') {
                 console.log('[Perf Phase2] Data loaded - hiding skeleton');
@@ -3521,7 +3587,10 @@ self.onmessage = async (event) => {
             refreshActiveTab();
         },
 
-        filterWorker
+        filterWorker,
+
+        // CCC messages
+        get cccMessages() { return cccMessages; }
     };
 
     // --- Live Logcat Integration ---

@@ -10,6 +10,7 @@ export default defineConfig({
     root: path.resolve(projectRoot, 'Production/src'),
 
     build: {
+        target: 'es2022',
         outDir: path.resolve(projectRoot, 'Production/dist'),
         emptyOutDir: true,
         rollupOptions: {

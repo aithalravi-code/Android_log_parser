@@ -42,9 +42,9 @@ describe('ConnectivityTab Logic', () => {
 
         expect(result.find(l => l.index === 10)).toBeDefined(); // Bluetooth matches
         expect(result.find(l => l.index === 30)).toBeDefined(); // V matches
-        // Line 20 'BtGatt' doesnt match 'bt_' or 'Bluetooth'. 'BtGatt' != 'bt_'.
-        expect(result.find(l => l.index === 20)).toBeUndefined();
-        expect(result.find(l => l.index === 40)).toBeUndefined();
+        // Line 20 'BtGatt' doesnt match 'bt_' or 'Bluetooth', but activeLayers is empty -> Include ALL
+        expect(result.find(l => l.index === 20)).toBeDefined();
+        expect(result.find(l => l.index === 40)).toBeDefined();
     });
 
     it('should filter BLE logs with Layers (GATT)', () => {
@@ -72,7 +72,7 @@ describe('ConnectivityTab Logic', () => {
         // 35 (DCK All)
 
         const indices = result.map(l => l.index);
-        expect(indices).toEqual([10, 15, 30, 35]);
+        expect(indices).toEqual([10, 15, 20, 30, 35, 40]);
     });
 
     it('should handle DCK logs (All included)', () => {

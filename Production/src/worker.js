@@ -62,7 +62,10 @@ self.onmessage = async (event) => {
     const batteryRegex = /(?:level|l|soc|capacity)[:=]\s*(\d+).*?(?:scale|s)[:=]\s*(\d+)|(?:level|l|soc|capacity)[:=]\s*(\d+)/i;
     const batteryDataPoints = [];
     const cccMessages = [];
-    const cccRegex = /(?:Sending|Received):\s*\[([0-9a-fA-F]+)\]/;
+    const cccRegex = /(?:Sending|Received)\s*:?\s*\[([0-9a-fA-F]+)\]/;
+    // SYNC with logParser.worker.js
+    const dckKeywords = ['DigitalCarKey', 'CarKey', 'UwbTransport', 'Dck', 'UWB', 'nearby', 'token', 'AuthInteractionProperties'];
+    const dckRegex = new RegExp(`\\b(${dckKeywords.join('|')})\\b`, 'i');
     const versionRegex = new RegExp('Package\\s+\\[([^\\]]+)\\].*?versionName=([^\\s\\n,]+)');
     const appVersions = new Map();
     const localAddressRegex = /Read BD_ADDR.*return: (([0-9A-F]{2}:){5}[0-9A-F]{2})/i;
@@ -214,6 +217,12 @@ self.onmessage = async (event) => {
         }
 
         if (parsedLine) {
+            if (dckRegex.test(lineText) || lineText.indexOf('| token:') !== -1) {
+                parsedLine.isDck = true;
+            }
+        }
+
+        if (parsedLine) {
             parsedLine.lineNumber = i + 1;
         }
         const textToSearchForHighlights = parsedLine.message || lineText;
@@ -321,7 +330,9 @@ self.onmessage = async (event) => {
                     payload,
                     fullHex: hex,
                     peerAddress: extractedAddress,
-                    handle: null
+                    handle: null,
+                    lineNumber: parsedLine.lineNumber, // Add line number for tooltip mapping
+                    level: parsedLine.level // Preserve log level for filtering
                 });
             }
         }

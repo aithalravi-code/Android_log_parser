@@ -19,7 +19,8 @@
         "@yume-chan/adb-credential-web": "^2.1.0",
         "@yume-chan/android-bin": "^2.1.0",
         "@yume-chan/stream-extra": "^2.1.0",
-        "chart.js": "^4.4.1",
+        "chart.js": "^4.5.1",
+        "chartjs-plugin-zoom": "^2.2.0",
         "jszip": "^3.10.1",
         "nouislider": "^15.7.1"
     },

@@ -134,12 +134,69 @@ export function applyMainFilters(lines, collapseState, activeCollapseSet, filter
 
         // Log level filter - treat lines without a level as 'V' (Verbose)
         const lineLevel = line.level || 'V';
+
+
+
         if (!activeLogLevels.has(lineLevel)) {
             rejectedByLevel++;
             continue;
         }
 
         // Keyword filter
+        // ... (existing keyword logic) ...
+        // Optimized keyword check (matches worker logic)
+        let keywordMatch = true;
+
+        if (activeKeywords.length > 0) {
+            const textToScan = (line.message || line.originalText) + (line.tag || '');
+            if (isAndLogic) {
+                // AND: Must match ALL active keywords
+                keywordMatch = activeKeywords.every(kw => kw.regex.test(textToScan));
+            } else {
+                // OR: Must match AT LEAST ONE active keyword
+                keywordMatch = activeKeywords.some(kw => kw.regex.test(textToScan));
+            }
+        }
+
+        if (!keywordMatch) {
+            rejectedByKeyword++;
+            continue;
+        }
+
+
+        // Live Search (Quick Filter)
+        if (liveRegex && !liveRegex.test(line.originalText)) {
+            rejectedByLiveSearch++;
+            continue;
+        }
+
+        // Time Filter (UTC-based comparison)
+        if (isTimeFilterActive && startTime && endTime) {
+            let lineTime = null;
+            if (line.dateObj) {
+                lineTime = new Date(line.dateObj).getTime();
+            } else if (line.timestamp) {
+                lineTime = new Date(line.timestamp).getTime();
+            }
+
+            if (lineTime !== null && !isNaN(lineTime)) {
+                const minTime = startTime.getTime();
+                const maxTime = endTime.getTime();
+
+                if (lineTime < minTime || lineTime > maxTime) {
+                    if (isToken) console.log('[FilterManager] REJECTED TOKEN by Time:', new Date(lineTime).toISOString(), 'Range:', startTime.toISOString(), '-', endTime.toISOString());
+                    rejectedByTime++;
+                    continue;
+                }
+            } else {
+                // No valid time, reject if strict? For now, we reject to be safe as per "missing timestamp" logic
+                if (isToken) console.log('[FilterManager] REJECTED TOKEN by Invalid/Missing Timestamp');
+                rejectedByTime++;
+                continue;
+            }
+        }
+
+
         if (activeKeywords.length > 0) {
             const matches = activeKeywords.map(kw => kw.regex.test(line.originalText));
             if (isAndLogic) {
@@ -161,25 +218,7 @@ export function applyMainFilters(lines, collapseState, activeCollapseSet, filter
             continue;
         }
 
-        // Time range filter - Auto-detect if time filtering should be applied
-        // If startTime or endTime is provided, apply the filter
-        if ((startTime || endTime) && line.dateObj) {
-            const lineTime = new Date(line.dateObj).getTime();
-            // Ensure valid date
-            if (!isNaN(lineTime)) {
-                if (startTime && lineTime < startTime.getTime()) {
-                    rejectedByTime++;
-                    continue;
-                }
-                if (endTime && lineTime > endTime.getTime()) {
-                    rejectedByTime++;
-                    continue;
-                }
-            } else {
-                // Lines without valid timestamps are excluded when time filter is active
-            }
-            // Lines without valid timestamps are excluded when time filter is active
-        }
+
 
         // --- MATCH FOUND ---
 
