@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getFixturePath } from '../helpers/test-utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,8 +39,8 @@ test.describe('CCC Extraction Verification', () => {
         await page.waitForLoadState('domcontentloaded');
         await page.waitForTimeout(1000);
 
-        // Load ZIP file
-        const zipPath = path.resolve(__dirname, '../../TestData/fixtures/bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57.zip');
+        // Load ZIP file (uses mock-data in CI, real fixtures locally)
+        const zipPath = getFixturePath('bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57.zip');
         const fileInput = await page.locator('#logFilesInput');
         await fileInput.setInputFiles(zipPath);
 

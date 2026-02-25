@@ -1,15 +1,17 @@
 import { test, expect } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getFixturePath } from '../helpers/test-utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 test.describe('Token Log Format Parsing', () => {
     test('should parse and display pipe-separated token logs with dates', async ({ page }) => {
-        // Navigate to the app
-        const appUrl = 'http://localhost:5173/log_parser.html';
-        await page.goto(appUrl);
+        // Navigate to the production build
+        const htmlPath = path.resolve(__dirname, '../../Production/dist/log_parser.html');
+        const fileUrl = `file://${htmlPath.replace(/ /g, '%20').replace(/\(/g, '%28').replace(/\)/g, '%29')}`;
+        await page.goto(fileUrl);
 
         // Clear any existing data
         await page.evaluate(() => {
@@ -23,8 +25,8 @@ test.describe('Token Log Format Parsing', () => {
         await page.reload();
         await page.waitForLoadState('domcontentloaded');
 
-        // Load the bugreport ZIP file
-        const filePath = path.resolve(__dirname, '../../TestData/fixtures/bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57.zip');
+        // Load the bugreport ZIP file (uses mock-data in CI, real fixtures locally)
+        const filePath = getFixturePath('bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57.zip');
 
         const fileInput = await page.locator('#zipInput');
         await fileInput.setInputFiles(filePath);

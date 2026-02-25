@@ -3,6 +3,27 @@
  * Common helper functions for E2E tests
  */
 
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, '../..');
+
+/**
+ * Returns the path to a test fixture file.
+ * In CI environments (process.env.CI === 'true'), returns path to the small
+ * mock-data version so the large real files don't need to be committed.
+ * Locally, returns the full-fidelity version in TestData/fixtures/.
+ *
+ * @param {string} filename - File name (e.g., 'bugreport-caiman-BP3A.250905.014-2025-09-24-10-26-57.zip')
+ * @returns {string} Absolute path to the fixture file
+ */
+export function getFixturePath(filename) {
+    const subDir = process.env.CI ? 'mock-data' : 'fixtures';
+    return path.resolve(projectRoot, 'TestData', subDir, filename);
+}
+
 /**
  * Wait for log processing to complete
  * @param {Page} page - Playwright page object

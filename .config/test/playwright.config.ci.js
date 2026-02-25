@@ -19,19 +19,28 @@ export default defineConfig({
         'app_initialization.spec.js',
         'datetime_filter.spec.js',
 
+        // CCC / Token log tests (use mock data in CI via getFixturePath())
+        'ccc_extraction_test.spec.js',
+        'ccc_level_check.spec.js',
+        'ccc_log_level_filter.spec.js',
+        'ccc_tab_debug.spec.js',
+        'token_logs.spec.js',
+        'token_logs_verification.spec.js',
+
         // Include but allow failures
         'integration_comprehensive.spec.js',
 
         // Skip flaky/strict tests in CI
         // 'accessibility_comprehensive.spec.js', // Too strict for CI
-        // 'state_persistence.spec.js', // Browser timing issues
-        // 'performance_comprehensive.spec.js', // CI is slower
+        // 'state_persistence.spec.js',           // Browser timing issues
+        // 'performance_comprehensive.spec.js',   // CI is slower
+        // 'log_level_filter_test.spec.js',       // Requires real 17MB bugreport (1M+ lines)
     ],
 
-    fullyParallel: false, // Prevent tests inside same file from running in parallel (avoids file contention)
+    fullyParallel: false,
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 2 : 0,
-    workers: 3,
+    workers: 2,
 
     reporter: [
         ['list'],
@@ -47,12 +56,11 @@ export default defineConfig({
         video: 'retain-on-failure',
         viewport: { width: 1920, height: 1080 },
 
-        // Increase timeouts for CI
         actionTimeout: process.env.CI ? 20000 : 15000,
         navigationTimeout: process.env.CI ? 90000 : 45000,
     },
 
-    timeout: process.env.CI ? 180000 : 90000, // 3 mins per test
+    timeout: process.env.CI ? 180000 : 90000,
     expect: {
         timeout: process.env.CI ? 15000 : 10000,
     },
@@ -73,9 +81,10 @@ export default defineConfig({
     ],
 
     webServer: {
-        command: 'npm run preview', // Use production build for stable CI testing
+        // Use explicit vite preview with full config path — keeps process alive in CI
+        command: 'npx vite preview --config .config/build/vite.config.js --port 4173',
         url: 'http://localhost:4173/log_parser.html',
-        reuseExistingServer: true, // Always reuse to avoid conflicts
-        timeout: 300000, // 5 minutes for extremely slow CI runners
+        reuseExistingServer: !process.env.CI,
+        timeout: 120000,
     },
 });

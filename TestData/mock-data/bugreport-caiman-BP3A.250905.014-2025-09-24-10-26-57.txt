@@ -10,85 +10,632 @@ Network: TestCarrier
 
 ------ SYSTEM LOG (logcat -v threadtime -v printable -v uid -d *:v) ------
 --------- beginning of main
-09-24 10:26:57.001  1000  1234  5678 I ActivityManager: Start proc 12345:com.android.bluetooth/u0a123 for service {com.android.bluetooth/.btservice.AdapterService}
-09-24 10:26:57.050  1000  1234  5679 D BluetoothAdapterService: onCreate()
-09-24 10:26:57.100  1000  1234  5680 I BluetoothAdapterService: Bluetooth Adapter Service started
-09-24 10:26:57.150  1000  1234  5681 D BluetoothManagerService: Bluetooth state changed: STATE_ON
-09-24 10:26:57.200  1000  1234  5682 I bt_stack: BTM_BleLoadLocalKeys: Loading BLE keys
-09-24 10:26:57.250  1000  1234  5683 D bt_btif: btif_dm_load_ble_local_keys: IRK loaded
-09-24 10:26:57.300  1000  1234  5684 I bt_btif_config: btif_config_get_bin: Loading LE_LOCAL_KEY_IRK
-09-24 10:26:58.001  1000  1234  5685 D bt_hci: HCI Event: Connection Complete
-09-24 10:26:58.050  1000  1234  5686 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:01
-09-24 10:26:58.100  1000  1234  5687 D bt_stack: BTM_SecAddDevice: Adding device AA:BB:CC:DD:EE:01
-09-24 10:26:58.150  1000  1234  5688 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:01
-09-24 10:26:58.200  1000  1234  5689 D BluetoothDevice: Device name: Test Device 1
-09-24 10:26:58.500  1000  1234  5690 D bt_hci: HCI Event: Connection Complete
-09-24 10:26:58.550  1000  1234  5691 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:02
-09-24 10:26:58.600  1000  1234  5692 D bt_stack: BTM_SecAddDevice: Adding device AA:BB:CC:DD:EE:02
-09-24 10:26:58.650  1000  1234  5693 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:02
-09-24 10:26:58.700  1000  1234  5694 D BluetoothDevice: Device name: Test Device 2
-09-24 10:26:59.001  1000  1234  5695 D bt_hci: HCI Event: Disconnection Complete
-09-24 10:26:59.050  1000  1234  5696 I bt_btif: bta_dm_acl_down: Device disconnected: AA:BB:CC:DD:EE:01
-09-24 10:26:59.100  1000  1234  5697 D bt_stack: BTM_SecDeleteDevice: Removing device AA:BB:CC:DD:EE:01
-09-24 10:26:59.500  1000  1234  5698 D bt_hci: HCI Event: Connection Complete
-09-24 10:26:59.550  1000  1234  5699 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:03
-09-24 10:26:59.600  1000  1234  5700 D bt_stack: BTM_SecAddDevice: Adding device AA:BB:CC:DD:EE:03
-09-24 10:26:59.650  1000  1234  5701 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:03
-09-24 10:26:59.700  1000  1234  5702 D BluetoothDevice: Device name: Test Device 3
-09-24 10:27:00.001  1000  1234  5703 D bt_hci: HCI Event: LE Connection Complete
-09-24 10:27:00.050  1000  1234  5704 I bt_btif: bta_dm_acl_up: LE Device connected: BB:CC:DD:EE:FF:01
-09-24 10:27:00.100  1000  1234  5705 D bt_stack: BTM_SecAddDevice: Adding LE device BB:CC:DD:EE:FF:01
-09-24 10:27:00.150  1000  1234  5706 I bt_btif: btif_dm_upstreams_evt: LE_ACL_UP event for BB:CC:DD:EE:FF:01
-09-24 10:27:00.200  1000  1234  5707 D BluetoothDevice: LE Device name: BLE Device 1
-09-24 10:27:00.500  1000  1234  5708 D bt_hci: HCI Event: LE Connection Complete
-09-24 10:27:00.550  1000  1234  5709 I bt_btif: bta_dm_acl_up: LE Device connected: BB:CC:DD:EE:FF:02
-09-24 10:27:00.600  1000  1234  5710 D bt_stack: BTM_SecAddDevice: Adding LE device BB:CC:DD:EE:FF:02
-09-24 10:27:00.650  1000  1234  5711 I bt_btif: btif_dm_upstreams_evt: LE_ACL_UP event for BB:CC:DD:EE:FF:02
-09-24 10:27:00.700  1000  1234  5712 D BluetoothDevice: LE Device name: BLE Device 2
-09-24 10:27:01.001  1000  1234  5713 D bt_hci: HCI CMD: Read Remote Version Information
-09-24 10:27:01.050  1000  1234  5714 I bt_stack: BTM_ReadRemoteVersion: Reading version for AA:BB:CC:DD:EE:02
-09-24 10:27:01.100  1000  1234  5715 D bt_hci: HCI Event: Read Remote Version Complete
-09-24 10:27:01.150  1000  1234  5716 I bt_stack: BTM_ReadRemoteVersionComplete: Version 5.2
-09-24 10:27:01.500  1000  1234  5717 D bt_hci: HCI Event: LE Disconnection Complete
-09-24 10:27:01.550  1000  1234  5718 I bt_btif: bta_dm_acl_down: LE Device disconnected: BB:CC:DD:EE:FF:01
-09-24 10:27:01.600  1000  1234  5719 D bt_stack: BTM_SecDeleteDevice: Removing LE device BB:CC:DD:EE:FF:01
-09-24 10:27:02.001  1000  1234  5720 D bt_hci: HCI Event: LE Connection Complete
-09-24 10:27:02.050  1000  1234  5721 I bt_btif: bta_dm_acl_up: LE Device connected: BB:CC:DD:EE:FF:03
-09-24 10:27:02.100  1000  1234  5722 D bt_stack: BTM_SecAddDevice: Adding LE device BB:CC:DD:EE:FF:03
-09-24 10:27:02.150  1000  1234  5723 I bt_btif: btif_dm_upstreams_evt: LE_ACL_UP event for BB:CC:DD:EE:FF:03
-09-24 10:27:02.200  1000  1234  5724 D BluetoothDevice: LE Device name: BLE Device 3
-09-24 10:27:02.500  1000  1234  5725 I ActivityManager: Bluetooth service running normally
-09-24 10:27:02.550  1000  1234  5726 D NetworkScheduler: NetworkScheduler.Stats: Task completed successfully
-09-24 10:27:02.600  1000  1234  5727 I RegisterSyncOperation: Sync operation registered
-09-24 10:27:02.650  1000  1234  5728 V CCTUploader: Upload batch size: 3 events
-09-24 10:27:03.001  1000  1234  5729 D bt_hci: HCI Event: Disconnection Complete
-09-24 10:27:03.050  1000  1234  5730 I bt_btif: bta_dm_acl_down: Device disconnected: AA:BB:CC:DD:EE:02
-09-24 10:27:03.100  1000  1234  5731 D bt_stack: BTM_SecDeleteDevice: Removing device AA:BB:CC:DD:EE:02
-09-24 10:27:03.500  1000  1234  5732 D bt_hci: HCI Event: LE Disconnection Complete
-09-24 10:27:03.550  1000  1234  5733 I bt_btif: bta_dm_acl_down: LE Device disconnected: BB:CC:DD:EE:FF:02
-09-24 10:27:03.600  1000  1234  5734 D bt_stack: BTM_SecDeleteDevice: Removing LE device BB:CC:DD:EE:FF:02
+09-24 10:00:01.013  1000  1234  1235 V ActivityManager: Log message 0 for testing
+09-24 10:00:02.026  1000  1234  1235 D BluetoothAdapter: Log message 1 for testing
+09-24 10:00:03.039  1000  1234  1235 I PackageManager: Log message 2 for testing
+09-24 10:00:04.052  1000  1234  1235 W SystemUI: Log message 3 for testing
+09-24 10:00:05.065  1000  1234  1235 E WindowManager: Log message 4 for testing
+09-24 10:00:06.078  1000  1234  1235 V bt_stack: Log message 5 for testing
+09-24 10:01:07.091  1000  1234  1235 D bt_btif: Log message 6 for testing
+09-24 10:01:08.104  1000  1234  1235 I bt_hci: Log message 7 for testing
+09-24 10:01:09.117  1000  1234  1235 W BluetoothAdapterService: Log message 8 for testing
+09-24 10:01:10.130  1000  1234  1235 E BluetoothManagerService: Log message 9 for testing
+09-24 10:01:11.143  1000  1234  1235 V ActivityManager: Log message 10 for testing
+09-24 10:01:12.156  1000  1234  1235 D BluetoothAdapter: Log message 11 for testing
+09-24 10:02:13.169  1000  1234  1235 I PackageManager: Log message 12 for testing
+09-24 10:02:14.182  1000  1234  1235 W SystemUI: Log message 13 for testing
+09-24 10:02:15.195  1000  1234  1235 E WindowManager: Log message 14 for testing
+09-24 10:02:16.208  1000  1234  1235 V bt_stack: Log message 15 for testing
+09-24 10:02:17.221  1000  1234  1235 D bt_btif: Log message 16 for testing
+09-24 10:02:18.234  1000  1234  1235 I bt_hci: Log message 17 for testing
+09-24 10:03:19.247  1000  1234  1235 W BluetoothAdapterService: Log message 18 for testing
+09-24 10:03:20.260  1000  1234  1235 E BluetoothManagerService: Log message 19 for testing
+09-24 10:03:21.273  1000  1234  1235 V ActivityManager: Log message 20 for testing
+09-24 10:03:22.286  1000  1234  1235 D BluetoothAdapter: Log message 21 for testing
+09-24 10:03:23.299  1000  1234  1235 I PackageManager: Log message 22 for testing
+09-24 10:03:24.312  1000  1234  1235 W SystemUI: Log message 23 for testing
+09-24 10:04:25.325  1000  1234  1235 E WindowManager: Log message 24 for testing
+09-24 10:04:26.338  1000  1234  1235 V bt_stack: Log message 25 for testing
+09-24 10:04:27.351  1000  1234  1235 D bt_btif: Log message 26 for testing
+09-24 10:04:28.364  1000  1234  1235 I bt_hci: Log message 27 for testing
+09-24 10:04:29.377  1000  1234  1235 W BluetoothAdapterService: Log message 28 for testing
+09-24 10:04:30.390  1000  1234  1235 E BluetoothManagerService: Log message 29 for testing
+09-24 10:05:31.403  1000  1234  1235 V ActivityManager: Log message 30 for testing
+09-24 10:05:32.416  1000  1234  1235 D BluetoothAdapter: Log message 31 for testing
+09-24 10:05:33.429  1000  1234  1235 I PackageManager: Log message 32 for testing
+09-24 10:05:34.442  1000  1234  1235 W SystemUI: Log message 33 for testing
+09-24 10:05:35.455  1000  1234  1235 E WindowManager: Log message 34 for testing
+09-24 10:05:36.468  1000  1234  1235 V bt_stack: Log message 35 for testing
+09-24 10:06:37.481  1000  1234  1235 D bt_btif: Log message 36 for testing
+09-24 10:06:38.494  1000  1234  1235 I bt_hci: Log message 37 for testing
+09-24 10:06:39.507  1000  1234  1235 W BluetoothAdapterService: Log message 38 for testing
+09-24 10:06:40.520  1000  1234  1235 E BluetoothManagerService: Log message 39 for testing
+09-24 10:06:41.533  1000  1234  1235 V ActivityManager: Log message 40 for testing
+09-24 10:06:42.546  1000  1234  1235 D BluetoothAdapter: Log message 41 for testing
+09-24 10:07:43.559  1000  1234  1235 I PackageManager: Log message 42 for testing
+09-24 10:07:44.572  1000  1234  1235 W SystemUI: Log message 43 for testing
+09-24 10:07:45.585  1000  1234  1235 E WindowManager: Log message 44 for testing
+09-24 10:07:46.598  1000  1234  1235 V bt_stack: Log message 45 for testing
+09-24 10:07:47.611  1000  1234  1235 D bt_btif: Log message 46 for testing
+09-24 10:07:48.624  1000  1234  1235 I bt_hci: Log message 47 for testing
+09-24 10:08:49.637  1000  1234  1235 W BluetoothAdapterService: Log message 48 for testing
+09-24 10:08:50.650  1000  1234  1235 E BluetoothManagerService: Log message 49 for testing
+09-24 10:08:51.663  1000  1234  1235 V ActivityManager: Log message 50 for testing
+09-24 10:08:52.676  1000  1234  1235 D BluetoothAdapter: Log message 51 for testing
+09-24 10:08:53.689  1000  1234  1235 I PackageManager: Log message 52 for testing
+09-24 10:08:54.702  1000  1234  1235 W SystemUI: Log message 53 for testing
+09-24 10:09:55.715  1000  1234  1235 E WindowManager: Log message 54 for testing
+09-24 10:09:56.728  1000  1234  1235 V bt_stack: Log message 55 for testing
+09-24 10:09:57.741  1000  1234  1235 D bt_btif: Log message 56 for testing
+09-24 10:09:58.754  1000  1234  1235 I bt_hci: Log message 57 for testing
+09-24 10:09:59.767  1000  1234  1235 W BluetoothAdapterService: Log message 58 for testing
+09-24 10:09:00.780  1000  1235  1236 E BluetoothManagerService: Log message 59 for testing
+09-24 10:10:01.793  1000  1235  1236 V ActivityManager: Log message 60 for testing
+09-24 10:10:02.806  1000  1235  1236 D BluetoothAdapter: Log message 61 for testing
+09-24 10:10:03.819  1000  1235  1236 I PackageManager: Log message 62 for testing
+09-24 10:10:04.832  1000  1235  1236 W SystemUI: Log message 63 for testing
+09-24 10:10:05.845  1000  1235  1236 E WindowManager: Log message 64 for testing
+09-24 10:10:06.858  1000  1235  1236 V bt_stack: Log message 65 for testing
+09-24 10:11:07.871  1000  1235  1236 D bt_btif: Log message 66 for testing
+09-24 10:11:08.884  1000  1235  1236 I bt_hci: Log message 67 for testing
+09-24 10:11:09.897  1000  1235  1236 W BluetoothAdapterService: Log message 68 for testing
+09-24 10:11:10.910  1000  1235  1236 E BluetoothManagerService: Log message 69 for testing
+09-24 10:11:11.923  1000  1235  1236 V ActivityManager: Log message 70 for testing
+09-24 10:11:12.936  1000  1235  1236 D BluetoothAdapter: Log message 71 for testing
+09-24 10:12:13.949  1000  1235  1236 I PackageManager: Log message 72 for testing
+09-24 10:12:14.962  1000  1235  1236 W SystemUI: Log message 73 for testing
+09-24 10:12:15.975  1000  1235  1236 E WindowManager: Log message 74 for testing
+09-24 10:12:16.988  1000  1235  1236 V bt_stack: Log message 75 for testing
+09-24 10:12:17.001  1000  1235  1236 D bt_btif: Log message 76 for testing
+09-24 10:12:18.014  1000  1235  1236 I bt_hci: Log message 77 for testing
+09-24 10:13:19.027  1000  1235  1236 W BluetoothAdapterService: Log message 78 for testing
+09-24 10:13:20.040  1000  1235  1236 E BluetoothManagerService: Log message 79 for testing
+09-24 10:13:21.053  1000  1235  1236 V ActivityManager: Log message 80 for testing
+09-24 10:13:22.066  1000  1235  1236 D BluetoothAdapter: Log message 81 for testing
+09-24 10:13:23.079  1000  1235  1236 I PackageManager: Log message 82 for testing
+09-24 10:13:24.092  1000  1235  1236 W SystemUI: Log message 83 for testing
+09-24 10:14:25.105  1000  1235  1236 E WindowManager: Log message 84 for testing
+09-24 10:14:26.118  1000  1235  1236 V bt_stack: Log message 85 for testing
+09-24 10:14:27.131  1000  1235  1236 D bt_btif: Log message 86 for testing
+09-24 10:14:28.144  1000  1235  1236 I bt_hci: Log message 87 for testing
+09-24 10:14:29.157  1000  1235  1236 W BluetoothAdapterService: Log message 88 for testing
+09-24 10:14:30.170  1000  1235  1236 E BluetoothManagerService: Log message 89 for testing
+09-24 10:15:31.183  1000  1235  1236 V ActivityManager: Log message 90 for testing
+09-24 10:15:32.196  1000  1235  1236 D BluetoothAdapter: Log message 91 for testing
+09-24 10:15:33.209  1000  1235  1236 I PackageManager: Log message 92 for testing
+09-24 10:15:34.222  1000  1235  1236 W SystemUI: Log message 93 for testing
+09-24 10:15:35.235  1000  1235  1236 E WindowManager: Log message 94 for testing
+09-24 10:15:36.248  1000  1235  1236 V bt_stack: Log message 95 for testing
+09-24 10:16:37.261  1000  1235  1236 D bt_btif: Log message 96 for testing
+09-24 10:16:38.274  1000  1235  1236 I bt_hci: Log message 97 for testing
+09-24 10:16:39.287  1000  1235  1236 W BluetoothAdapterService: Log message 98 for testing
+09-24 10:16:40.300  1000  1235  1236 E BluetoothManagerService: Log message 99 for testing
+09-24 10:16:41.313  1000  1235  1236 V ActivityManager: Log message 100 for testing
+09-24 10:16:42.326  1000  1235  1236 D BluetoothAdapter: Log message 101 for testing
+09-24 10:17:43.339  1000  1235  1236 I PackageManager: Log message 102 for testing
+09-24 10:17:44.352  1000  1235  1236 W SystemUI: Log message 103 for testing
+09-24 10:17:45.365  1000  1235  1236 E WindowManager: Log message 104 for testing
+09-24 10:17:46.378  1000  1235  1236 V bt_stack: Log message 105 for testing
+09-24 10:17:47.391  1000  1235  1236 D bt_btif: Log message 106 for testing
+09-24 10:17:48.404  1000  1235  1236 I bt_hci: Log message 107 for testing
+09-24 10:18:49.417  1000  1235  1236 W BluetoothAdapterService: Log message 108 for testing
+09-24 10:18:50.430  1000  1235  1236 E BluetoothManagerService: Log message 109 for testing
+09-24 10:18:51.443  1000  1235  1236 V ActivityManager: Log message 110 for testing
+09-24 10:18:52.456  1000  1235  1236 D BluetoothAdapter: Log message 111 for testing
+09-24 10:18:53.469  1000  1235  1236 I PackageManager: Log message 112 for testing
+09-24 10:18:54.482  1000  1235  1236 W SystemUI: Log message 113 for testing
+09-24 10:19:55.495  1000  1235  1236 E WindowManager: Log message 114 for testing
+09-24 10:19:56.508  1000  1235  1236 V bt_stack: Log message 115 for testing
+09-24 10:19:57.521  1000  1235  1236 D bt_btif: Log message 116 for testing
+09-24 10:19:58.534  1000  1235  1236 I bt_hci: Log message 117 for testing
+09-24 10:19:59.547  1000  1235  1236 W BluetoothAdapterService: Log message 118 for testing
+09-24 10:19:00.560  1000  1236  1237 E BluetoothManagerService: Log message 119 for testing
+09-24 10:20:01.573  1000  1236  1237 V ActivityManager: Log message 120 for testing
+09-24 10:20:02.586  1000  1236  1237 D BluetoothAdapter: Log message 121 for testing
+09-24 10:20:03.599  1000  1236  1237 I PackageManager: Log message 122 for testing
+09-24 10:20:04.612  1000  1236  1237 W SystemUI: Log message 123 for testing
+09-24 10:20:05.625  1000  1236  1237 E WindowManager: Log message 124 for testing
+09-24 10:20:06.638  1000  1236  1237 V bt_stack: Log message 125 for testing
+09-24 10:21:07.651  1000  1236  1237 D bt_btif: Log message 126 for testing
+09-24 10:21:08.664  1000  1236  1237 I bt_hci: Log message 127 for testing
+09-24 10:21:09.677  1000  1236  1237 W BluetoothAdapterService: Log message 128 for testing
+09-24 10:21:10.690  1000  1236  1237 E BluetoothManagerService: Log message 129 for testing
+09-24 10:21:11.703  1000  1236  1237 V ActivityManager: Log message 130 for testing
+09-24 10:21:12.716  1000  1236  1237 D BluetoothAdapter: Log message 131 for testing
+09-24 10:22:13.729  1000  1236  1237 I PackageManager: Log message 132 for testing
+09-24 10:22:14.742  1000  1236  1237 W SystemUI: Log message 133 for testing
+09-24 10:22:15.755  1000  1236  1237 E WindowManager: Log message 134 for testing
+09-24 10:22:16.768  1000  1236  1237 V bt_stack: Log message 135 for testing
+09-24 10:22:17.781  1000  1236  1237 D bt_btif: Log message 136 for testing
+09-24 10:22:18.794  1000  1236  1237 I bt_hci: Log message 137 for testing
+09-24 10:23:19.807  1000  1236  1237 W BluetoothAdapterService: Log message 138 for testing
+09-24 10:23:20.820  1000  1236  1237 E BluetoothManagerService: Log message 139 for testing
+09-24 10:23:21.833  1000  1236  1237 V ActivityManager: Log message 140 for testing
+09-24 10:23:22.846  1000  1236  1237 D BluetoothAdapter: Log message 141 for testing
+09-24 10:23:23.859  1000  1236  1237 I PackageManager: Log message 142 for testing
+09-24 10:23:24.872  1000  1236  1237 W SystemUI: Log message 143 for testing
+09-24 10:24:25.885  1000  1236  1237 E WindowManager: Log message 144 for testing
+09-24 10:24:26.898  1000  1236  1237 V bt_stack: Log message 145 for testing
+09-24 10:24:27.911  1000  1236  1237 D bt_btif: Log message 146 for testing
+09-24 10:24:28.924  1000  1236  1237 I bt_hci: Log message 147 for testing
+09-24 10:24:29.937  1000  1236  1237 W BluetoothAdapterService: Log message 148 for testing
+09-24 10:24:30.950  1000  1236  1237 E BluetoothManagerService: Log message 149 for testing
+09-24 10:25:31.963  1000  1236  1237 V ActivityManager: Log message 150 for testing
+09-24 10:25:32.976  1000  1236  1237 D BluetoothAdapter: Log message 151 for testing
+09-24 10:25:33.989  1000  1236  1237 I PackageManager: Log message 152 for testing
+09-24 10:25:34.002  1000  1236  1237 W SystemUI: Log message 153 for testing
+09-24 10:25:35.015  1000  1236  1237 E WindowManager: Log message 154 for testing
+09-24 10:25:36.028  1000  1236  1237 V bt_stack: Log message 155 for testing
+09-24 10:26:37.041  1000  1236  1237 D bt_btif: Log message 156 for testing
+09-24 10:26:38.054  1000  1236  1237 I bt_hci: Log message 157 for testing
+09-24 10:26:39.067  1000  1236  1237 W BluetoothAdapterService: Log message 158 for testing
+09-24 10:26:40.080  1000  1236  1237 E BluetoothManagerService: Log message 159 for testing
+09-24 10:26:41.093  1000  1236  1237 V ActivityManager: Log message 160 for testing
+09-24 10:26:42.106  1000  1236  1237 D BluetoothAdapter: Log message 161 for testing
+09-24 10:27:43.119  1000  1236  1237 I PackageManager: Log message 162 for testing
+09-24 10:27:44.132  1000  1236  1237 W SystemUI: Log message 163 for testing
+09-24 10:27:45.145  1000  1236  1237 E WindowManager: Log message 164 for testing
+09-24 10:27:46.158  1000  1236  1237 V bt_stack: Log message 165 for testing
+09-24 10:27:47.171  1000  1236  1237 D bt_btif: Log message 166 for testing
+09-24 10:27:48.184  1000  1236  1237 I bt_hci: Log message 167 for testing
+09-24 10:28:49.197  1000  1236  1237 W BluetoothAdapterService: Log message 168 for testing
+09-24 10:28:50.210  1000  1236  1237 E BluetoothManagerService: Log message 169 for testing
+09-24 10:28:51.223  1000  1236  1237 V ActivityManager: Log message 170 for testing
+09-24 10:28:52.236  1000  1236  1237 D BluetoothAdapter: Log message 171 for testing
+09-24 10:28:53.249  1000  1236  1237 I PackageManager: Log message 172 for testing
+09-24 10:28:54.262  1000  1236  1237 W SystemUI: Log message 173 for testing
+09-24 10:29:55.275  1000  1236  1237 E WindowManager: Log message 174 for testing
+09-24 10:29:56.288  1000  1236  1237 V bt_stack: Log message 175 for testing
+09-24 10:29:57.301  1000  1236  1237 D bt_btif: Log message 176 for testing
+09-24 10:29:58.314  1000  1236  1237 I bt_hci: Log message 177 for testing
+09-24 10:29:59.327  1000  1236  1237 W BluetoothAdapterService: Log message 178 for testing
+09-24 10:29:00.340  1000  1237  1238 E BluetoothManagerService: Log message 179 for testing
+09-24 10:30:01.353  1000  1237  1238 V ActivityManager: Log message 180 for testing
+09-24 10:30:02.366  1000  1237  1238 D BluetoothAdapter: Log message 181 for testing
+09-24 10:30:03.379  1000  1237  1238 I PackageManager: Log message 182 for testing
+09-24 10:30:04.392  1000  1237  1238 W SystemUI: Log message 183 for testing
+09-24 10:30:05.405  1000  1237  1238 E WindowManager: Log message 184 for testing
+09-24 10:30:06.418  1000  1237  1238 V bt_stack: Log message 185 for testing
+09-24 10:31:07.431  1000  1237  1238 D bt_btif: Log message 186 for testing
+09-24 10:31:08.444  1000  1237  1238 I bt_hci: Log message 187 for testing
+09-24 10:31:09.457  1000  1237  1238 W BluetoothAdapterService: Log message 188 for testing
+09-24 10:31:10.470  1000  1237  1238 E BluetoothManagerService: Log message 189 for testing
+09-24 10:31:11.483  1000  1237  1238 V ActivityManager: Log message 190 for testing
+09-24 10:31:12.496  1000  1237  1238 D BluetoothAdapter: Log message 191 for testing
+09-24 10:32:13.509  1000  1237  1238 I PackageManager: Log message 192 for testing
+09-24 10:32:14.522  1000  1237  1238 W SystemUI: Log message 193 for testing
+09-24 10:32:15.535  1000  1237  1238 E WindowManager: Log message 194 for testing
+09-24 10:32:16.548  1000  1237  1238 V bt_stack: Log message 195 for testing
+09-24 10:32:17.561  1000  1237  1238 D bt_btif: Log message 196 for testing
+09-24 10:32:18.574  1000  1237  1238 I bt_hci: Log message 197 for testing
+09-24 10:33:19.587  1000  1237  1238 W BluetoothAdapterService: Log message 198 for testing
+09-24 10:33:20.600  1000  1237  1238 E BluetoothManagerService: Log message 199 for testing
+09-24 10:33:21.613  1000  1237  1238 V ActivityManager: Log message 200 for testing
+09-24 10:33:22.626  1000  1237  1238 D BluetoothAdapter: Log message 201 for testing
+09-24 10:33:23.639  1000  1237  1238 I PackageManager: Log message 202 for testing
+09-24 10:33:24.652  1000  1237  1238 W SystemUI: Log message 203 for testing
+09-24 10:34:25.665  1000  1237  1238 E WindowManager: Log message 204 for testing
+09-24 10:34:26.678  1000  1237  1238 V bt_stack: Log message 205 for testing
+09-24 10:34:27.691  1000  1237  1238 D bt_btif: Log message 206 for testing
+09-24 10:34:28.704  1000  1237  1238 I bt_hci: Log message 207 for testing
+09-24 10:34:29.717  1000  1237  1238 W BluetoothAdapterService: Log message 208 for testing
+09-24 10:34:30.730  1000  1237  1238 E BluetoothManagerService: Log message 209 for testing
+09-24 10:35:31.743  1000  1237  1238 V ActivityManager: Log message 210 for testing
+09-24 10:35:32.756  1000  1237  1238 D BluetoothAdapter: Log message 211 for testing
+09-24 10:35:33.769  1000  1237  1238 I PackageManager: Log message 212 for testing
+09-24 10:35:34.782  1000  1237  1238 W SystemUI: Log message 213 for testing
+09-24 10:35:35.795  1000  1237  1238 E WindowManager: Log message 214 for testing
+09-24 10:35:36.808  1000  1237  1238 V bt_stack: Log message 215 for testing
+09-24 10:36:37.821  1000  1237  1238 D bt_btif: Log message 216 for testing
+09-24 10:36:38.834  1000  1237  1238 I bt_hci: Log message 217 for testing
+09-24 10:36:39.847  1000  1237  1238 W BluetoothAdapterService: Log message 218 for testing
+09-24 10:36:40.860  1000  1237  1238 E BluetoothManagerService: Log message 219 for testing
+09-24 10:36:41.873  1000  1237  1238 V ActivityManager: Log message 220 for testing
+09-24 10:36:42.886  1000  1237  1238 D BluetoothAdapter: Log message 221 for testing
+09-24 10:37:43.899  1000  1237  1238 I PackageManager: Log message 222 for testing
+09-24 10:37:44.912  1000  1237  1238 W SystemUI: Log message 223 for testing
+09-24 10:37:45.925  1000  1237  1238 E WindowManager: Log message 224 for testing
+09-24 10:37:46.938  1000  1237  1238 V bt_stack: Log message 225 for testing
+09-24 10:37:47.951  1000  1237  1238 D bt_btif: Log message 226 for testing
+09-24 10:37:48.964  1000  1237  1238 I bt_hci: Log message 227 for testing
+09-24 10:38:49.977  1000  1237  1238 W BluetoothAdapterService: Log message 228 for testing
+09-24 10:38:50.990  1000  1237  1238 E BluetoothManagerService: Log message 229 for testing
+09-24 10:38:51.003  1000  1237  1238 V ActivityManager: Log message 230 for testing
+09-24 10:38:52.016  1000  1237  1238 D BluetoothAdapter: Log message 231 for testing
+09-24 10:38:53.029  1000  1237  1238 I PackageManager: Log message 232 for testing
+09-24 10:38:54.042  1000  1237  1238 W SystemUI: Log message 233 for testing
+09-24 10:39:55.055  1000  1237  1238 E WindowManager: Log message 234 for testing
+09-24 10:39:56.068  1000  1237  1238 V bt_stack: Log message 235 for testing
+09-24 10:39:57.081  1000  1237  1238 D bt_btif: Log message 236 for testing
+09-24 10:39:58.094  1000  1237  1238 I bt_hci: Log message 237 for testing
+09-24 10:39:59.107  1000  1237  1238 W BluetoothAdapterService: Log message 238 for testing
+09-24 10:39:00.120  1000  1238  1239 E BluetoothManagerService: Log message 239 for testing
+09-24 10:40:01.133  1000  1238  1239 V ActivityManager: Log message 240 for testing
+09-24 10:40:02.146  1000  1238  1239 D BluetoothAdapter: Log message 241 for testing
+09-24 10:40:03.159  1000  1238  1239 I PackageManager: Log message 242 for testing
+09-24 10:40:04.172  1000  1238  1239 W SystemUI: Log message 243 for testing
+09-24 10:40:05.185  1000  1238  1239 E WindowManager: Log message 244 for testing
+09-24 10:40:06.198  1000  1238  1239 V bt_stack: Log message 245 for testing
+09-24 10:41:07.211  1000  1238  1239 D bt_btif: Log message 246 for testing
+09-24 10:41:08.224  1000  1238  1239 I bt_hci: Log message 247 for testing
+09-24 10:41:09.237  1000  1238  1239 W BluetoothAdapterService: Log message 248 for testing
+09-24 10:41:10.250  1000  1238  1239 E BluetoothManagerService: Log message 249 for testing
+09-24 10:41:11.263  1000  1238  1239 V ActivityManager: Log message 250 for testing
+09-24 10:41:12.276  1000  1238  1239 D BluetoothAdapter: Log message 251 for testing
+09-24 10:42:13.289  1000  1238  1239 I PackageManager: Log message 252 for testing
+09-24 10:42:14.302  1000  1238  1239 W SystemUI: Log message 253 for testing
+09-24 10:42:15.315  1000  1238  1239 E WindowManager: Log message 254 for testing
+09-24 10:42:16.328  1000  1238  1239 V bt_stack: Log message 255 for testing
+09-24 10:42:17.341  1000  1238  1239 D bt_btif: Log message 256 for testing
+09-24 10:42:18.354  1000  1238  1239 I bt_hci: Log message 257 for testing
+09-24 10:43:19.367  1000  1238  1239 W BluetoothAdapterService: Log message 258 for testing
+09-24 10:43:20.380  1000  1238  1239 E BluetoothManagerService: Log message 259 for testing
+09-24 10:43:21.393  1000  1238  1239 V ActivityManager: Log message 260 for testing
+09-24 10:43:22.406  1000  1238  1239 D BluetoothAdapter: Log message 261 for testing
+09-24 10:43:23.419  1000  1238  1239 I PackageManager: Log message 262 for testing
+09-24 10:43:24.432  1000  1238  1239 W SystemUI: Log message 263 for testing
+09-24 10:44:25.445  1000  1238  1239 E WindowManager: Log message 264 for testing
+09-24 10:44:26.458  1000  1238  1239 V bt_stack: Log message 265 for testing
+09-24 10:44:27.471  1000  1238  1239 D bt_btif: Log message 266 for testing
+09-24 10:44:28.484  1000  1238  1239 I bt_hci: Log message 267 for testing
+09-24 10:44:29.497  1000  1238  1239 W BluetoothAdapterService: Log message 268 for testing
+09-24 10:44:30.510  1000  1238  1239 E BluetoothManagerService: Log message 269 for testing
+09-24 10:45:31.523  1000  1238  1239 V ActivityManager: Log message 270 for testing
+09-24 10:45:32.536  1000  1238  1239 D BluetoothAdapter: Log message 271 for testing
+09-24 10:45:33.549  1000  1238  1239 I PackageManager: Log message 272 for testing
+09-24 10:45:34.562  1000  1238  1239 W SystemUI: Log message 273 for testing
+09-24 10:45:35.575  1000  1238  1239 E WindowManager: Log message 274 for testing
+09-24 10:45:36.588  1000  1238  1239 V bt_stack: Log message 275 for testing
+09-24 10:46:37.601  1000  1238  1239 D bt_btif: Log message 276 for testing
+09-24 10:46:38.614  1000  1238  1239 I bt_hci: Log message 277 for testing
+09-24 10:46:39.627  1000  1238  1239 W BluetoothAdapterService: Log message 278 for testing
+09-24 10:46:40.640  1000  1238  1239 E BluetoothManagerService: Log message 279 for testing
+09-24 10:46:41.653  1000  1238  1239 V ActivityManager: Log message 280 for testing
+09-24 10:46:42.666  1000  1238  1239 D BluetoothAdapter: Log message 281 for testing
+09-24 10:47:43.679  1000  1238  1239 I PackageManager: Log message 282 for testing
+09-24 10:47:44.692  1000  1238  1239 W SystemUI: Log message 283 for testing
+09-24 10:47:45.705  1000  1238  1239 E WindowManager: Log message 284 for testing
+09-24 10:47:46.718  1000  1238  1239 V bt_stack: Log message 285 for testing
+09-24 10:47:47.731  1000  1238  1239 D bt_btif: Log message 286 for testing
+09-24 10:47:48.744  1000  1238  1239 I bt_hci: Log message 287 for testing
+09-24 10:48:49.757  1000  1238  1239 W BluetoothAdapterService: Log message 288 for testing
+09-24 10:48:50.770  1000  1238  1239 E BluetoothManagerService: Log message 289 for testing
+09-24 10:48:51.783  1000  1238  1239 V ActivityManager: Log message 290 for testing
+09-24 10:48:52.796  1000  1238  1239 D BluetoothAdapter: Log message 291 for testing
+09-24 10:48:53.809  1000  1238  1239 I PackageManager: Log message 292 for testing
+09-24 10:48:54.822  1000  1238  1239 W SystemUI: Log message 293 for testing
+09-24 10:49:55.835  1000  1238  1239 E WindowManager: Log message 294 for testing
+09-24 10:49:56.848  1000  1238  1239 V bt_stack: Log message 295 for testing
+09-24 10:49:57.861  1000  1238  1239 D bt_btif: Log message 296 for testing
+09-24 10:49:58.874  1000  1238  1239 I bt_hci: Log message 297 for testing
+09-24 10:49:59.887  1000  1238  1239 W BluetoothAdapterService: Log message 298 for testing
+09-24 10:49:00.900  1000  1239  1240 E BluetoothManagerService: Log message 299 for testing
+09-24 10:50:01.913  1000  1239  1240 V ActivityManager: Log message 300 for testing
+09-24 10:50:02.926  1000  1239  1240 D BluetoothAdapter: Log message 301 for testing
+09-24 10:50:03.939  1000  1239  1240 I PackageManager: Log message 302 for testing
+09-24 10:50:04.952  1000  1239  1240 W SystemUI: Log message 303 for testing
+09-24 10:50:05.965  1000  1239  1240 E WindowManager: Log message 304 for testing
+09-24 10:50:06.978  1000  1239  1240 V bt_stack: Log message 305 for testing
+09-24 10:51:07.991  1000  1239  1240 D bt_btif: Log message 306 for testing
+09-24 10:51:08.004  1000  1239  1240 I bt_hci: Log message 307 for testing
+09-24 10:51:09.017  1000  1239  1240 W BluetoothAdapterService: Log message 308 for testing
+09-24 10:51:10.030  1000  1239  1240 E BluetoothManagerService: Log message 309 for testing
+09-24 10:51:11.043  1000  1239  1240 V ActivityManager: Log message 310 for testing
+09-24 10:51:12.056  1000  1239  1240 D BluetoothAdapter: Log message 311 for testing
+09-24 10:52:13.069  1000  1239  1240 I PackageManager: Log message 312 for testing
+09-24 10:52:14.082  1000  1239  1240 W SystemUI: Log message 313 for testing
+09-24 10:52:15.095  1000  1239  1240 E WindowManager: Log message 314 for testing
+09-24 10:52:16.108  1000  1239  1240 V bt_stack: Log message 315 for testing
+09-24 10:52:17.121  1000  1239  1240 D bt_btif: Log message 316 for testing
+09-24 10:52:18.134  1000  1239  1240 I bt_hci: Log message 317 for testing
+09-24 10:53:19.147  1000  1239  1240 W BluetoothAdapterService: Log message 318 for testing
+09-24 10:53:20.160  1000  1239  1240 E BluetoothManagerService: Log message 319 for testing
+09-24 10:53:21.173  1000  1239  1240 V ActivityManager: Log message 320 for testing
+09-24 10:53:22.186  1000  1239  1240 D BluetoothAdapter: Log message 321 for testing
+09-24 10:53:23.199  1000  1239  1240 I PackageManager: Log message 322 for testing
+09-24 10:53:24.212  1000  1239  1240 W SystemUI: Log message 323 for testing
+09-24 10:54:25.225  1000  1239  1240 E WindowManager: Log message 324 for testing
+09-24 10:54:26.238  1000  1239  1240 V bt_stack: Log message 325 for testing
+09-24 10:54:27.251  1000  1239  1240 D bt_btif: Log message 326 for testing
+09-24 10:54:28.264  1000  1239  1240 I bt_hci: Log message 327 for testing
+09-24 10:54:29.277  1000  1239  1240 W BluetoothAdapterService: Log message 328 for testing
+09-24 10:54:30.290  1000  1239  1240 E BluetoothManagerService: Log message 329 for testing
+09-24 10:55:31.303  1000  1239  1240 V ActivityManager: Log message 330 for testing
+09-24 10:55:32.316  1000  1239  1240 D BluetoothAdapter: Log message 331 for testing
+09-24 10:55:33.329  1000  1239  1240 I PackageManager: Log message 332 for testing
+09-24 10:55:34.342  1000  1239  1240 W SystemUI: Log message 333 for testing
+09-24 10:55:35.355  1000  1239  1240 E WindowManager: Log message 334 for testing
+09-24 10:55:36.368  1000  1239  1240 V bt_stack: Log message 335 for testing
+09-24 10:56:37.381  1000  1239  1240 D bt_btif: Log message 336 for testing
+09-24 10:56:38.394  1000  1239  1240 I bt_hci: Log message 337 for testing
+09-24 10:56:39.407  1000  1239  1240 W BluetoothAdapterService: Log message 338 for testing
+09-24 10:56:40.420  1000  1239  1240 E BluetoothManagerService: Log message 339 for testing
+09-24 10:56:41.433  1000  1239  1240 V ActivityManager: Log message 340 for testing
+09-24 10:56:42.446  1000  1239  1240 D BluetoothAdapter: Log message 341 for testing
+09-24 10:57:43.459  1000  1239  1240 I PackageManager: Log message 342 for testing
+09-24 10:57:44.472  1000  1239  1240 W SystemUI: Log message 343 for testing
+09-24 10:57:45.485  1000  1239  1240 E WindowManager: Log message 344 for testing
+09-24 10:57:46.498  1000  1239  1240 V bt_stack: Log message 345 for testing
+09-24 10:57:47.511  1000  1239  1240 D bt_btif: Log message 346 for testing
+09-24 10:57:48.524  1000  1239  1240 I bt_hci: Log message 347 for testing
+09-24 10:58:49.537  1000  1239  1240 W BluetoothAdapterService: Log message 348 for testing
+09-24 10:58:50.550  1000  1239  1240 E BluetoothManagerService: Log message 349 for testing
+09-24 10:58:51.563  1000  1239  1240 V ActivityManager: Log message 350 for testing
+09-24 10:58:52.576  1000  1239  1240 D BluetoothAdapter: Log message 351 for testing
+09-24 10:58:53.589  1000  1239  1240 I PackageManager: Log message 352 for testing
+09-24 10:58:54.602  1000  1239  1240 W SystemUI: Log message 353 for testing
+09-24 10:59:55.615  1000  1239  1240 E WindowManager: Log message 354 for testing
+09-24 10:59:56.628  1000  1239  1240 V bt_stack: Log message 355 for testing
+09-24 10:59:57.641  1000  1239  1240 D bt_btif: Log message 356 for testing
+09-24 10:59:58.654  1000  1239  1240 I bt_hci: Log message 357 for testing
+09-24 10:59:59.667  1000  1239  1240 W BluetoothAdapterService: Log message 358 for testing
+09-24 10:59:00.680  1000  1240  1241 E BluetoothManagerService: Log message 359 for testing
+09-24 11:00:01.693  1000  1240  1241 V ActivityManager: Log message 360 for testing
+09-24 11:00:02.706  1000  1240  1241 D BluetoothAdapter: Log message 361 for testing
+09-24 11:00:03.719  1000  1240  1241 I PackageManager: Log message 362 for testing
+09-24 11:00:04.732  1000  1240  1241 W SystemUI: Log message 363 for testing
+09-24 11:00:05.745  1000  1240  1241 E WindowManager: Log message 364 for testing
+09-24 11:00:06.758  1000  1240  1241 V bt_stack: Log message 365 for testing
+09-24 11:01:07.771  1000  1240  1241 D bt_btif: Log message 366 for testing
+09-24 11:01:08.784  1000  1240  1241 I bt_hci: Log message 367 for testing
+09-24 11:01:09.797  1000  1240  1241 W BluetoothAdapterService: Log message 368 for testing
+09-24 11:01:10.810  1000  1240  1241 E BluetoothManagerService: Log message 369 for testing
+09-24 11:01:11.823  1000  1240  1241 V ActivityManager: Log message 370 for testing
+09-24 11:01:12.836  1000  1240  1241 D BluetoothAdapter: Log message 371 for testing
+09-24 11:02:13.849  1000  1240  1241 I PackageManager: Log message 372 for testing
+09-24 11:02:14.862  1000  1240  1241 W SystemUI: Log message 373 for testing
+09-24 11:02:15.875  1000  1240  1241 E WindowManager: Log message 374 for testing
+09-24 11:02:16.888  1000  1240  1241 V bt_stack: Log message 375 for testing
+09-24 11:02:17.901  1000  1240  1241 D bt_btif: Log message 376 for testing
+09-24 11:02:18.914  1000  1240  1241 I bt_hci: Log message 377 for testing
+09-24 11:03:19.927  1000  1240  1241 W BluetoothAdapterService: Log message 378 for testing
+09-24 11:03:20.940  1000  1240  1241 E BluetoothManagerService: Log message 379 for testing
+09-24 11:03:21.953  1000  1240  1241 V ActivityManager: Log message 380 for testing
+09-24 11:03:22.966  1000  1240  1241 D BluetoothAdapter: Log message 381 for testing
+09-24 11:03:23.979  1000  1240  1241 I PackageManager: Log message 382 for testing
+09-24 11:03:24.992  1000  1240  1241 W SystemUI: Log message 383 for testing
+09-24 11:04:25.005  1000  1240  1241 E WindowManager: Log message 384 for testing
+09-24 11:04:26.018  1000  1240  1241 V bt_stack: Log message 385 for testing
+09-24 11:04:27.031  1000  1240  1241 D bt_btif: Log message 386 for testing
+09-24 11:04:28.044  1000  1240  1241 I bt_hci: Log message 387 for testing
+09-24 11:04:29.057  1000  1240  1241 W BluetoothAdapterService: Log message 388 for testing
+09-24 11:04:30.070  1000  1240  1241 E BluetoothManagerService: Log message 389 for testing
+09-24 11:05:31.083  1000  1240  1241 V ActivityManager: Log message 390 for testing
+09-24 11:05:32.096  1000  1240  1241 D BluetoothAdapter: Log message 391 for testing
+09-24 11:05:33.109  1000  1240  1241 I PackageManager: Log message 392 for testing
+09-24 11:05:34.122  1000  1240  1241 W SystemUI: Log message 393 for testing
+09-24 11:05:35.135  1000  1240  1241 E WindowManager: Log message 394 for testing
+09-24 11:05:36.148  1000  1240  1241 V bt_stack: Log message 395 for testing
+09-24 11:06:37.161  1000  1240  1241 D bt_btif: Log message 396 for testing
+09-24 11:06:38.174  1000  1240  1241 I bt_hci: Log message 397 for testing
+09-24 11:06:39.187  1000  1240  1241 W BluetoothAdapterService: Log message 398 for testing
+09-24 11:06:40.200  1000  1240  1241 E BluetoothManagerService: Log message 399 for testing
+09-24 11:06:41.213  1000  1240  1241 V ActivityManager: Log message 400 for testing
+09-24 11:06:42.226  1000  1240  1241 D BluetoothAdapter: Log message 401 for testing
+09-24 11:07:43.239  1000  1240  1241 I PackageManager: Log message 402 for testing
+09-24 11:07:44.252  1000  1240  1241 W SystemUI: Log message 403 for testing
+09-24 11:07:45.265  1000  1240  1241 E WindowManager: Log message 404 for testing
+09-24 11:07:46.278  1000  1240  1241 V bt_stack: Log message 405 for testing
+09-24 11:07:47.291  1000  1240  1241 D bt_btif: Log message 406 for testing
+09-24 11:07:48.304  1000  1240  1241 I bt_hci: Log message 407 for testing
+09-24 11:08:49.317  1000  1240  1241 W BluetoothAdapterService: Log message 408 for testing
+09-24 11:08:50.330  1000  1240  1241 E BluetoothManagerService: Log message 409 for testing
+09-24 11:08:51.343  1000  1240  1241 V ActivityManager: Log message 410 for testing
+09-24 11:08:52.356  1000  1240  1241 D BluetoothAdapter: Log message 411 for testing
+09-24 11:08:53.369  1000  1240  1241 I PackageManager: Log message 412 for testing
+09-24 11:08:54.382  1000  1240  1241 W SystemUI: Log message 413 for testing
+09-24 11:09:55.395  1000  1240  1241 E WindowManager: Log message 414 for testing
+09-24 11:09:56.408  1000  1240  1241 V bt_stack: Log message 415 for testing
+09-24 11:09:57.421  1000  1240  1241 D bt_btif: Log message 416 for testing
+09-24 11:09:58.434  1000  1240  1241 I bt_hci: Log message 417 for testing
+09-24 11:09:59.447  1000  1240  1241 W BluetoothAdapterService: Log message 418 for testing
+09-24 11:09:00.460  1000  1241  1242 E BluetoothManagerService: Log message 419 for testing
+09-24 11:10:01.473  1000  1241  1242 V ActivityManager: Log message 420 for testing
+09-24 11:10:02.486  1000  1241  1242 D BluetoothAdapter: Log message 421 for testing
+09-24 11:10:03.499  1000  1241  1242 I PackageManager: Log message 422 for testing
+09-24 11:10:04.512  1000  1241  1242 W SystemUI: Log message 423 for testing
+09-24 11:10:05.525  1000  1241  1242 E WindowManager: Log message 424 for testing
+09-24 11:10:06.538  1000  1241  1242 V bt_stack: Log message 425 for testing
+09-24 11:11:07.551  1000  1241  1242 D bt_btif: Log message 426 for testing
+09-24 11:11:08.564  1000  1241  1242 I bt_hci: Log message 427 for testing
+09-24 11:11:09.577  1000  1241  1242 W BluetoothAdapterService: Log message 428 for testing
+09-24 11:11:10.590  1000  1241  1242 E BluetoothManagerService: Log message 429 for testing
+09-24 11:11:11.603  1000  1241  1242 V ActivityManager: Log message 430 for testing
+09-24 11:11:12.616  1000  1241  1242 D BluetoothAdapter: Log message 431 for testing
+09-24 11:12:13.629  1000  1241  1242 I PackageManager: Log message 432 for testing
+09-24 11:12:14.642  1000  1241  1242 W SystemUI: Log message 433 for testing
+09-24 11:12:15.655  1000  1241  1242 E WindowManager: Log message 434 for testing
+09-24 11:12:16.668  1000  1241  1242 V bt_stack: Log message 435 for testing
+09-24 11:12:17.681  1000  1241  1242 D bt_btif: Log message 436 for testing
+09-24 11:12:18.694  1000  1241  1242 I bt_hci: Log message 437 for testing
+09-24 11:13:19.707  1000  1241  1242 W BluetoothAdapterService: Log message 438 for testing
+09-24 11:13:20.720  1000  1241  1242 E BluetoothManagerService: Log message 439 for testing
+09-24 11:13:21.733  1000  1241  1242 V ActivityManager: Log message 440 for testing
+09-24 11:13:22.746  1000  1241  1242 D BluetoothAdapter: Log message 441 for testing
+09-24 11:13:23.759  1000  1241  1242 I PackageManager: Log message 442 for testing
+09-24 11:13:24.772  1000  1241  1242 W SystemUI: Log message 443 for testing
+09-24 11:14:25.785  1000  1241  1242 E WindowManager: Log message 444 for testing
+09-24 11:14:26.798  1000  1241  1242 V bt_stack: Log message 445 for testing
+09-24 11:14:27.811  1000  1241  1242 D bt_btif: Log message 446 for testing
+09-24 11:14:28.824  1000  1241  1242 I bt_hci: Log message 447 for testing
+09-24 11:14:29.837  1000  1241  1242 W BluetoothAdapterService: Log message 448 for testing
+09-24 11:14:30.850  1000  1241  1242 E BluetoothManagerService: Log message 449 for testing
+09-24 11:15:31.863  1000  1241  1242 V ActivityManager: Log message 450 for testing
+09-24 11:15:32.876  1000  1241  1242 D BluetoothAdapter: Log message 451 for testing
+09-24 11:15:33.889  1000  1241  1242 I PackageManager: Log message 452 for testing
+09-24 11:15:34.902  1000  1241  1242 W SystemUI: Log message 453 for testing
+09-24 11:15:35.915  1000  1241  1242 E WindowManager: Log message 454 for testing
+09-24 11:15:36.928  1000  1241  1242 V bt_stack: Log message 455 for testing
+09-24 11:16:37.941  1000  1241  1242 D bt_btif: Log message 456 for testing
+09-24 11:16:38.954  1000  1241  1242 I bt_hci: Log message 457 for testing
+09-24 11:16:39.967  1000  1241  1242 W BluetoothAdapterService: Log message 458 for testing
+09-24 11:16:40.980  1000  1241  1242 E BluetoothManagerService: Log message 459 for testing
+09-24 11:16:41.993  1000  1241  1242 V ActivityManager: Log message 460 for testing
+09-24 11:16:42.006  1000  1241  1242 D BluetoothAdapter: Log message 461 for testing
+09-24 11:17:43.019  1000  1241  1242 I PackageManager: Log message 462 for testing
+09-24 11:17:44.032  1000  1241  1242 W SystemUI: Log message 463 for testing
+09-24 11:17:45.045  1000  1241  1242 E WindowManager: Log message 464 for testing
+09-24 11:17:46.058  1000  1241  1242 V bt_stack: Log message 465 for testing
+09-24 11:17:47.071  1000  1241  1242 D bt_btif: Log message 466 for testing
+09-24 11:17:48.084  1000  1241  1242 I bt_hci: Log message 467 for testing
+09-24 11:18:49.097  1000  1241  1242 W BluetoothAdapterService: Log message 468 for testing
+09-24 11:18:50.110  1000  1241  1242 E BluetoothManagerService: Log message 469 for testing
+09-24 11:18:51.123  1000  1241  1242 V ActivityManager: Log message 470 for testing
+09-24 11:18:52.136  1000  1241  1242 D BluetoothAdapter: Log message 471 for testing
+09-24 11:18:53.149  1000  1241  1242 I PackageManager: Log message 472 for testing
+09-24 11:18:54.162  1000  1241  1242 W SystemUI: Log message 473 for testing
+09-24 11:19:55.175  1000  1241  1242 E WindowManager: Log message 474 for testing
+09-24 11:19:56.188  1000  1241  1242 V bt_stack: Log message 475 for testing
+09-24 11:19:57.201  1000  1241  1242 D bt_btif: Log message 476 for testing
+09-24 11:19:58.214  1000  1241  1242 I bt_hci: Log message 477 for testing
+09-24 11:19:59.227  1000  1241  1242 W BluetoothAdapterService: Log message 478 for testing
+09-24 11:19:00.240  1000  1242  1243 E BluetoothManagerService: Log message 479 for testing
+09-24 11:20:01.253  1000  1242  1243 V ActivityManager: Log message 480 for testing
+09-24 11:20:02.266  1000  1242  1243 D BluetoothAdapter: Log message 481 for testing
+09-24 11:20:03.279  1000  1242  1243 I PackageManager: Log message 482 for testing
+09-24 11:20:04.292  1000  1242  1243 W SystemUI: Log message 483 for testing
+09-24 11:20:05.305  1000  1242  1243 E WindowManager: Log message 484 for testing
+09-24 11:20:06.318  1000  1242  1243 V bt_stack: Log message 485 for testing
+09-24 11:21:07.331  1000  1242  1243 D bt_btif: Log message 486 for testing
+09-24 11:21:08.344  1000  1242  1243 I bt_hci: Log message 487 for testing
+09-24 11:21:09.357  1000  1242  1243 W BluetoothAdapterService: Log message 488 for testing
+09-24 11:21:10.370  1000  1242  1243 E BluetoothManagerService: Log message 489 for testing
+09-24 11:21:11.383  1000  1242  1243 V ActivityManager: Log message 490 for testing
+09-24 11:21:12.396  1000  1242  1243 D BluetoothAdapter: Log message 491 for testing
+09-24 11:22:13.409  1000  1242  1243 I PackageManager: Log message 492 for testing
+09-24 11:22:14.422  1000  1242  1243 W SystemUI: Log message 493 for testing
+09-24 11:22:15.435  1000  1242  1243 E WindowManager: Log message 494 for testing
+09-24 11:22:16.448  1000  1242  1243 V bt_stack: Log message 495 for testing
+09-24 11:22:17.461  1000  1242  1243 D bt_btif: Log message 496 for testing
+09-24 11:22:18.474  1000  1242  1243 I bt_hci: Log message 497 for testing
+09-24 11:23:19.487  1000  1242  1243 W BluetoothAdapterService: Log message 498 for testing
+09-24 11:23:20.500  1000  1242  1243 E BluetoothManagerService: Log message 499 for testing
 
---------- beginning of system
-09-24 10:26:56.000  1000  1000  1000 I Zygote: Process forked
-09-24 10:26:56.050  1000  1000  1001 D SystemServer: System services initialized
-09-24 10:26:56.100  1000  1000  1002 I PackageManager: Package database loaded
-09-24 10:26:56.150  1000  1000  1003 W ActivityManager: System ready
-09-24 10:26:56.200  1000  1000  1004 E SystemServer: Boot completed
+-- CCC / Digital Car Key related log entries --
+09-24 10:27:00.000  1000  5000  5001 V [BleConnection/CCC]: SENT APDU type=SELECT seq=0
+09-24 10:27:01.017  1000  5000  5001 D [BleConnection/CCC]: RECEIVED APDU type=AUTHENTICATE seq=1
+09-24 10:27:02.034  1000  5000  5001 I [BleConnection/CCC]: SENT APDU type=GET_CHALLENGE seq=2
+09-24 10:27:03.051  1000  5000  5001 W [BleConnection/CCC]: RECEIVED APDU type=CREATE_KEY seq=3
+09-24 10:27:04.068  1000  5000  5001 E [BleConnection/CCC]: SENT APDU type=SIGN seq=4
+09-24 10:27:05.085  1000  5000  5001 V [BleConnection/CCC]: RECEIVED APDU type=SELECT seq=5
+09-24 10:27:06.102  1000  5000  5001 D [BleConnection/CCC]: SENT APDU type=AUTHENTICATE seq=6
+09-24 10:27:07.119  1000  5000  5001 I [BleConnection/CCC]: RECEIVED APDU type=GET_CHALLENGE seq=7
+09-24 10:27:08.136  1000  5000  5001 W [BleConnection/CCC]: SENT APDU type=CREATE_KEY seq=8
+09-24 10:27:09.153  1000  5000  5001 E [BleConnection/CCC]: RECEIVED APDU type=SIGN seq=9
+09-24 10:27:10.170  1000  5000  5001 V [BleConnection/CCC]: SENT APDU type=SELECT seq=10
+09-24 10:27:11.187  1000  5000  5001 D [BleConnection/CCC]: RECEIVED APDU type=AUTHENTICATE seq=11
+09-24 10:27:12.204  1000  5000  5001 I [BleConnection/CCC]: SENT APDU type=GET_CHALLENGE seq=12
+09-24 10:27:13.221  1000  5000  5001 W [BleConnection/CCC]: RECEIVED APDU type=CREATE_KEY seq=13
+09-24 10:27:14.238  1000  5000  5001 E [BleConnection/CCC]: SENT APDU type=SIGN seq=14
+09-24 10:27:15.255  1000  5000  5001 V [BleConnection/CCC]: RECEIVED APDU type=SELECT seq=15
+09-24 10:27:16.272  1000  5000  5001 D [BleConnection/CCC]: SENT APDU type=AUTHENTICATE seq=16
+09-24 10:27:17.289  1000  5000  5001 I [BleConnection/CCC]: RECEIVED APDU type=GET_CHALLENGE seq=17
+09-24 10:27:18.306  1000  5000  5001 W [BleConnection/CCC]: SENT APDU type=CREATE_KEY seq=18
+09-24 10:27:19.323  1000  5000  5001 E [BleConnection/CCC]: RECEIVED APDU type=SIGN seq=19
+09-24 10:27:20.340  1000  5000  5001 V [BleConnection/CCC]: SENT APDU type=SELECT seq=20
+09-24 10:27:21.357  1000  5000  5001 D [BleConnection/CCC]: RECEIVED APDU type=AUTHENTICATE seq=21
+09-24 10:27:22.374  1000  5000  5001 I [BleConnection/CCC]: SENT APDU type=GET_CHALLENGE seq=22
+09-24 10:27:23.391  1000  5000  5001 W [BleConnection/CCC]: RECEIVED APDU type=CREATE_KEY seq=23
+09-24 10:27:24.408  1000  5000  5001 E [BleConnection/CCC]: SENT APDU type=SIGN seq=24
+09-24 10:27:25.425  1000  5000  5001 V [BleConnection/CCC]: RECEIVED APDU type=SELECT seq=25
+09-24 10:27:26.442  1000  5000  5001 D [BleConnection/CCC]: SENT APDU type=AUTHENTICATE seq=26
+09-24 10:27:27.459  1000  5000  5001 I [BleConnection/CCC]: RECEIVED APDU type=GET_CHALLENGE seq=27
+09-24 10:27:28.476  1000  5000  5001 W [BleConnection/CCC]: SENT APDU type=CREATE_KEY seq=28
+09-24 10:27:29.493  1000  5000  5001 E [BleConnection/CCC]: RECEIVED APDU type=SIGN seq=29
+09-24 10:27:30.510  1000  5000  5001 V [BleConnection/CCC]: SENT APDU type=SELECT seq=30
+09-24 10:27:31.527  1000  5000  5001 D [BleConnection/CCC]: RECEIVED APDU type=AUTHENTICATE seq=31
+09-24 10:27:32.544  1000  5000  5001 I [BleConnection/CCC]: SENT APDU type=GET_CHALLENGE seq=32
+09-24 10:27:33.561  1000  5000  5001 W [BleConnection/CCC]: RECEIVED APDU type=CREATE_KEY seq=33
+09-24 10:27:34.578  1000  5000  5001 E [BleConnection/CCC]: SENT APDU type=SIGN seq=34
+09-24 10:27:35.595  1000  5000  5001 V [BleConnection/CCC]: RECEIVED APDU type=SELECT seq=35
+09-24 10:27:36.612  1000  5000  5001 D [BleConnection/CCC]: SENT APDU type=AUTHENTICATE seq=36
+09-24 10:27:37.629  1000  5000  5001 I [BleConnection/CCC]: RECEIVED APDU type=GET_CHALLENGE seq=37
+09-24 10:27:38.646  1000  5000  5001 W [BleConnection/CCC]: SENT APDU type=CREATE_KEY seq=38
+09-24 10:27:39.663  1000  5000  5001 E [BleConnection/CCC]: RECEIVED APDU type=SIGN seq=39
+09-24 10:27:40.680  1000  5000  5001 V [BleConnection/CCC]: SENT APDU type=SELECT seq=40
+09-24 10:27:41.697  1000  5000  5001 D [BleConnection/CCC]: RECEIVED APDU type=AUTHENTICATE seq=41
+09-24 10:27:42.714  1000  5000  5001 I [BleConnection/CCC]: SENT APDU type=GET_CHALLENGE seq=42
+09-24 10:27:43.731  1000  5000  5001 W [BleConnection/CCC]: RECEIVED APDU type=CREATE_KEY seq=43
+09-24 10:27:44.748  1000  5000  5001 E [BleConnection/CCC]: SENT APDU type=SIGN seq=44
+09-24 10:27:45.765  1000  5000  5001 V [BleConnection/CCC]: RECEIVED APDU type=SELECT seq=45
+09-24 10:27:46.782  1000  5000  5001 D [BleConnection/CCC]: SENT APDU type=AUTHENTICATE seq=46
+09-24 10:27:47.799  1000  5000  5001 I [BleConnection/CCC]: RECEIVED APDU type=GET_CHALLENGE seq=47
+09-24 10:27:48.816  1000  5000  5001 W [BleConnection/CCC]: SENT APDU type=CREATE_KEY seq=48
+09-24 10:27:49.833  1000  5000  5001 E [BleConnection/CCC]: RECEIVED APDU type=SIGN seq=49
 
------- MEMORY INFO (/proc/meminfo) ------
-MemTotal:       12000000 kB
-MemFree:         3000000 kB
-MemAvailable:    6000000 kB
+-- Token / pipe-separated log entries --
+09-24 10:30:00.000  1000  6000  6001 V KeystoreService: key_id=0x0001 | token: 42 | status: OK
+09-24 10:30:01.033  1000  6000  6001 D KeystoreService: key_id=0x0002 | token: 142 | status: OK
+09-24 10:30:02.066  1000  6000  6001 I KeystoreService: key_id=0x0003 | token: 242 | status: OK
+09-24 10:30:03.099  1000  6000  6001 W KeystoreService: key_id=0x0004 | token: 342 | status: OK
+09-24 10:30:04.132  1000  6000  6001 E KeystoreService: key_id=0x0005 | token: 442 | status: OK
+09-24 10:30:05.165  1000  6000  6001 V KeystoreService: key_id=0x0006 | token: 542 | status: OK
+09-24 10:30:06.198  1000  6000  6001 D KeystoreService: key_id=0x0007 | token: 642 | status: OK
+09-24 10:30:07.231  1000  6000  6001 I KeystoreService: key_id=0x0008 | token: 742 | status: OK
+09-24 10:30:08.264  1000  6000  6001 W KeystoreService: key_id=0x0009 | token: 842 | status: OK
+09-24 10:30:09.297  1000  6000  6001 E KeystoreService: key_id=0x000a | token: 942 | status: OK
+09-24 10:30:10.330  1000  6000  6001 V KeystoreService: key_id=0x000b | token: 1042 | status: OK
+09-24 10:30:11.363  1000  6000  6001 D KeystoreService: key_id=0x000c | token: 1142 | status: OK
+09-24 10:30:12.396  1000  6000  6001 I KeystoreService: key_id=0x000d | token: 1242 | status: OK
+09-24 10:30:13.429  1000  6000  6001 W KeystoreService: key_id=0x000e | token: 1342 | status: OK
+09-24 10:30:14.462  1000  6000  6001 E KeystoreService: key_id=0x000f | token: 1442 | status: OK
+09-24 10:30:15.495  1000  6000  6001 V KeystoreService: key_id=0x0010 | token: 1542 | status: OK
+09-24 10:30:16.528  1000  6000  6001 D KeystoreService: key_id=0x0011 | token: 1642 | status: OK
+09-24 10:30:17.561  1000  6000  6001 I KeystoreService: key_id=0x0012 | token: 1742 | status: OK
+09-24 10:30:18.594  1000  6000  6001 W KeystoreService: key_id=0x0013 | token: 1842 | status: OK
+09-24 10:30:19.627  1000  6000  6001 E KeystoreService: key_id=0x0014 | token: 1942 | status: OK
+09-24 10:30:20.660  1000  6000  6001 V KeystoreService: key_id=0x0015 | token: 2042 | status: OK
+09-24 10:30:21.693  1000  6000  6001 D KeystoreService: key_id=0x0016 | token: 2142 | status: OK
+09-24 10:30:22.726  1000  6000  6001 I KeystoreService: key_id=0x0017 | token: 2242 | status: OK
+09-24 10:30:23.759  1000  6000  6001 W KeystoreService: key_id=0x0018 | token: 2342 | status: OK
+09-24 10:30:24.792  1000  6000  6001 E KeystoreService: key_id=0x0019 | token: 2442 | status: OK
+09-24 10:30:25.825  1000  6000  6001 V KeystoreService: key_id=0x001a | token: 2542 | status: OK
+09-24 10:30:26.858  1000  6000  6001 D KeystoreService: key_id=0x001b | token: 2642 | status: OK
+09-24 10:30:27.891  1000  6000  6001 I KeystoreService: key_id=0x001c | token: 2742 | status: OK
+09-24 10:30:28.924  1000  6000  6001 W KeystoreService: key_id=0x001d | token: 2842 | status: OK
+09-24 10:30:29.957  1000  6000  6001 E KeystoreService: key_id=0x001e | token: 2942 | status: OK
 
------- CPU INFO (top -n 1 -d 1 -m 30 -t) ------
-Tasks: 600 total
-%Cpu(s): 20.0 us, 8.0 sy
+-- Bluetooth connectivity events --
+09-24 10:26:57.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:01
+09-24 10:26:58.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:01
+09-24 10:26:58.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:02
+09-24 10:26:59.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:02
+09-24 10:26:59.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:03
+09-24 10:26:60.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:03
+09-24 10:26:60.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:04
+09-24 10:26:61.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:04
+09-24 10:26:61.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:05
+09-24 10:26:62.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:05
+09-24 10:26:62.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:06
+09-24 10:26:63.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:06
+09-24 10:26:63.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:07
+09-24 10:26:64.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:07
+09-24 10:26:64.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:08
+09-24 10:26:65.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:08
+09-24 10:26:65.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:09
+09-24 10:26:66.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:09
+09-24 10:26:66.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:10
+09-24 10:26:67.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:10
+09-24 10:26:67.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:11
+09-24 10:26:68.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:11
+09-24 10:26:68.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:12
+09-24 10:26:69.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:12
+09-24 10:26:69.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:13
+09-24 10:26:70.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:13
+09-24 10:26:70.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:14
+09-24 10:26:71.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:14
+09-24 10:26:71.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:15
+09-24 10:26:72.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:15
+09-24 10:26:72.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:16
+09-24 10:26:73.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:16
+09-24 10:26:73.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:17
+09-24 10:26:74.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:17
+09-24 10:26:74.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:18
+09-24 10:26:75.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:18
+09-24 10:26:75.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:19
+09-24 10:26:76.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:19
+09-24 10:26:76.001  1000  1234  5678 I bt_btif: bta_dm_acl_up: Device connected: AA:BB:CC:DD:EE:20
+09-24 10:26:77.050  1000  1234  5678 I bt_btif: btif_dm_upstreams_evt: ACL_UP event for AA:BB:CC:DD:EE:20
 
------- PROCESSES AND THREADS (ps -A -T -Z -O pri,nice,rtprio,sched,pcy,time) ------
-USER           PID   TID PPID     VSZ    RSS WCHAN            ADDR S NAME
-system        1234  1234    1 1200000  60000 SyS_epoll_wait      0 S system_server
-bluetooth     5678  5678 1234  800000  40000 SyS_epoll_wait      0 S com.android.bluetooth
+[persist.bluetooth.device_class]: [0x200404]
 
-========================================================
-== dumpstate: done
-========================================================
